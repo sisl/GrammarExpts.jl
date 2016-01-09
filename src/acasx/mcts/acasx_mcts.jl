@@ -59,7 +59,8 @@ using ExprSearch
 
 #nmacs vs nonnmacs
 function acasx_mcts(; seed=1,
-                    logfileroot::AbstractString="acasx_mcts_logs",
+                    runtype::AbstractString="nmacs_vs_nonnmacs",
+                    clusterdataname::AbstractString="",
                     data::DFSet=DATASET,
                     data_meta::DataFrame=DATASET_META,
                     n_iters::Int64=N_ITERS,
@@ -68,7 +69,17 @@ function acasx_mcts(; seed=1,
                     safetylimit::Int64=SAFETYLIMIT)
   srand(seed)
 
-  Dl = nmacs_vs_nonnmacs(data, data_meta)
+  Dl = if runtype == "nmacs_vs_nonnmacs"
+    nmacs_vs_nonnmacs(data, data_meta)
+  elseif runtype == "nmac_clusters"
+    clustering = dataset(manuals, clusterdataname)
+    nmac_clusters(clustering, data)
+  elseif runtype == "nonnmacs_extra_cluster"
+    clustering = dataset(manuals, clusterdataname)
+    nonnmacs_extra_cluster(clustering, data, data_meta)
+  else
+    error("runtype not recognized ($runtype)")
+  end
 
   define_reward(Dl)
 
@@ -89,7 +100,7 @@ function acasx_mcts(; seed=1,
 
   result = exprsearch(mcts_params)
 
-  save_log("$logfileroot.txt", logs)
+  save_log("$(runtype)_$(clusterdataname)_log.txt", logs)
 
   return result
 end

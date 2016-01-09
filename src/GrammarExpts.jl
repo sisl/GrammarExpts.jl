@@ -34,6 +34,7 @@
 
 module GrammarExpts
 
-# package code goes here
+include("acasx/mcts/acasx_mcts.jl")
+export ACASX_MCTS
 
 end # module
