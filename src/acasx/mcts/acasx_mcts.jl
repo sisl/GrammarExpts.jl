@@ -61,12 +61,14 @@ using ExprSearch
 function acasx_mcts(; seed=1,
                     runtype::AbstractString="nmacs_vs_nonnmacs",
                     clusterdataname::AbstractString="",
+                    logfileroot::AbstractString="acasx_mcts_log",
                     data::DFSet=DATASET,
                     data_meta::DataFrame=DATASET_META,
                     n_iters::Int64=N_ITERS,
                     searchdepth::Int64=SEARCHDEPTH,
                     exploration_const::Float64=EXPLORATIONCONST,
-                    safetylimit::Int64=SAFETYLIMIT)
+                    safetylimit::Int64=SAFETYLIMIT,
+                    q0::Float64=MAX_NEG_REWARD)
   srand(seed)
 
   Dl = if runtype == "nmacs_vs_nonnmacs"
@@ -95,12 +97,12 @@ function acasx_mcts(; seed=1,
   mcts_observer = Observer()
 
   mcts_params = MCTSESParams(tree_params, mdp_params, n_iters, searchdepth,
-                             exploration_const, mcts_observer, safetylimit,
+                             exploration_const, q0, mcts_observer, safetylimit,
                              observer)
 
   result = exprsearch(mcts_params)
 
-  save_log("$(runtype)_$(clusterdataname)_log.txt", logs)
+  save_log("$(logfileroot).txt", logs)
 
   return result
 end

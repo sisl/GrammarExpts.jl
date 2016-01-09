@@ -41,8 +41,7 @@ function define_reward{T}(Dl::DFSetLabeled{T})
       elseif isterminal(tree) #not-compilable
         MAX_NEG_REWARD
       else #each step
-        #STEP_REWARD
-        0.0
+        STEP_REWARD
       end
       return reward
     end
