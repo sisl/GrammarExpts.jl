@@ -32,21 +32,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("../ge/fitness.jl")
+#mdp
+const MAXSTEPS = 20
+const DISCOUNT = 1.0
 
-function define_reward{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function MCTS.get_reward(tree::DerivationTree)
-      reward = if iscomplete(tree)
-        code = get_expr(tree)
-        -get_fitness(code, $Dl)
-      elseif isterminal(tree) #not-compilable
-        MAX_NEG_REWARD
-      else #each step
-        STEP_REWARD
-      end
-      return reward
-    end
-  end
-  eval(ex)
-end
+#mcts
+const N_ITERS = 200
+const SEARCHDEPTH = 40
+const EXPLORATIONCONST = 30.0
+const SAFETYLIMIT = 30 #max steps to terminal
+
+#fitness function
+const W_ENT = 100 #entropy
+const W_LEN = 0.1 #
+
+#reward function
+const MAX_NEG_REWARD = -2000.0
+const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
+const MAXCODELENGTH = 1000000 #disable for now

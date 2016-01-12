@@ -32,21 +32,16 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("../ge/fitness.jl")
+include("infogain.jl")
 
-function define_reward{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function MCTS.get_reward(tree::DerivationTree)
-      reward = if iscomplete(tree)
-        code = get_expr(tree)
-        -get_fitness(code, $Dl)
-      elseif isterminal(tree) #not-compilable
-        MAX_NEG_REWARD
-      else #each step
-        STEP_REWARD
-      end
-      return reward
-    end
+function get_fitness{T}(code::Union{Expr,Symbol}, Dl::DFSetLabeled{T})
+  codelen = length(string(code))
+  if codelen > MAXCODELENGTH #avoid long evaluations on long codes
+    return realmax(Float64)
   end
-  eval(ex)
+
+  f = to_function(code)
+  predicts = map(f, Dl.records)
+  _, _, ent_post = get_metrics(predicts, Dl.labels)
+  return W_ENT * ent_post + W_LEN * codelen
 end

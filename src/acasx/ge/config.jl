@@ -32,21 +32,27 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("../ge/fitness.jl")
+#grammatical evolution
+const GENOME_SIZE = 20
+const MAXWRAPS = 0
+const DEFAULTCODE = :(eval(false))
+const TOP_PERCENT = 0.5
+const PROB_MUTATION = 0.2
+const MUTATION_RATE = 0.2
+const VERBOSITY = 1
+const MAXVALUE = 1000
 
-function define_reward{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function MCTS.get_reward(tree::DerivationTree)
-      reward = if iscomplete(tree)
-        code = get_expr(tree)
-        -get_fitness(code, $Dl)
-      elseif isterminal(tree) #not-compilable
-        MAX_NEG_REWARD
-      else #each step
-        STEP_REWARD
-      end
-      return reward
-    end
-  end
-  eval(ex)
-end
+const POP_SIZE = 5000
+const MAXITERATIONS = 20
+const STOP_N = 20 #early stop
+
+#fitness
+const MAXCODELENGTH = 1000000 #disable for now
+const W_ENT = 100 #entropy
+const W_LEN = 0.1 #
+
+#vis
+const LIMIT_MEMBERS = 30
+const HIST_NBINS = 40
+const HIST_EDGES = linspace(0.0, 200.0, HIST_NBINS + 1)
+const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect

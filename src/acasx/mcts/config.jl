@@ -37,7 +37,7 @@ const MAXSTEPS = 20
 const DISCOUNT = 1.0
 
 #mcts
-const N_ITERS = 200
+const N_ITERS = 2000
 const SEARCHDEPTH = 40
 const EXPLORATIONCONST = 30.0
 const SAFETYLIMIT = 30 #max steps to terminal

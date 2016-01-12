@@ -32,14 +32,28 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-function get_fitness{T}(code::Union{Expr,Symbol}, Dl::DFSetLabeled{T})
-  codelen = length(string(code))
-  if codelen > MAXCODELENGTH #avoid long evaluations on long codes
-    return realmax(Float64)
-  end
+#grammatical evolution
+const GENOME_SIZE = 20
+const MAXWRAPS = 0
+const DEFAULTCODE = :(eval(false))
+const TOP_PERCENT = 0.5
+const PROB_MUTATION = 0.2
+const MUTATION_RATE = 0.2
+const VERBOSITY = 1
+const MAXVALUE = 1000
 
-  f = to_function(code)
-  predicts = map(f, Dl.records)
-  _, _, ent_post = get_metrics(predicts, Dl.labels)
-  return W_ENT * ent_post + W_LEN * codelen
-end
+#reduced for testing
+const POP_SIZE = 50
+const MAXITERATIONS = 3
+const STOP_N = 3
+
+#fitness
+const MAXCODELENGTH = 1000000 #disable for now
+const W_ENT = 100 #entropy
+const W_LEN = 0.1 #
+
+#vis
+const LIMIT_MEMBERS = 30
+const HIST_NBINS = 40
+const HIST_EDGES = linspace(0.0, 200.0, HIST_NBINS + 1)
+const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect

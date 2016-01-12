@@ -37,4 +37,7 @@ module GrammarExpts
 include("acasx/mcts/acasx_mcts.jl")
 export ACASX_MCTS
 
+include("acasx/ge/acasx_ge.jl")
+export ACASX_GE
+
 end # module

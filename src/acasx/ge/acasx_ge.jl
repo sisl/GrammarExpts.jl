@@ -32,17 +32,18 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module ACASX_MCTS
+module ACASX_GE
 
-export acasx_mcts
+export acasx_ge
 
-using ExprSearch.MCTS
+using ExprSearch.GE
 using Datasets
+using RLESUtils.ArrayUtils
 using Reexport
 
 include("../grammar/grammar_typed/GrammarDef.jl") #grammar
 
-include("test_config.jl")
+include("test_config.jl") #for testing
 #include("config.jl")
 
 #pick a dataset
@@ -50,23 +51,59 @@ include("../common/data_dasc.jl")
 #include("../common/data_libcas098_small.jl")
 
 include("../common/labeleddata.jl")
-include("reward.jl")
+
+import ExprSearch.GE.get_fitness
+include("fitness.jl")
 include("logs.jl")
 
 using .GrammarDef
 
+#Callbacks
+#################
+function define_stop()
+  tracker = Float64[]
+  ex = quote
+    function GE.stop(iter::Int64, fitness::Float64)
+      if iter == 1
+        empty!($tracker)
+      end
+      push!($tracker, fitness)
+
+      if length($tracker) < STOP_N
+        return false
+      else
+        last_N = ($tracker)[end - STOP_N + 1 : end]
+        return elements_equal(last_N)
+      end
+    end
+  end
+  eval(ex)
+end
+
+function define_fitness{T}(Dl::DFSetLabeled{T})
+  ex = quote
+    function GE.get_fitness(code::Union{Expr,Symbol})
+      return get_fitness(code, $Dl)
+    end
+  end
+  eval(ex)
+end
+
 #nmacs vs nonnmacs
-function acasx_mcts(outdir::AbstractString="./"; seed=1,
-                    runtype::AbstractString="nmacs_vs_nonnmacs",
-                    clusterdataname::AbstractString="",
-                    logfileroot::AbstractString="acasx_mcts_log",
-                    data::DFSet=DATASET,
-                    data_meta::DataFrame=DATASET_META,
-                    n_iters::Int64=N_ITERS,
-                    searchdepth::Int64=SEARCHDEPTH,
-                    exploration_const::Float64=EXPLORATIONCONST,
-                    safetylimit::Int64=SAFETYLIMIT,
-                    q0::Float64=MAX_NEG_REWARD)
+function acasx_ge(outdir::AbstractString="./"; seed=1,
+                  runtype::AbstractString="nmacs_vs_nonnmacs",
+                  clusterdataname::AbstractString="",
+                  logfileroot::AbstractString="acasx_ge_log",
+                  data::DFSet=DATASET,
+                  data_meta::DataFrame=DATASET_META,
+                  genome_size::Int64=GENOME_SIZE,
+                  pop_size::Int64=POP_SIZE,
+                  maxwraps::Int64=MAXWRAPS,
+                  top_percent::Float64=TOP_PERCENT,
+                  prob_mutation::Float64=PROB_MUTATION,
+                  mutation_rate::Float64=MUTATION_RATE,
+                  default_code::Expr=DEFAULTCODE,
+                  maxiterations::Int64=MAXITERATIONS)
   srand(seed)
 
   Dl = if runtype == "nmacs_vs_nonnmacs"
@@ -81,25 +118,30 @@ function acasx_mcts(outdir::AbstractString="./"; seed=1,
     error("runtype not recognized ($runtype)")
   end
 
-  define_reward(Dl)
+  define_stop()
+  define_fitness(Dl)
 
   grammar = create_grammar()
-  tree_params = DerivTreeParams(grammar, MAXSTEPS)
-  mdp_params = DerivTreeMDPParams(grammar)
 
   observer = Observer()
   add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "action", x -> println("step=$(x[1]), action=$(x[2])"))
-  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2])"))
+  add_observer(observer, "best_individual", x -> begin
+                 iter, fitness, code = x
+                 code = string(code)
+                 code_short = take(code, 50) |> join
+                 println("generation: $iter, max fitness=$(signif(fitness, 4)),",
+                         "length=$(length(code)), code=$(code_short)")
+               end)
+  add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2])"))
   logs = define_logs(observer)
 
-  mcts_observer = Observer()
+  ge_observer = Observer()
 
-  mcts_params = MCTSESParams(tree_params, mdp_params, n_iters, searchdepth,
-                             exploration_const, q0, mcts_observer, safetylimit,
-                             observer)
+  ge_params = GEESParams(grammar, genome_size, pop_size, maxwraps,
+                         top_percent, prob_mutation, mutation_rate, default_code,
+                         maxiterations, ge_observer, observer)
 
-  result = exprsearch(mcts_params)
+  result = exprsearch(ge_params)
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
