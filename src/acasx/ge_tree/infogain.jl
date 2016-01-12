@@ -32,34 +32,18 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
-
-export load_expt
-
-using Reexport
-
-const EXPTDIR = dirname(@__FILE__)
-
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-load_expt(s::Symbol) = load_expt(Val{s})
-
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
+function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
+  true_ids = find(predicts)
+  false_ids = find(!predicts)
+  ent_pre = truth |> proportions |> entropy
+  ent_true = !isempty(true_ids) ?
+    truth[true_ids] |> proportions |> entropy : 0.0
+  ent_false = !isempty(false_ids) ?
+    truth[false_ids] |> proportions |> entropy : 0.0
+  w1 = length(true_ids) / length(truth)
+  w2 = length(false_ids) / length(truth)
+  ent_post = w1 * ent_true + w2 * ent_false #miminize entropy after split
+  info_gain = ent_pre - ent_post
+  return (info_gain, ent_pre, ent_post) #entropy pre/post split
 end
 
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
-end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module

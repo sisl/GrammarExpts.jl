@@ -32,34 +32,16 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+include("infogain.jl")
 
-export load_expt
+function get_fitness{T}(code::Union{Expr,Symbol}, Dl::DFSetLabeled{T})
+  codelen = length(string(code))
+  if codelen > MAXCODELENGTH #avoid long evaluations on long codes
+    return realmax(Float64)
+  end
 
-using Reexport
-
-const EXPTDIR = dirname(@__FILE__)
-
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-load_expt(s::Symbol) = load_expt(Val{s})
-
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
+  f = to_function(code)
+  predicts = map(f, Dl.records)
+  _, _, ent_post = get_metrics(predicts, Dl.labels)
+  return W_ENT * ent_post + W_LEN * codelen
 end
-
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
-end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module

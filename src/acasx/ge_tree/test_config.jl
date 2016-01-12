@@ -32,34 +32,31 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+#grammatical evolution
+const GENOME_SIZE = 20
+const MAXWRAPS = 0
+const DEFAULTCODE = :(eval(false))
+const TOP_PERCENT = 0.5
+const PROB_MUTATION = 0.2
+const MUTATION_RATE = 0.2
+const VERBOSITY = 1
+const MAXVALUE = 1000
 
-export load_expt
+#reduced for testing
+const POP_SIZE = 50
+const MAXITERATIONS = 3
+const STOP_N = 3
 
-using Reexport
+#fitness
+const MAXCODELENGTH = 1000000 #disable for now
+const W_ENT = 100 #entropy
+const W_LEN = 0.1 #
 
-const EXPTDIR = dirname(@__FILE__)
+#decision tree
+const MAXDEPTH = 2
 
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-load_expt(s::Symbol) = load_expt(Val{s})
-
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
-end
-
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
-end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module
+#vis
+const LIMIT_MEMBERS = 30
+const HIST_NBINS = 40
+const HIST_EDGES = linspace(0.0, 200.0, HIST_NBINS + 1)
+const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect
