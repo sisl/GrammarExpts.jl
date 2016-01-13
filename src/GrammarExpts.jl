@@ -60,6 +60,11 @@ function load_expt(::Type{Val{:acasx_ge_tree}})
   @eval @reexport using .ACASX_GE_Tree
 end
 
+function load_expt(::Type{Val{:acasx_mcts_tree}})
+  @eval include(joinpath(EXPTDIR, "acasx/mcts_tree/acasx_mcts_tree.jl"))
+  @eval @reexport using .ACASX_MCTS_Tree
+end
+
 load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
 
 end # module

@@ -44,6 +44,7 @@ using Reexport
 
 include("../grammar/grammar_typed/GrammarDef.jl") #grammar
 
+#TODO: make this settable at runtime
 include("test_config.jl") #for testing
 #include("config.jl")
 
@@ -57,81 +58,10 @@ import ExprSearch.GE.get_fitness
 include("fitness.jl")
 include("logs.jl")
 
+include("ge_callbacks.jl")
+include("dtree_callbacks.jl")
+
 using .GrammarDef
-
-#Callbacks
-#################
-function define_stop()
-  tracker = Float64[]
-  ex = quote
-    function GE.stop(iter::Int64, fitness::Float64)
-      if iter == 1
-        empty!($tracker)
-      end
-      push!($tracker, fitness)
-
-      if length($tracker) < STOP_N
-        return false
-      else
-        last_N = ($tracker)[end - STOP_N + 1 : end]
-        return elements_equal(last_N)
-      end
-    end
-  end
-  eval(ex)
-end
-
-#FIXME: rewrite these sneak-in callbacks as a convenience macro
-function define_fitness{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function GE.get_fitness(code::Union{Expr,Symbol})
-      return get_fitness(code, $Dl)
-    end
-  end
-  eval(ex)
-end
-
-function define_truth{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_truth(members::Vector{Int64})
-      return $(Dl).labels[members]
-    end
-  end
-  eval(ex)
-end
-
-function classify(result::GEESResult, Ds::Vector{DataFrame})
-  f = to_function(result.expr)
-  return map(f, Ds)
-end
-
-function define_splitter{T}(Dl::DFSetLabeled{T}, ge_params::GEESParams, logs::TaggedDFLogger)
-  ex = quote
-    function DecisionTrees.get_splitter(members::Vector{Int64})
-      set_observers!($(ge_params).observer, $logs)
-      Dl_sub = $(Dl)[members]
-
-      define_fitness(Dl_sub)
-
-      result = exprsearch($ge_params)
-
-      predicts = classify(result, Dl_sub.records)
-      info_gain, _, _ = get_metrics(predicts, Dl_sub.labels)
-
-      return info_gain > 0 ? result : nothing
-    end
-  end
-  eval(ex)
-end
-
-function define_labels{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_labels(result::SearchResult, members::Vector{Int64})
-      return classify(result, $(Dl).records[members])
-    end
-  end
-  eval(ex)
-end
 
 function train_dtree{T}(ge_params::GEESParams, Dl::DFSetLabeled{T})
 
@@ -183,7 +113,6 @@ function acasx_ge_tree(outdir::AbstractString="./"; seed=1,
   define_stop() #stopping criterion
 
   logs = define_logs()
-
   ge_params = GEESParams(grammar, genome_size, pop_size, maxwraps,
                          top_percent, prob_mutation, mutation_rate, default_code,
                          maxiterations, Observer(), Observer())

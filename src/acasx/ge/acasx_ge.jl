@@ -43,6 +43,7 @@ using Reexport
 
 include("../grammar/grammar_typed/GrammarDef.jl") #grammar
 
+#TODO: make this settable at runtime
 include("test_config.jl") #for testing
 #include("config.jl")
 

@@ -67,6 +67,7 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger)
                          "length=$(length(code)), code=$(code_short)")
                end)
   add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2])"))
+
   ###################
   #log observers
   decision_id = nrow(logs["fitness"]) > 0 ?
