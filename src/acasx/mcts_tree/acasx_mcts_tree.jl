@@ -42,42 +42,43 @@ using Datasets
 using RLESUtils.Obj2Dict
 using Reexport
 
-const DIR = dirname(@__FILE__)
+import GrammarExpts.CONFIG
 
-function configure(; config::Symbol=:test, data::Symbol=:dasc)
-  if isdefined(:CONFIGURED)
-    error("Cannot configure twice")
-  end
+include("../grammar/grammar_typed/GrammarDef.jl") #grammar
 
-  global const CONFIGURED = true
-  println("Configuring: config=$config, data=$data")
-
-  @eval include(joinpath(DIR, "../grammar/grammar_typed/GrammarDef.jl")) #grammar
-
-  if config == :test
-    @eval include(joinpath(DIR, "test_config.jl"))
-  elseif config == :normal
-    @eval include(joinpath(DIR, "config.jl"))
-  else
-    error("config not valid ($config)")
-  end
-
-  if data == :dasc
-    @eval include(joinpath(DIR, "../common/data_dasc.jl"))
-  elseif data == :libcas098_small
-    @eval include(joinpath(DIR, "../common/data_libcas098_small.jl"))
-  else
-    error("data not valid ($data)")
-  end
-
-  @eval include(joinpath(DIR, "../common/labeleddata.jl"))
-  @eval include(joinpath(DIR, "reward.jl"))
-  @eval include(joinpath(DIR, "logs.jl"))
-
-  @eval include(joinpath(DIR, "dtree_callbacks.jl"))
-
-  @eval using .GrammarDef
+#defaults
+if !haskey(CONFIG, :config)
+  CONFIG[:config] = :test
 end
+if !haskey(CONFIG, :data)
+  CONFIG[:data] = :dasc
+end
+
+println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data])")
+
+if CONFIG[:config] == :test
+  include("test_config.jl")
+elseif CONFIG[:config] == :normal
+  include("config.jl")
+else
+  error("config not valid ($config)")
+end
+
+if CONFIG[:data] == :dasc
+  include("../common/data_dasc.jl")
+elseif CONFIG[:data] == :libcas098_small
+  include("../common/data_libcas098_small.jl")
+else
+  error("data not valid ($data)")
+end
+
+include("../common/labeleddata.jl")
+include("reward.jl")
+include("logs.jl")
+
+include("dtree_callbacks.jl")
+
+using .GrammarDef
 
 function train_dtree{T}(ge_params::MCTSESParams, Dl::DFSetLabeled{T})
 

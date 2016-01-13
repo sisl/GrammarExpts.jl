@@ -38,12 +38,17 @@ export load_expt
 
 using Reexport
 
+global CONFIG
 const EXPTDIR = dirname(@__FILE__)
 
 #load experiments dynamically
 #keeps the experiments separate, so that they don't clash at compile time
 #esp the overloads
-load_expt(s::Symbol) = load_expt(Val{s})
+#pass keyword arguments as config into the loaded module
+function load_expt(s::Symbol; kwargs...)
+  global CONFIG = Dict{Symbol,Symbol}(kwargs)
+  load_expt(Val{s})
+end
 
 function load_expt(::Type{Val{:acasx_mcts}})
   @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
