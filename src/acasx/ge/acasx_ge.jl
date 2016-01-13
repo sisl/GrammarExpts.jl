@@ -34,30 +34,50 @@
 
 module ACASX_GE
 
-export acasx_ge
+export acasx_ge, configure
 
 using ExprSearch.GE
 using Datasets
 using RLESUtils.ArrayUtils
 using Reexport
 
-include("../grammar/grammar_typed/GrammarDef.jl") #grammar
+const DIR = dirname(@__FILE__)
 
-#TODO: make this settable at runtime
-include("test_config.jl") #for testing
-#include("config.jl")
+function configure(; config::Symbol=:test, data::Symbol=:dasc)
+  if isdefined(:CONFIGURED)
+    error("Cannot configure twice")
+  end
 
-#pick a dataset
-include("../common/data_dasc.jl")
-#include("../common/data_libcas098_small.jl")
+  global const CONFIGURED = true
+  println("Configure: config=$config, data=$data")
 
-include("../common/labeleddata.jl")
+  @eval include(joinpath(DIR, "../grammar/grammar_typed/GrammarDef.jl")) #grammar
 
-import ExprSearch.GE.get_fitness
-include("fitness.jl")
-include("logs.jl")
+  if config == :test
+    @eval include(joinpath(DIR, "test_config.jl")) #for testing
+  elseif config == :normal
+    @eval include(joinpath(DIR, "config.jl"))
+  else
+    error("config not valid ($config)")
+  end
 
-using .GrammarDef
+  if data == :dasc
+    @eval include(joinpath(DIR, "../common/data_dasc.jl"))
+  elseif data == :libcas098_small
+    @eval include(joinpath(DIR, "../common/data_libcas098_small.jl"))
+  else
+    error("data not valid ($data)")
+  end
+
+  @eval include(joinpath(DIR, "../common/labeleddata.jl"))
+
+  @eval import ExprSearch.GE.get_fitness
+  @eval include(joinpath(DIR, "fitness.jl"))
+  @eval include(joinpath(DIR, "logs.jl"))
+
+  @eval using .GrammarDef
+end
+
 
 #Callbacks
 #################

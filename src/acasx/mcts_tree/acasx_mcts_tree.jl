@@ -34,7 +34,7 @@
 
 module ACASX_MCTS_Tree
 
-export acasx_mcts_tree
+export acasx_mcts_tree, configure
 
 using DecisionTrees
 using ExprSearch.MCTS
@@ -42,23 +42,42 @@ using Datasets
 using RLESUtils.Obj2Dict
 using Reexport
 
-include("../grammar/grammar_typed/GrammarDef.jl") #grammar
+const DIR = dirname(@__FILE__)
 
-#TODO: make this settable at runtime
-include("test_config.jl")
-#include("config.jl")
+function configure(; config::Symbol=:test, data::Symbol=:dasc)
+  if isdefined(:CONFIGURED)
+    error("Cannot configure twice")
+  end
 
-#pick a dataset
-include("../common/data_dasc.jl")
-#include("../common/data_libcas098_small.jl")
+  global const CONFIGURED = true
+  println("Configuring: config=$config, data=$data")
 
-include("../common/labeleddata.jl")
-include("reward.jl")
-include("logs.jl")
+  @eval include(joinpath(DIR, "../grammar/grammar_typed/GrammarDef.jl")) #grammar
 
-include("dtree_callbacks.jl")
+  if config == :test
+    @eval include(joinpath(DIR, "test_config.jl"))
+  elseif config == :normal
+    @eval include(joinpath(DIR, "config.jl"))
+  else
+    error("config not valid ($config)")
+  end
 
-using .GrammarDef
+  if data == :dasc
+    @eval include(joinpath(DIR, "../common/data_dasc.jl"))
+  elseif data == :libcas098_small
+    @eval include(joinpath(DIR, "../common/data_libcas098_small.jl"))
+  else
+    error("data not valid ($data)")
+  end
+
+  @eval include(joinpath(DIR, "../common/labeleddata.jl"))
+  @eval include(joinpath(DIR, "reward.jl"))
+  @eval include(joinpath(DIR, "logs.jl"))
+
+  @eval include(joinpath(DIR, "dtree_callbacks.jl"))
+
+  @eval using .GrammarDef
+end
 
 function train_dtree{T}(ge_params::MCTSESParams, Dl::DFSetLabeled{T})
 
