@@ -50,6 +50,10 @@ if !haskey(CONFIG, :data)
   CONFIG[:data] = :dasc
 end
 
+if !haskey(CONFIG, :treevis)
+  CONFIG[:treevis] = false
+end
+
 println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data])")
 
 include("../grammar/grammar_typed/GrammarDef.jl") #grammar
@@ -58,6 +62,8 @@ if CONFIG[:config] == :test
   include("test_config.jl") #for testing
 elseif CONFIG[:config] == :normal
   include("config.jl")
+elseif CONFIG[:config] == :long
+  include("long_config.jl")
 else
   error("config not valid ($config)")
 end
@@ -74,10 +80,15 @@ include("../common/labeleddata.jl")
 include("reward.jl")
 include("logs.jl")
 
+if CONFIG[:treevis]
+  include("treeview.jl")
+end
+
 using .GrammarDef
 
+using Debug
 #nmacs vs nonnmacs
-function acasx_mcts(outdir::AbstractString="./"; seed=1,
+@debug function acasx_mcts(outdir::AbstractString="./"; seed=1,
                     runtype::AbstractString="nmacs_vs_nonnmacs",
                     clusterdataname::AbstractString="",
                     logfileroot::AbstractString="acasx_mcts_log",
@@ -87,7 +98,8 @@ function acasx_mcts(outdir::AbstractString="./"; seed=1,
                     searchdepth::Int64=SEARCHDEPTH,
                     exploration_const::Float64=EXPLORATIONCONST,
                     safetylimit::Int64=SAFETYLIMIT,
-                    q0::Float64=MAX_NEG_REWARD)
+                    q0::Float64=MAX_NEG_REWARD,
+                    treevis::Bool=CONFIG[:treevis])
   srand(seed)
 
   Dl = if runtype == "nmacs_vs_nonnmacs"
@@ -116,6 +128,12 @@ function acasx_mcts(outdir::AbstractString="./"; seed=1,
 
   mcts_observer = Observer()
 
+  if treevis
+    startstate = DerivTreeState() #assumes empty constructor is initial state...
+    view, viewstep = viewstep_f(startstate, 1)
+    add_observer(mcts_observer, "tree", viewstep)
+  end
+
   mcts_params = MCTSESParams(tree_params, mdp_params, n_iters, searchdepth,
                              exploration_const, q0, mcts_observer, safetylimit,
                              observer)
@@ -124,6 +142,8 @@ function acasx_mcts(outdir::AbstractString="./"; seed=1,
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
+
+  @bp treevis
 
   return result
 end
