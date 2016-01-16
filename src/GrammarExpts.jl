@@ -75,6 +75,11 @@ function load_expt(::Type{Val{:symbolic_mcts}})
   @eval @reexport using .SYMBOLIC_MCTS
 end
 
+function load_expt(::Type{Val{:symbolic_ge}})
+  @eval include(joinpath(EXPTDIR, "symbolic/ge/symbolic_ge.jl"))
+  @eval @reexport using .SYMBOLIC_GE
+end
+
 load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
 
 end # module
