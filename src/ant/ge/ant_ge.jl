@@ -32,59 +32,82 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module ANT_GE
 
-export load_expt
+export ant_ge
 
+using ExprSearch.GE
 using Reexport
 
-global CONFIG
-const EXPTDIR = dirname(@__FILE__)
+import GrammarExpts.CONFIG
 
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-#pass keyword arguments as config into the loaded module
-function load_expt(s::Symbol; kwargs...)
-  global CONFIG = Dict{Symbol,Any}(kwargs)
-  load_expt(Val{s})
+#defaults
+if !haskey(CONFIG, :config)
+  CONFIG[:config] = :test
 end
 
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
+println("Configuring: config=$(CONFIG[:config])")
+
+include("../grammar/GrammarDef.jl") #grammar
+using .GrammarDef
+
+if CONFIG[:config] == :test
+  include("test_config.jl") #for testing
+elseif CONFIG[:config] == :normal
+  include("config.jl")
+else
+  error("config not valid ($(CONFIG[:config]))")
 end
 
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
+import ExprSearch.GE.get_fitness
+include("../common/fitness.jl")
+include("logs.jl")
+
+#Callbacks
+#################
+GE.stop(iter::Int64, fitness::Float64) = false
+
+#nmacs vs nonnmacs
+function ant_ge(outdir::AbstractString="./"; seed=1,
+                logfileroot::AbstractString="ant_ge_log",
+                genome_size::Int64=GENOME_SIZE,
+                pop_size::Int64=POP_SIZE,
+                maxwraps::Int64=MAXWRAPS,
+                top_percent::Float64=TOP_PERCENT,
+                prob_mutation::Float64=PROB_MUTATION,
+                mutation_rate::Float64=MUTATION_RATE,
+                default_code=DEFAULTCODE,
+                maxiterations::Int64=MAXITERATIONS,
+                trailfile::AbstractString="santefe.trail")
+  srand(seed)
+
+  grammar = create_grammar()
+
+  define_fitness(trailfile)
+
+  observer = Observer()
+  add_observer(observer, "verbose1", x -> println(x[1]))
+  add_observer(observer, "best_individual", x -> begin
+                 iter, fitness, code = x
+                 code = string(code)
+                 println("generation: $iter, max fitness=$(signif(fitness, 4)),",
+                         "length=$(length(code)), code=\n$(code)")
+               end)
+  add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2])"))
+  logs = define_logs(observer)
+
+  ge_observer = Observer()
+
+  ge_params = GEESParams(grammar, genome_size, pop_size, maxwraps,
+                         top_percent, prob_mutation, mutation_rate, default_code,
+                         maxiterations, ge_observer, observer)
+
+  result = exprsearch(ge_params)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
+
+  return result
 end
 
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-function load_expt(::Type{Val{:acasx_mcts_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts_tree/acasx_mcts_tree.jl"))
-  @eval @reexport using .ACASX_MCTS_Tree
-end
-
-function load_expt(::Type{Val{:symbolic_mcts}})
-  @eval include(joinpath(EXPTDIR, "symbolic/mcts/symbolic_mcts.jl"))
-  @eval @reexport using .SYMBOLIC_MCTS
-end
-
-function load_expt(::Type{Val{:symbolic_ge}})
-  @eval include(joinpath(EXPTDIR, "symbolic/ge/symbolic_ge.jl"))
-  @eval @reexport using .SYMBOLIC_GE
-end
-
-function load_expt(::Type{Val{:ant_ge}})
-  @eval include(joinpath(EXPTDIR, "ant/ge/ant_ge.jl"))
-  @eval @reexport using .ANT_GE
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module
+end #module

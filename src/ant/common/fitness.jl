@@ -1,7 +1,7 @@
 # *****************************************************************************
 # Written by Ritchie Lee, ritchie.lee@sv.cmu.edu
 # *****************************************************************************
-# Copyright ã 2015, United States Government, as represented by the
+# Copyright � 2015, United States Government, as represented by the
 # Administrator of the National Aeronautics and Space Administration. All
 # rights reserved.  The Reinforcement Learning Encounter Simulator (RLES)
 # platform is licensed under the Apache License, Version 2.0 (the "License");
@@ -32,59 +32,50 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+function read_map(s)
+  data = [strip(line) for line in s]
+  height = length(data)
+  width = length(data[1])
+  start = ones(Int64, 2)
 
-export load_expt
+  map = zeros(Int64, width, height)
+  for i=1:height
+    for j=1:width
+      if data[i][j] != STARTPOS
+        map[i, j] = convert(Int64, data[i][j])
+      else
+        start = Any[i, j]
+      end
+    end
+  end
 
-using Reexport
-
-global CONFIG
-const EXPTDIR = dirname(@__FILE__)
-
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-#pass keyword arguments as config into the loaded module
-function load_expt(s::Symbol; kwargs...)
-  global CONFIG = Dict{Symbol,Any}(kwargs)
-  load_expt(Val{s})
+  return (map, start)
 end
 
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
+function define_fitness(trailfile::AbstractString)
+  file = joinpath(dirname(@__FILE__), trailfile)
+  data = open(file)
+  (map, start) = read_map(readlines(data))
+  world = World(map, start)
+
+  ex = quote
+    function get_fitness(code)
+      get_fitness(code, $world, $W_LEN)
+    end
+  end
+  eval(ex)
 end
 
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
+function get_fitness(code, world::World, w_len::Float64)
+  f = to_function(code)
+  # copy world
+  world = copy(world)
+
+  # create ant
+  ant = Ant(world.start[1], world.start[2])
+
+  f(world, ant)
+
+  eaten = convert(Float64, ant.eaten)
+  return -eaten + W_LEN * length(string(code))
 end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-function load_expt(::Type{Val{:acasx_mcts_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts_tree/acasx_mcts_tree.jl"))
-  @eval @reexport using .ACASX_MCTS_Tree
-end
-
-function load_expt(::Type{Val{:symbolic_mcts}})
-  @eval include(joinpath(EXPTDIR, "symbolic/mcts/symbolic_mcts.jl"))
-  @eval @reexport using .SYMBOLIC_MCTS
-end
-
-function load_expt(::Type{Val{:symbolic_ge}})
-  @eval include(joinpath(EXPTDIR, "symbolic/ge/symbolic_ge.jl"))
-  @eval @reexport using .SYMBOLIC_GE
-end
-
-function load_expt(::Type{Val{:ant_ge}})
-  @eval include(joinpath(EXPTDIR, "ant/ge/ant_ge.jl"))
-  @eval @reexport using .ANT_GE
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module
