@@ -32,49 +32,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+@reexport using RLESUtils: Observers, Loggers
 
-export load_expt
+function define_logs(observer::Observer)
+  logs = TaggedDFLogger()
+  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "action", [Int64, Int64], ["step", "action_id"])
+  add_folder!(logs, "cputime", [Int64, Float64], ["step", "cputime_s"])
+  add_folder!(logs, "result", [Float64, ASCIIString], ["total_reward", "expr"])
 
-using Reexport
+  add_observer(observer, "parameters", push!_f(logs, "parameters"))
+  add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
+  add_observer(observer, "action", push!_f(logs, "action"))
+  add_observer(observer, "cputime", push!_f(logs, "cputime"))
+  add_observer(observer, "result", push!_f(logs, "result"))
 
-global CONFIG
-const EXPTDIR = dirname(@__FILE__)
-
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-#pass keyword arguments as config into the loaded module
-function load_expt(s::Symbol; kwargs...)
-  global CONFIG = Dict{Symbol,Any}(kwargs)
-  load_expt(Val{s})
+  return logs
 end
-
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
-end
-
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
-end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-function load_expt(::Type{Val{:acasx_mcts_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts_tree/acasx_mcts_tree.jl"))
-  @eval @reexport using .ACASX_MCTS_Tree
-end
-
-function load_expt(::Type{Val{:symbolic_mcts}})
-  @eval include(joinpath(EXPTDIR, "symbolic/mcts/symbolic_mcts.jl"))
-  @eval @reexport using .SYMBOLIC_MCTS
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module

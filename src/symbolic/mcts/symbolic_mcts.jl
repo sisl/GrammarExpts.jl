@@ -32,12 +32,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module ACASX_MCTS
+module SYMBOLIC_MCTS
 
-export acasx_mcts
+export symbolic_mcts
 
 using ExprSearch.MCTS
-using Datasets
 using Reexport
 
 import GrammarExpts.CONFIG
@@ -46,56 +45,47 @@ import GrammarExpts.CONFIG
 if !haskey(CONFIG, :config)
   CONFIG[:config] = :test
 end
-if !haskey(CONFIG, :data)
-  CONFIG[:data] = :dasc
+if !haskey(CONFIG, :gt)
+  CONFIG[:gt] = :easy
 end
-
 if !haskey(CONFIG, :treevis)
   CONFIG[:treevis] = false
 end
 
-println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data])")
+println("Configuring: config=$(CONFIG[:config]), gt=$(CONFIG[:gt]), treevis=$(CONFIG[:treevis])")
 
-include("../grammar/grammar_typed/GrammarDef.jl") #grammar
+#2d polynomials with integral coeffs
+include("../grammar/grammar_poly2d/GrammarDef.jl") #grammar
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
 elseif CONFIG[:config] == :normal
   include("config.jl")
-elseif CONFIG[:config] == :higher
-  include("higher_config.jl")
-elseif CONFIG[:config] == :highest
-  include("highest_config.jl")
 else
-  error("config not valid ($config)")
+  error("config not valid ($(CONFIG[:config]))")
 end
 
-if CONFIG[:data] == :dasc
-  include("../common/data_dasc.jl")
-elseif CONFIG[:data] == :libcas098_small
-  include("../common/data_libcas098_small.jl")
+if CONFIG[:gt] == :easy
+  include("gt_easy.jl")
+elseif CONFIG[:gt] == :higherorder
+  include("gt_higherorder.jl")
 else
-  error("data not valid ($data)")
+  error("gt not valid ($(CONFIG[:gt]))")
 end
-
-include("../common/labeleddata.jl")
 include("reward.jl")
 include("logs.jl")
 
+#FIXME
 if CONFIG[:treevis]
   include("treeview.jl")
 end
 
+
 using .GrammarDef
 
-using Debug
 #nmacs vs nonnmacs
-@debug function acasx_mcts(outdir::AbstractString="./"; seed=1,
-                    runtype::AbstractString="nmacs_vs_nonnmacs",
-                    clusterdataname::AbstractString="",
-                    logfileroot::AbstractString="acasx_mcts_log",
-                    data::DFSet=DATASET,
-                    data_meta::DataFrame=DATASET_META,
+function symbolic_mcts(outdir::AbstractString="./"; seed=1,
+                    logfileroot::AbstractString="symbolic_mcts_log",
                     n_iters::Int64=N_ITERS,
                     searchdepth::Int64=SEARCHDEPTH,
                     exploration_const::Float64=EXPLORATIONCONST,
@@ -103,20 +93,6 @@ using Debug
                     q0::Float64=MAX_NEG_REWARD,
                     treevis::Bool=CONFIG[:treevis])
   srand(seed)
-
-  Dl = if runtype == "nmacs_vs_nonnmacs"
-    nmacs_vs_nonnmacs(data, data_meta)
-  elseif runtype == "nmac_clusters"
-    clustering = dataset(manuals, clusterdataname)
-    nmac_clusters(clustering, data)
-  elseif runtype == "nonnmacs_extra_cluster"
-    clustering = dataset(manuals, clusterdataname)
-    nonnmacs_extra_cluster(clustering, data, data_meta)
-  else
-    error("runtype not recognized ($runtype)")
-  end
-
-  define_reward(Dl)
 
   grammar = create_grammar()
   tree_params = DerivTreeParams(grammar, MAXSTEPS)
@@ -144,8 +120,6 @@ using Debug
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
-
-  @bp treevis
 
   return result
 end

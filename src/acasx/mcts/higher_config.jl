@@ -32,49 +32,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+#mdp
+const MAXSTEPS = 20
+const DISCOUNT = 1.0
 
-export load_expt
+#mcts
+const N_ITERS = 5000
+const SEARCHDEPTH = 40
+const EXPLORATIONCONST = 30.0
+const SAFETYLIMIT = 30 #max steps to terminal
 
-using Reexport
+#fitness function
+const W_ENT = 100 #entropy
+const W_LEN = 0.1 #
 
-global CONFIG
-const EXPTDIR = dirname(@__FILE__)
-
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-#pass keyword arguments as config into the loaded module
-function load_expt(s::Symbol; kwargs...)
-  global CONFIG = Dict{Symbol,Any}(kwargs)
-  load_expt(Val{s})
-end
-
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
-end
-
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
-end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-function load_expt(::Type{Val{:acasx_mcts_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts_tree/acasx_mcts_tree.jl"))
-  @eval @reexport using .ACASX_MCTS_Tree
-end
-
-function load_expt(::Type{Val{:symbolic_mcts}})
-  @eval include(joinpath(EXPTDIR, "symbolic/mcts/symbolic_mcts.jl"))
-  @eval @reexport using .SYMBOLIC_MCTS
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module
+#reward function
+const MAX_NEG_REWARD = -2000.0
+const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
+const MAXCODELENGTH = 1000000 #disable for now

@@ -32,49 +32,15 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
-
-export load_expt
-
-using Reexport
-
-global CONFIG
-const EXPTDIR = dirname(@__FILE__)
-
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-#pass keyword arguments as config into the loaded module
-function load_expt(s::Symbol; kwargs...)
-  global CONFIG = Dict{Symbol,Any}(kwargs)
-  load_expt(Val{s})
+#mean-square error over a range
+function get_fitness{T<:AbstractFloat}(code,
+                                       xrange::FloatRange{T}=XRANGE,
+                                       yrange::FloatRange{T}=YRANGE)
+  sum_se = 0.0
+  f = to_function(code)
+  for x in xrange, y in yrange
+    sum_se += abs2(f(x, y) - gt(x, y))
+  end
+  n = length(xrange) * length(yrange)
+  return sum_se / n #mse
 end
-
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
-end
-
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
-end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-function load_expt(::Type{Val{:acasx_mcts_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts_tree/acasx_mcts_tree.jl"))
-  @eval @reexport using .ACASX_MCTS_Tree
-end
-
-function load_expt(::Type{Val{:symbolic_mcts}})
-  @eval include(joinpath(EXPTDIR, "symbolic/mcts/symbolic_mcts.jl"))
-  @eval @reexport using .SYMBOLIC_MCTS
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module
