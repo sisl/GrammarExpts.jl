@@ -45,6 +45,7 @@ const SAFETYLIMIT = 50 #max steps to terminal
 #fitness function
 const XRANGE = 0.0:0.5:10.0
 const YRANGE = 0.0:0.5:10.0
+const W_LEN = 0.01
 
 #reward function
 const MAX_NEG_REWARD = -3000.0

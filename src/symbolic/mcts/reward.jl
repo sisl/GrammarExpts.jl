@@ -32,7 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("fitness.jl")
+include("../common/fitness.jl")
 
 function MCTS.get_reward(tree::DerivationTree)
   reward = if iscomplete(tree)

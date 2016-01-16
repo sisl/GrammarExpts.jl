@@ -66,9 +66,9 @@ else
 end
 
 if CONFIG[:gt] == :easy
-  include("gt_easy.jl")
+  include("../common/gt_easy.jl")
 elseif CONFIG[:gt] == :higherorder
-  include("gt_higherorder.jl")
+  include("../common/gt_higherorder.jl")
 else
   error("gt not valid ($(CONFIG[:gt]))")
 end
@@ -79,7 +79,6 @@ include("logs.jl")
 if CONFIG[:treevis]
   include("treeview.jl")
 end
-
 
 using .GrammarDef
 
