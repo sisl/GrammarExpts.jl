@@ -32,15 +32,24 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#mean-square error over a range
-function get_fitness{T<:AbstractFloat}(code,
-                                       xrange::FloatRange{T}=XRANGE,
-                                       yrange::FloatRange{T}=YRANGE)
-  sum_se = 0.0
-  f = to_function(code)
-  for x in xrange, y in yrange
-    sum_se += abs2(f(x, y) - gt(x, y))
-  end
-  n = length(xrange) * length(yrange)
-  return sum_se / n #mse
-end
+#grammatical evolution
+const GENOME_SIZE = 50
+const MAXWRAPS = 0
+const DEFAULTCODE = 0
+const TOP_PERCENT = 0.5
+const PROB_MUTATION = 0.2
+const MUTATION_RATE = 0.2
+const MAXVALUE = 1000
+
+const POP_SIZE = 2000
+const MAXITERATIONS = 20
+
+#fitness
+const XRANGE = 0.0:0.5:10.0
+const YRANGE = 0.0:0.5:10.0
+const W_LEN = 0.01
+
+#vis
+const HIST_NBINS = 40
+const HIST_EDGES = linspace(0.0, 500.0, HIST_NBINS + 1)
+const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect
