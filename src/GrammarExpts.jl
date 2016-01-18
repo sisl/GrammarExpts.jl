@@ -85,6 +85,11 @@ function load_expt(::Type{Val{:ant_ge}})
   @eval @reexport using .ANT_GE
 end
 
+function load_expt(::Type{Val{:ant_mcts}})
+  @eval include(joinpath(EXPTDIR, "ant/mcts/ant_mcts.jl"))
+  @eval @reexport using .ANT_MCTS
+end
+
 load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
 
 end # module

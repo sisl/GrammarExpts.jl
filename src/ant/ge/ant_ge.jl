@@ -46,7 +46,7 @@ if !haskey(CONFIG, :config)
   CONFIG[:config] = :test
 end
 
-println("Configuring: config=$(CONFIG[:config])")
+println("Configuration: config=$(CONFIG[:config])")
 
 include("../grammar/GrammarDef.jl") #grammar
 using .GrammarDef

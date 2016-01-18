@@ -32,21 +32,86 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-@reexport using RLESUtils: Observers, Loggers
+module ANT_MCTS
 
-function define_logs(observer::Observer)
-  logs = TaggedDFLogger()
-  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "action", [Int64, Int64], ["step", "action_id"])
-  add_folder!(logs, "cputime", [Int64, Float64], ["step", "cputime_s"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals"])
+export ant_mcts
 
-  add_observer(observer, "parameters", push!_f(logs, "parameters"))
-  add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
-  add_observer(observer, "action", push!_f(logs, "action"))
-  add_observer(observer, "cputime", push!_f(logs, "cputime"))
-  add_observer(observer, "result", push!_f(logs, "result"))
+using ExprSearch.MCTS
+using Reexport
 
-  return logs
+import GrammarExpts.CONFIG
+
+#defaults
+if !haskey(CONFIG, :config)
+  CONFIG[:config] = :test
 end
+if !haskey(CONFIG, :treevis)
+  CONFIG[:treevis] = false
+end
+
+println("Configuration: config=$(CONFIG[:config]), treevis=$(CONFIG[:treevis])")
+
+include("../grammar/GrammarDef.jl") #grammar
+using .GrammarDef
+
+if CONFIG[:config] == :test
+  include("test_config.jl") #for testing
+elseif CONFIG[:config] == :normal
+  include("config.jl")
+else
+  error("config not valid ($(CONFIG[:config]))")
+end
+
+include("reward.jl")
+include("logs.jl")
+
+#FIXME
+if CONFIG[:treevis]
+  include("treeview.jl")
+end
+
+function ant_mcts(outdir::AbstractString="./"; seed=1,
+                  logfileroot::AbstractString="ant_mcts_log",
+                  n_iters::Int64=N_ITERS,
+                  searchdepth::Int64=SEARCHDEPTH,
+                  exploration_const::Float64=EXPLORATIONCONST,
+                  safetylimit::Int64=SAFETYLIMIT,
+                  q0::Float64=MAX_NEG_REWARD,
+                  treevis::Bool=CONFIG[:treevis],
+                  trailfile::AbstractString="santefe.trail")
+  srand(seed)
+
+  grammar = create_grammar()
+  define_fitness(trailfile)
+
+  tree_params = DerivTreeParams(grammar, MAXSTEPS)
+  mdp_params = DerivTreeMDPParams(grammar)
+
+  observer = Observer()
+  add_observer(observer, "verbose1", x -> println(x[1]))
+  add_observer(observer, "action", x -> println("step $(x[1]): action=$(x[2])"))
+  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
+  add_observer(observer, "current_best", x -> println("step $(x[1]): best_reward=$(x[2]), best_state=$(x[3].past_actions)"))
+  logs = define_logs(observer)
+
+  mcts_observer = Observer()
+
+  if treevis
+    startstate = DerivTreeState() #assumes empty constructor is initial state...
+    view, viewstep = viewstep_f(startstate, 1)
+    add_observer(mcts_observer, "tree", viewstep)
+  end
+
+  mcts_params = MCTSESParams(tree_params, mdp_params, n_iters, searchdepth,
+                             exploration_const, q0, mcts_observer, safetylimit,
+                             observer)
+
+  result = exprsearch(mcts_params)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
+
+  return result
+end
+
+end #module

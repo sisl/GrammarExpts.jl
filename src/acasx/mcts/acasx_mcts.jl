@@ -125,7 +125,8 @@ using Debug
   observer = Observer()
   add_observer(observer, "verbose1", x -> println(x[1]))
   add_observer(observer, "action", x -> println("step=$(x[1]), action=$(x[2])"))
-  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2])"))
+  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
+  add_observer(observer, "current_best", x -> println("step $(x[1]): best_reward=$(x[2]), best_state=$(x[3].past_actions)"))
   logs = define_logs(observer)
 
   mcts_observer = Observer()

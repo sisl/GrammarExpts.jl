@@ -32,21 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-@reexport using RLESUtils: Observers, Loggers
+code = "x"
 
-function define_logs(observer::Observer)
-  logs = TaggedDFLogger()
-  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "action", [Int64, Int64], ["step", "action_id"])
-  add_folder!(logs, "cputime", [Int64, Float64], ["step", "cputime_s"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals"])
-
-  add_observer(observer, "parameters", push!_f(logs, "parameters"))
-  add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
-  add_observer(observer, "action", push!_f(logs, "action"))
-  add_observer(observer, "cputime", push!_f(logs, "cputime"))
-  add_observer(observer, "result", push!_f(logs, "result"))
-
-  return logs
+while true
+  tic()
+  for i = 1:10000
+    @eval f(x) = $code
+  end
+  println("$(toq())")
 end

@@ -48,5 +48,5 @@ const YRANGE = 0.0:0.5:10.0
 const W_LEN = 0.01
 
 #reward function
-const MAX_NEG_REWARD = -3000.0
+const MAX_NEG_REWARD = -1000.0
 const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
