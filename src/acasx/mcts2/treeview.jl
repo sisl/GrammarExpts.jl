@@ -36,17 +36,12 @@ using POMDPs.State
 using GBMCTSView
 using D3Trees
 
-type Counter
-  c::Int64
-end
-
-function viewstep_f(startstate::State, interval::Int64, counter=Counter(0))
+function viewstep_f(startstate::State, interval::Int64)
   view = TreeView()
-  function viewstep(tree::Dict{UInt64,StateNode}, curstate::State)
-    if rem(counter.c, interval) == 0
-      logstep!(view, tree, startstate, curstate)
+  function viewstep(i::Int64, tree::Dict{UInt64,StateNode})
+    if rem(i, interval) == 0
+      logstep!(view, tree, startstate, startstate)
     end
-    counter.c += 1
   end
   viewstep{T}(x::Vector{T}) = viewstep(x...)
 

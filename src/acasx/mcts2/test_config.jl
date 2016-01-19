@@ -49,3 +49,6 @@ const W_LEN = 0.1 #
 const MAX_NEG_REWARD = -2000.0
 const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
 const MAXCODELENGTH = 1000000 #disable for now
+
+#vis
+const TREEVIS_INTERVAL = 20

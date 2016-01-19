@@ -144,8 +144,8 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
 
   if treevis
     startstate = DerivTreeState() #assumes empty constructor is initial state...
-    view, viewstep = viewstep_f(startstate, TREEVIS_INTERVAL, Counter(1))
-    add_observer(mcts2_observer, "tree", viewstep)
+    view, viewstep = viewstep_f(startstate, TREEVIS_INTERVAL)
+    add_observer(observer, "tree", viewstep)
   end
 
   mcts2_params = MCTS2ESParams(tree_params, mdp_params, n_iters, searchdepth,
