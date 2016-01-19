@@ -32,11 +32,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module ACASX_MCTS
+module ACASX_MCTS2
 
-export acasx_mcts
+export acasx_mcts2
 
-using ExprSearch.MCTS
+using ExprSearch.MCTS2
 using Datasets
 using Reexport
 using JSON
@@ -89,17 +89,15 @@ end
 
 using .GrammarDef
 
-using Debug
-@debug function acasx_mcts(outdir::AbstractString="./"; seed=1,
+function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                     runtype::AbstractString="nmacs_vs_nonnmacs",
                     clusterdataname::AbstractString="",
-                    logfileroot::AbstractString="acasx_mcts_log",
+                    logfileroot::AbstractString="acasx_mcts2_log",
                     data::DFSet=DATASET,
                     data_meta::DataFrame=DATASET_META,
                     n_iters::Int64=N_ITERS,
                     searchdepth::Int64=SEARCHDEPTH,
                     exploration_const::Float64=EXPLORATIONCONST,
-                    safetylimit::Int64=SAFETYLIMIT,
                     q0::Float64=MAX_NEG_REWARD,
                     treevis::Bool=CONFIG[:treevis])
   srand(seed)
@@ -124,43 +122,45 @@ using Debug
 
   observer = Observer()
   add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "action", x -> println("step=$(x[1]), action=$(x[2])"))
+  add_observer(observer, "iteration", x -> begin
+                 i = x[1]
+                 rem(i, 100) == 0 && println("iteration $i")
+               end)
   add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
-  add_observer(observer, "current_best", x -> println("step $(x[1]): best_reward=$(x[2]), best_state=$(x[3].past_actions)"))
+  add_observer(observer, "current_best", x -> begin
+                 i, reward, state = x
+                 rem(i, 100) == 0 && println("step $i: best_reward=$(reward), best_state=$(state.past_actions)")
+               end)
 
   logs = define_logs(observer)
   @notify_observer(observer, "parameters", ["seed", seed])
   @notify_observer(observer, "parameters", ["runtype", runtype])
   @notify_observer(observer, "parameters", ["clusterdataname", clusterdataname])
-  @notify_observer(observer, "parameters", ["safetylimit", safetylimit])
   @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
   @notify_observer(observer, "parameters", ["data", CONFIG[:data]])
   @notify_observer(observer, "parameters", ["treevis", CONFIG[:treevis]])
 
-  mcts_observer = Observer()
+  mcts2_observer = Observer()
 
   if treevis
     startstate = DerivTreeState() #assumes empty constructor is initial state...
-    view, viewstep = viewstep_f(startstate, 1)
-    add_observer(mcts_observer, "tree", viewstep)
+    view, viewstep = viewstep_f(startstate, TREEVIS_INTERVAL, Counter(1))
+    add_observer(mcts2_observer, "tree", viewstep)
   end
 
-  mcts_params = MCTSESParams(tree_params, mdp_params, n_iters, searchdepth,
-                             exploration_const, q0, mcts_observer, safetylimit,
+  mcts2_params = MCTS2ESParams(tree_params, mdp_params, n_iters, searchdepth,
+                             exploration_const, q0, mcts2_observer,
                              observer)
 
-  result = exprsearch(mcts_params)
+  result = exprsearch(mcts2_params)
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
   #save treevis
   if treevis
-    @bp
-    for (i, d) in enumerate(view.steps)
-      open("treevis$i.json", "w") do f
-        JSON.print(f, d)
-      end
+    open("treevis.json", "w") do f
+      JSON.print(f, view.steps)
     end
   end
 
