@@ -49,7 +49,7 @@ function define_logs(observer::Observer)
               ["iter", "iteration_time_s"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "result", [Float64, ASCIIString], ["fitness", "expr"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals"])
 
   add_observer(observer, "fitness", push!_f(logs, "fitness"))
   add_observer(observer, "fitness5", x -> begin

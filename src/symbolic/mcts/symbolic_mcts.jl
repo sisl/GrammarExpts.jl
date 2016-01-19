@@ -82,7 +82,6 @@ end
 
 using .GrammarDef
 
-#nmacs vs nonnmacs
 function symbolic_mcts(outdir::AbstractString="./"; seed=1,
                     logfileroot::AbstractString="symbolic_mcts_log",
                     n_iters::Int64=N_ITERS,

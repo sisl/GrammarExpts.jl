@@ -88,9 +88,7 @@ end
 
 using .GrammarDef
 
-using Debug
-#nmacs vs nonnmacs
-@debug function acasx_mcts(outdir::AbstractString="./"; seed=1,
+function acasx_mcts(outdir::AbstractString="./"; seed=1,
                     runtype::AbstractString="nmacs_vs_nonnmacs",
                     clusterdataname::AbstractString="",
                     logfileroot::AbstractString="acasx_mcts_log",
@@ -146,7 +144,7 @@ using Debug
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
-  @bp treevis
+  #TODO: save treevis...
 
   return result
 end
