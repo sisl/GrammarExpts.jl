@@ -64,7 +64,7 @@ if CONFIG[:config] == :test
 elseif CONFIG[:config] == :normal
   include("config.jl")
 else
-  error("config not valid ($config)")
+  error("config not valid ($(CONFIG[:config])")
 end
 
 if CONFIG[:data] == :dasc
@@ -72,7 +72,7 @@ if CONFIG[:data] == :dasc
 elseif CONFIG[:data] == :libcas098_small
   include("../common/data_libcas098_small.jl")
 else
-  error("data not valid ($data)")
+  error("data not valid ($(CONFIG[:data])")
 end
 
 if CONFIG[:vis]
@@ -99,18 +99,14 @@ function train_dtree{T}(ge_params::MCTSESParams, Dl::DFSetLabeled{T})
   T1 = Bool #predict_type
   T2 = Int64 #label_type
 
-  #dtree callbacks
-  define_truth(Dl)
-  define_splitter(Dl, ge_params, logs)
-  define_labels(Dl)
-
   p = DTParams(num_data, MAXDEPTH, T1, T2)
 
-  dtree = build_tree(p)
+  dtree = build_tree(p,
+                     Dl, mcts2_params, logs) #userargs...
+
   return dtree, logs
 end
 
-#nmacs vs nonnmacs
 function acasx_mcts_tree(outdir::AbstractString="./"; seed=1,
                     runtype::AbstractString="nmacs_vs_nonnmacs",
                     clusterdataname::AbstractString="",
@@ -121,7 +117,8 @@ function acasx_mcts_tree(outdir::AbstractString="./"; seed=1,
                     searchdepth::Int64=SEARCHDEPTH,
                     exploration_const::Float64=EXPLORATIONCONST,
                     safetylimit::Int64=SAFETYLIMIT,
-                    q0::Float64=MAX_NEG_REWARD)
+                    q0::Float64=MAX_NEG_REWARD,
+					vis::Bool=CONFIG[:vis])
   srand(seed)
 
   Dl = if runtype == "nmacs_vs_nonnmacs"
@@ -147,10 +144,24 @@ function acasx_mcts_tree(outdir::AbstractString="./"; seed=1,
 
   dtree, logs = train_dtree(mcts_params, Dl)
 
+  #add to log
+  push!(logs, "parameters", ["seed", seed, 0])
+  push!(logs, "parameters", ["runtype", runtype, 0])
+  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
+  push!(logs, "parameters", ["config", CONFIG[:config], 0])
+  push!(logs, "parameters", ["data", CONFIG[:data], 0])
+  push!(logs, "parameters", ["treevis", CONFIG[:vis], 0])
+
   outfile = joinpath(outdir, "$(logfileroot).json")
   Obj2Dict.save_obj(outfile, dtree)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
+
+  #visualize
+  if vis
+    decisiontreevis(dtree, Dl, "$(logfileroot)_vis")
+    logvis(logs, "$(logfileroot)_logs")
+  end
 
   return dtree, logs
 end

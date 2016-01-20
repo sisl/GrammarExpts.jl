@@ -34,6 +34,7 @@
 
 using TreeToJSON
 using TikzQTrees
+using RLESUtils.LatexUtils
 
 function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::AbstractString)
   get_depth(tree::DecisionTree) = get_depth(tree.root)
@@ -56,16 +57,16 @@ function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::
       expr = string(get_expr(tree))
       pretty = pretty_string(tree, FMT_PRETTY)
       natural = pretty_string(tree, FMT_NATURAL, true)
-      score = "score(higher is better)=" * string(signif(get_metric(node.split_rule), 4))
+      score = "fitness (lower is better)=" * string(signif(get_metric(node.split_rule), 4))
     else
       expr = pretty = natural = "none"
-      score = "score(higher is better)=none"
+      score = "fitness (lower is better)=none"
     end
     text = join([members_text, label, confidence, expr, pretty, natural, score], "\\\\")
-    return text::ASCIIString
+    return text
   end
 
   viscalls = VisCalls(get_name, get_children, get_depth)
-  write_d3js(dtree, viscalls, "$(fileroot)_decisiontree.json")
+  write_json(dtree, viscalls, "$(fileroot)_decisiontree.json")
   plottree("$(fileroot)_decisiontree.json", outfileroot="$(fileroot)_decisiontree")
 end

@@ -46,7 +46,7 @@ const W_ENT = 100 #entropy
 const W_LEN = 0.1 #
 
 #decision tree
-const MAXDEPTH = 4
+const MAXDEPTH = 1
 
 #reward function
 const MAX_NEG_REWARD = -2000.0

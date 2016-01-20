@@ -34,5 +34,5 @@
 
 
 get_tree(result::MCTSESResult) = result.tree
-get_metric(result::MCTSESResult) = result.reward
+get_metric(result::MCTSESResult) = -result.reward
 

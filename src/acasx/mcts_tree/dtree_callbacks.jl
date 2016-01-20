@@ -34,13 +34,9 @@
 
 using DecisionTrees
 
-function define_truth{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_truth(members::Vector{Int64})
-      return $(Dl).labels[members]
-    end
-  end
-  eval(ex)
+function DecisionTrees.get_truth{T}(members::Vector{Int64},
+                                 Dl::DFSetLabeled{T}, otherargs...) #userargs...
+  return labels(Dl, members)
 end
 
 function classify(result::MCTSESResult, Ds::Vector{DataFrame})
@@ -48,31 +44,26 @@ function classify(result::MCTSESResult, Ds::Vector{DataFrame})
   return map(f, Ds)
 end
 
-function define_splitter{T}(Dl::DFSetLabeled{T}, mcts_params::MCTSESParams, logs::TaggedDFLogger)
-  ex = quote
-    function DecisionTrees.get_splitter(members::Vector{Int64})
-      set_observers!($(mcts_params).observer, $logs)
-      Dl_sub = $(Dl)[members]
+function DecisionTrees.get_splitter{T}(members::Vector{Int64},
+                                      Dl::DFSetLabeled{T}, mcts_params::MCTSESParams, logs::TaggedDFLogger) #userargs...
+  set_observers!(mcts_params.observer, logs)
 
-      define_reward(Dl_sub)
+  Dl_sub = Dl[members]
+  result = exprsearch(mcts_params, Dl_sub)
 
-      result = exprsearch($mcts_params)
+  @notify_observer(mcts2_params.observer, "expression",
+                   [string(result.expr),
+                    pretty_string(result.tree, FMT_PRETTY),
+                    pretty_string(result.tree, FMT_NATURAL, true)])
 
-      predicts = classify(result, Dl_sub.records)
-      info_gain, _, _ = get_metrics(predicts, Dl_sub.labels)
+  predicts = classify(result, records(Dl_sub))
+  info_gain, _, _ = get_metrics(predicts, labels(Dl_sub))
 
-      return info_gain > 0 ? result : nothing
-    end
-  end
-  eval(ex)
+  return info_gain > 0 ? result : nothing
 end
 
-function define_labels{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_labels(result::SearchResult, members::Vector{Int64})
-      return classify(result, $(Dl).records[members])
-    end
-  end
-  eval(ex)
+function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},
+                                     Dl::DFSetLabeled{T}, otherargs...) #userargs...
+  return classify(result, records(Dl, members))
 end
 

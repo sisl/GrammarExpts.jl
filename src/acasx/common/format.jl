@@ -42,7 +42,7 @@ function get_map(num_aircraft::Int64 = 2)
   D = Dict{ASCIIString,ASCIIString}()
   for i = 1:num_aircraft
     D["RA_$i"] = "active RA on aircraft $i"
-    D["vert_rate_$i"] = "aircraft $i's vertical rate "
+    D["vert_rate_$i"] = "aircraft $i's vertical rate"
     D["alt_diff_$i"] = "altitude difference relative to aircraft $i"
     D["psi_$i"] = "aircraft $i's heading angle"
     D["intr_sr_$i"] = "aircraft $i's intruder slant range"
@@ -51,7 +51,7 @@ function get_map(num_aircraft::Int64 = 2)
     D["intr_vrc1_$i"] = "aircraft $i's input vrc bit 1 is set"
     D["intr_vrc2_$i"] = "aircraft $i's input vrc bit 2 is set"
     D["cc0_$i"] = "aircraft $i's cc bit 0 is set"
-    D["cc1_$i"] = "aircraft $i's cc bit 1 is set]"
+    D["cc1_$i"] = "aircraft $i's cc bit 1 is set"
     D["cc2_$i"] = "aircraft $i's cc bit 2 is set"
     D["vc0_$i"] = "aircraft $i's vc bit 0 is set"
     D["vc1_$i"] = "aircraft $i's vc bit 1 is set"
@@ -91,7 +91,7 @@ const U_IMPLIES = "=>"
 function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt = Format()
 
-  fmt["globally"] = (cmd, args) -> "G($(args[1]))"
+  fmt["always"] = (cmd, args) -> "G($(args[1]))"
   fmt["eventually"] = (cmd, args) -> "F($(args[1]))"
 
   bin_infix(cmd, args, insym) = "($(args[1]) $insym $(args[2]))"
@@ -101,43 +101,67 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["implies"] = (cmd, args) -> "($(args[1]) => $(args[2]))"
 
   count_op(cmd, args, op) = "(count($(args[1])) $op $(args[2]))"
-  #fmt["count"] = (cmd, args) -> "G($(args[1]))" #FIXME
+  fmt["count.1"] = (cmd, args) -> count_op(cmd, args, "<")
+  fmt["count.2"] = (cmd, args) -> count_op(cmd, args, "<=")
+  fmt["count.3"] = (cmd, args) -> count_op(cmd, args, ">")
+  fmt["count.4"] = (cmd, args) -> count_op(cmd, args, ">=")
+  fmt["count.5"] = (cmd, args) -> count_op(cmd, args, "==")
 
   bin_infix_eq(cmd, args) = bin_infix(cmd, args, ".==")
   bin_infix_lt(cmd, args) = bin_infix(cmd, args, ".<")
   bin_infix_lte(cmd, args) = bin_infix(cmd, args, ".<=")
-  fmt["vrate_eq"] = bin_infix_eq
+  fmt["vrate_eq.1"] = bin_infix_eq
+  fmt["vrate_eq.2"] = bin_infix_eq
   fmt["altdiff_eq"] = bin_infix_eq
-  fmt["chi_angle_eq"] = bin_infix_eq
+  fmt["chi_angle_eq.1"] = bin_infix_eq
+  fmt["chi_angle_eq.2"] = bin_infix_eq
   fmt["psi_angle_eq"] = bin_infix_eq
   fmt["sr_eq"] = bin_infix_eq
-  fmt["tds_eq"] = bin_infix_eq
-  fmt["timer_eq"] = bin_infix_eq
-  fmt["psid_eq"] = bin_infix_eq
-  fmt["v_eq"] = bin_infix_eq
-  fmt["alt_eq"] = bin_infix_eq
+  fmt["tds_eq.1"] = bin_infix_eq
+  fmt["tds_eq.2"] = bin_infix_eq
+  fmt["timer_eq.1"] = bin_infix_eq
+  fmt["timer_eq.2"] = bin_infix_eq
+  fmt["psid_eq.1"] = bin_infix_eq
+  fmt["psid_eq.2"] = bin_infix_eq
+  fmt["v_eq.1"] = bin_infix_eq
+  fmt["v_eq.2"] = bin_infix_eq
+  fmt["alt_eq.1"] = bin_infix_eq
+  fmt["alt_eq.2"] = bin_infix_eq
   fmt["abs_altdiff_eq"] = bin_infix_eq
-  fmt["vrate_lt"] = bin_infix_lt
+  fmt["vrate_lt.1"] = bin_infix_lt
+  fmt["vrate_lt.2"] = bin_infix_lt
   fmt["altdiff_lt"] = bin_infix_lt
-  fmt["chi_angle_lt"] = bin_infix_lt
+  fmt["chi_angle_lt.1"] = bin_infix_lt
+  fmt["chi_angle_lt.2"] = bin_infix_lt
   fmt["psi_angle_lt"] = bin_infix_lt
   fmt["sr_lt"] = bin_infix_lt
-  fmt["tds_lt"] = bin_infix_lt
-  fmt["timer_lt"] = bin_infix_lt
-  fmt["psid_lt"] = bin_infix_lt
-  fmt["v_lt"] = bin_infix_lt
-  fmt["alt_lt"] = bin_infix_lt
+  fmt["tds_lt.1"] = bin_infix_lt
+  fmt["tds_lt.2"] = bin_infix_lt
+  fmt["timer_lt.1"] = bin_infix_lt
+  fmt["psid_lt.1"] = bin_infix_lt
+  fmt["psid_lt.2"] = bin_infix_lt
+  fmt["v_lt.1"] = bin_infix_lt
+  fmt["v_lt.2"] = bin_infix_lt
+  fmt["alt_lt.1"] = bin_infix_lt
+  fmt["alt_lt.2"] = bin_infix_lt
   fmt["abs_altdiff_lt"] = bin_infix_lt
-  fmt["vrate_lte"] = bin_infix_lte
+  fmt["vrate_lte.1"] = bin_infix_lte
+  fmt["vrate_lte.2"] = bin_infix_lte
   fmt["altdiff_lte"] = bin_infix_lte
-  fmt["chi_angle_lte"] = bin_infix_lte
+  fmt["chi_angle_lte.1"] = bin_infix_lte
+  fmt["chi_angle_lte.2"] = bin_infix_lte
   fmt["psi_angle_lte"] = bin_infix_lte
   fmt["sr_lte"] = bin_infix_lte
-  fmt["tds_lte"] = bin_infix_lte
-  fmt["timer_lte"] = bin_infix_lte
-  fmt["psid_lte"] = bin_infix_lte
-  fmt["v_lte"] = bin_infix_lte
-  fmt["alt_lte"] = bin_infix_lte
+  fmt["tds_lte.1"] = bin_infix_lte
+  fmt["tds_lte.2"] = bin_infix_lte
+  fmt["timer_lte.1"] = bin_infix_lte
+  fmt["timer_lte.2"] = bin_infix_lte
+  fmt["psid_lte.1"] = bin_infix_lte
+  fmt["psid_lte.2"] = bin_infix_lte
+  fmt["v_lte.1"] = bin_infix_lte
+  fmt["v_lte.2"] = bin_infix_lte
+  fmt["alt_lte.1"] = bin_infix_lte
+  fmt["alt_lte.2"] = bin_infix_lte
   fmt["abs_altdiff_lte"] = bin_infix_lte
 
   diff_infix_op(cmd, args, op) = "($(args[1]) - $(args[2]) $op $(args[3]))"
@@ -155,7 +179,6 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["chi_angle_diff_lt"] = diff_infix_lt
   fmt["psi_angle_diff_lt"] = diff_infix_lt
   fmt["tds_diff_lt"] = diff_infix_lt
-  fmt["altdiff_lt"] = diff_infix_lt
   fmt["timer_diff_lt"] = diff_infix_lt
   fmt["psid_diff_lt"] = diff_infix_lt
   fmt["v_diff_lt"] = diff_infix_lt
@@ -206,16 +229,8 @@ end
 
 function get_format_natural{T<:AbstractString}(colnames::Vector{T})
   fmt = Format()
-  fmt["D"] = (cmd, args) -> "$(colnames[parse(Int, args[2])])"
 
-  #fmt["ctlt"] = (cmd, args) -> "the number of times $(args[1]) is less than $(args[2])"
-  #fmt["ctle"] = (cmd, args) -> "the number of times $(args[1]) is less than or equal to $(args[2])"
-  #fmt["ctgt"] = (cmd, args) -> "the number of times $(args[1]) is greater than $(args[2])"
-  #fmt["ctge"] = (cmd, args) -> "the number of times $(args[1]) is greater than or equal to $(args[2])"
-  #fmt["cteq"] = (cmd, args) -> "the number of times $(args[1]) is equal to $(args[2])"
-
-  #######
-  fmt["globally"] = (cmd, args) -> "for all time, $(args[1])"
+  fmt["always"] = (cmd, args) -> "for all time, $(args[1])"
   fmt["eventually"] = (cmd, args) -> "at some point, $(args[1])"
 
   bin_infix(cmd, args, insym) = "[$(args[1]) $insym $(args[2])]"
@@ -225,43 +240,67 @@ function get_format_natural{T<:AbstractString}(colnames::Vector{T})
   fmt["implies"] = (cmd, args) -> "[$(args[1]) implies that $(args[2])]"
 
   count_op(cmd, args, op) = "[count($(args[1])) $op $(args[2])]"
-  #fmt["count"] = (cmd, args) -> "G($(args[1]))" #FIXME
+  fmt["count.1"] = (cmd, args) -> count_op(cmd, args, "is less than")
+  fmt["count.2"] = (cmd, args) -> count_op(cmd, args, "is less than or equal to")
+  fmt["count.3"] = (cmd, args) -> count_op(cmd, args, "is greater than")
+  fmt["count.4"] = (cmd, args) -> count_op(cmd, args, "is greater than or equal to")
+  fmt["count.5"] = (cmd, args) -> count_op(cmd, args, "equals")
 
   bin_infix_eq(cmd, args) = bin_infix(cmd, args, "equals")
   bin_infix_lt(cmd, args) = bin_infix(cmd, args, "is less than")
   bin_infix_lte(cmd, args) = bin_infix(cmd, args, "is less than or equal to")
-  fmt["vrate_eq"] = bin_infix_eq
+  fmt["vrate_eq.1"] = bin_infix_eq
+  fmt["vrate_eq.2"] = bin_infix_eq
   fmt["altdiff_eq"] = bin_infix_eq
-  fmt["chi_angle_eq"] = bin_infix_eq
+  fmt["chi_angle_eq.1"] = bin_infix_eq
+  fmt["chi_angle_eq.2"] = bin_infix_eq
   fmt["psi_angle_eq"] = bin_infix_eq
   fmt["sr_eq"] = bin_infix_eq
-  fmt["tds_eq"] = bin_infix_eq
-  fmt["timer_eq"] = bin_infix_eq
-  fmt["psid_eq"] = bin_infix_eq
-  fmt["v_eq"] = bin_infix_eq
-  fmt["alt_eq"] = bin_infix_eq
+  fmt["tds_eq.1"] = bin_infix_eq
+  fmt["tds_eq.2"] = bin_infix_eq
+  fmt["timer_eq.1"] = bin_infix_eq
+  fmt["timer_eq.2"] = bin_infix_eq
+  fmt["psid_eq.1"] = bin_infix_eq
+  fmt["psid_eq.2"] = bin_infix_eq
+  fmt["v_eq.1"] = bin_infix_eq
+  fmt["v_eq.2"] = bin_infix_eq
+  fmt["alt_eq.1"] = bin_infix_eq
+  fmt["alt_eq.2"] = bin_infix_eq
   fmt["abs_altdiff_eq"] = bin_infix_eq
-  fmt["vrate_lt"] = bin_infix_lt
+  fmt["vrate_lt.1"] = bin_infix_lt
+  fmt["vrate_lt.2"] = bin_infix_lt
   fmt["altdiff_lt"] = bin_infix_lt
-  fmt["chi_angle_lt"] = bin_infix_lt
+  fmt["chi_angle_lt.1"] = bin_infix_lt
+  fmt["chi_angle_lt.2"] = bin_infix_lt
   fmt["psi_angle_lt"] = bin_infix_lt
   fmt["sr_lt"] = bin_infix_lt
-  fmt["tds_lt"] = bin_infix_lt
-  fmt["timer_lt"] = bin_infix_lt
-  fmt["psid_lt"] = bin_infix_lt
-  fmt["v_lt"] = bin_infix_lt
-  fmt["alt_lt"] = bin_infix_lt
+  fmt["tds_lt.1"] = bin_infix_lt
+  fmt["tds_lt.2"] = bin_infix_lt
+  fmt["timer_lt.1"] = bin_infix_lt
+  fmt["psid_lt.1"] = bin_infix_lt
+  fmt["psid_lt.2"] = bin_infix_lt
+  fmt["v_lt.1"] = bin_infix_lt
+  fmt["v_lt.2"] = bin_infix_lt
+  fmt["alt_lt.1"] = bin_infix_lt
+  fmt["alt_lt.2"] = bin_infix_lt
   fmt["abs_altdiff_lt"] = bin_infix_lt
-  fmt["vrate_lte"] = bin_infix_lte
+  fmt["vrate_lte.1"] = bin_infix_lte
+  fmt["vrate_lte.2"] = bin_infix_lte
   fmt["altdiff_lte"] = bin_infix_lte
-  fmt["chi_angle_lte"] = bin_infix_lte
+  fmt["chi_angle_lte.1"] = bin_infix_lte
+  fmt["chi_angle_lte.2"] = bin_infix_lte
   fmt["psi_angle_lte"] = bin_infix_lte
   fmt["sr_lte"] = bin_infix_lte
-  fmt["tds_lte"] = bin_infix_lte
-  fmt["timer_lte"] = bin_infix_lte
-  fmt["psid_lte"] = bin_infix_lte
-  fmt["v_lte"] = bin_infix_lte
-  fmt["alt_lte"] = bin_infix_lte
+  fmt["tds_lte.1"] = bin_infix_lte
+  fmt["tds_lte.2"] = bin_infix_lte
+  fmt["timer_lte.1"] = bin_infix_lte
+  fmt["timer_lte.2"] = bin_infix_lte
+  fmt["psid_lte.1"] = bin_infix_lte
+  fmt["psid_lte.2"] = bin_infix_lte
+  fmt["v_lte.1"] = bin_infix_lte
+  fmt["v_lte.2"] = bin_infix_lte
+  fmt["alt_lte.1"] = bin_infix_lte
+  fmt["alt_lte.2"] = bin_infix_lte
   fmt["abs_altdiff_lte"] = bin_infix_lte
 
   diff_infix_op(cmd, args, op) = "[the difference between $(args[1]) and $(args[2]) $op $(args[3])]"
@@ -279,7 +318,6 @@ function get_format_natural{T<:AbstractString}(colnames::Vector{T})
   fmt["chi_angle_diff_lt"] = diff_infix_lt
   fmt["psi_angle_diff_lt"] = diff_infix_lt
   fmt["tds_diff_lt"] = diff_infix_lt
-  fmt["altdiff_lt"] = diff_infix_lt
   fmt["timer_diff_lt"] = diff_infix_lt
   fmt["psid_diff_lt"] = diff_infix_lt
   fmt["v_diff_lt"] = diff_infix_lt

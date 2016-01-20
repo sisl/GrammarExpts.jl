@@ -94,21 +94,18 @@ include("dtree_callbacks.jl")
 
 using .GrammarDef
 
-function train_dtree{T}(ge_params::MCTS2ESParams, Dl::DFSetLabeled{T})
+function train_dtree{T}(mcts2_params::MCTS2ESParams, Dl::DFSetLabeled{T})
 
   logs = define_logs()
   num_data = length(Dl)
   T1 = Bool #predict_type
   T2 = Int64 #label_type
 
-  #dtree callbacks
-  define_truth(Dl)
-  define_splitter(Dl, ge_params, logs)
-  define_labels(Dl)
-
   p = DTParams(num_data, MAXDEPTH, T1, T2)
 
-  dtree = build_tree(p)
+  dtree = build_tree(p,
+                     Dl, mcts2_params, logs) #userargs...
+
   return dtree, logs
 end
 
