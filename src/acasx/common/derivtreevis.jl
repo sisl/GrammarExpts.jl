@@ -32,52 +32,29 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using DecisionTrees
+using TreeToJSON
+using TikzQTrees
+using Iterators
 
-function define_truth{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_truth(members::Vector{Int64})
-      return $(Dl).labels[members]
-    end
+function derivtreevis(tree::DerivationTree, outfileroot::AbstractString)
+
+  get_name(tree::DerivationTree) = get_name(tree.root)
+  function get_name(node::DerivTreeNode)
+    cmd_text = node.cmd
+    rule_text = split(string(typeof(node.rule)), ".")[end]
+    action_text = string(node.action)
+    expr_text = string(get_expr(node))
+    text = join([cmd_text, rule_text, action_text, expr_text], "\\\\")
+    return text
   end
-  eval(ex)
-end
 
-function classify(result::MCTS2ESResult, Ds::Vector{DataFrame})
-  f = to_function(result.expr)
-  return map(f, Ds)
-end
+  get_children(tree::DerivationTree) = get_children(tree.root)
+  get_children(node::DerivTreeNode) = imap(x -> ("", x), node.children)
+  get_depth(tree::DerivationTree) = get_depth(tree.root)
+  get_depth(node::DerivTreeNode) = node.depth
 
-function define_splitter{T}(Dl::DFSetLabeled{T}, mcts2_params::MCTS2ESParams, logs::TaggedDFLogger)
-  ex = quote
-    function DecisionTrees.get_splitter(members::Vector{Int64})
-      set_observers!($(mcts2_params).observer, $logs)
-      Dl_sub = $(Dl)[members]
-
-      define_reward(Dl_sub)
-
-      result = exprsearch($mcts2_params)
-
-      @notify_observer($(mcts2_params).observer, "expression",
-                       [string(result.expr),
-                        pretty_string(result.tree, FMT_PRETTY),
-                        pretty_string(result.tree, FMT_NATURAL, true)])
-
-      predicts = classify(result, Dl_sub.records)
-      info_gain, _, _ = get_metrics(predicts, Dl_sub.labels)
-
-      return info_gain > 0 ? result : nothing
-    end
-  end
-  eval(ex)
-end
-
-function define_labels{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_labels(result::SearchResult, members::Vector{Int64})
-      return classify(result, $(Dl).records[members])
-    end
-  end
-  eval(ex)
+  viscalls = VisCalls(get_name, get_children, get_depth)
+  write_d3js(tree, viscalls, "$(outfileroot).json")
+  plottree("$(outfileroot).json", outfileroot="$(outfileroot)")
 end
 

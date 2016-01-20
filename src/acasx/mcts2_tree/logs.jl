@@ -40,6 +40,7 @@ function define_logs()
   add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
   add_folder!(logs, "cputime", [Int64, Float64, Int64], ["step", "cputime_s", "decision_id"])
   add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals", "decision_id"])
+  add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
 
   return logs
 end
@@ -67,6 +68,7 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger)
   add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
   add_observer(observer, "cputime", append_push!_f(logs, "cputime", decision_id))
   add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
+  add_observer(observer, "expression", append_push!_f(logs, "expression", decision_id))
 
   return logs
 end

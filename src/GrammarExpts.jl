@@ -75,6 +75,11 @@ function load_expt(::Type{Val{:acasx_mcts_tree}})
   @eval @reexport using .ACASX_MCTS_Tree
 end
 
+function load_expt(::Type{Val{:acasx_mcts2_tree}})
+  @eval include(joinpath(EXPTDIR, "acasx/mcts2_tree/acasx_mcts2_tree.jl"))
+  @eval @reexport using .ACASX_MCTS2_Tree
+end
+
 function load_expt(::Type{Val{:symbolic_mcts}})
   @eval include(joinpath(EXPTDIR, "symbolic/mcts/symbolic_mcts.jl"))
   @eval @reexport using .SYMBOLIC_MCTS

@@ -34,7 +34,7 @@
 
 module ACASX_MCTS_Tree
 
-export acasx_mcts_tree, configure
+export acasx_mcts_tree
 
 using DecisionTrees
 using ExprSearch.MCTS
@@ -53,8 +53,11 @@ end
 if !haskey(CONFIG, :data)
   CONFIG[:data] = :dasc
 end
+if !haskey(CONFIG, :vis)
+  CONFIG[:vis] = true
+end
 
-println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data])")
+println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis])")
 
 if CONFIG[:config] == :test
   include("test_config.jl")
@@ -72,7 +75,16 @@ else
   error("data not valid ($data)")
 end
 
+if CONFIG[:vis]
+  include("vishelpers.jl")
+  include("../common/decisiontreevis.jl")
+  include("logvis.jl")
+else
+  error("data not valid ($(CONFIG[:vis])")
+end
+
 include("../common/labeleddata.jl")
+include("../common/format.jl")
 include("reward.jl")
 include("logs.jl")
 

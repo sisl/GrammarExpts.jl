@@ -32,52 +32,40 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using DecisionTrees
+using TreeToJSON
+using TikzQTrees
 
-function define_truth{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_truth(members::Vector{Int64})
-      return $(Dl).labels[members]
+function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::AbstractString)
+  get_depth(tree::DecisionTree) = get_depth(tree.root)
+  get_depth(node::DTNode) = node.depth
+  get_children(tree::DecisionTree) = get_children(tree.root)
+  get_children(node::DTNode) = node.children
+
+  get_name(tree::DecisionTree) = get_name(tree.root)
+  function get_name(node::DTNode)
+    members = sort(Dl.names[node.members], by=x->parse(Int64, x))
+    members_text = if length(members) <= LIMIT_MEMBERS
+      "members=" * join(members, ",")
+    else
+      "members=" * join(members[1:LIMIT_MEMBERS], ",") * ", and $(length(members)-LIMIT_MEMBERS) more."
     end
-  end
-  eval(ex)
-end
-
-function classify(result::MCTS2ESResult, Ds::Vector{DataFrame})
-  f = to_function(result.expr)
-  return map(f, Ds)
-end
-
-function define_splitter{T}(Dl::DFSetLabeled{T}, mcts2_params::MCTS2ESParams, logs::TaggedDFLogger)
-  ex = quote
-    function DecisionTrees.get_splitter(members::Vector{Int64})
-      set_observers!($(mcts2_params).observer, $logs)
-      Dl_sub = $(Dl)[members]
-
-      define_reward(Dl_sub)
-
-      result = exprsearch($mcts2_params)
-
-      @notify_observer($(mcts2_params).observer, "expression",
-                       [string(result.expr),
-                        pretty_string(result.tree, FMT_PRETTY),
-                        pretty_string(result.tree, FMT_NATURAL, true)])
-
-      predicts = classify(result, Dl_sub.records)
-      info_gain, _, _ = get_metrics(predicts, Dl_sub.labels)
-
-      return info_gain > 0 ? result : nothing
+    label = "label=$(node.label)"
+    confidence = "confidence=" * string(signif(node.confidence, 3))
+    if node.split_rule != nothing
+      tree = get_tree(node.split_rule)
+      expr = string(get_expr(tree))
+      pretty = pretty_string(tree, FMT_PRETTY)
+      natural = pretty_string(tree, FMT_NATURAL, true)
+      score = "score(higher is better)=" * string(signif(get_metric(node.split_rule), 4))
+    else
+      expr = pretty = natural = "none"
+      score = "score(higher is better)=none"
     end
+    text = join([members_text, label, confidence, expr, pretty, natural, score], "\\\\")
+    return text::ASCIIString
   end
-  eval(ex)
-end
 
-function define_labels{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_labels(result::SearchResult, members::Vector{Int64})
-      return classify(result, $(Dl).records[members])
-    end
-  end
-  eval(ex)
+  viscalls = VisCalls(get_name, get_children, get_depth)
+  write_d3js(dtree, viscalls, "$(fileroot)_decisiontree.json")
+  plottree("$(fileroot)_decisiontree.json", outfileroot="$(fileroot)_decisiontree")
 end
-

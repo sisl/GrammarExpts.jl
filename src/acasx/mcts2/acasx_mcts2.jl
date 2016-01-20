@@ -50,17 +50,21 @@ end
 if !haskey(CONFIG, :data)
   CONFIG[:data] = :dasc
 end
-
-if !haskey(CONFIG, :treevis)
-  CONFIG[:treevis] = false
+if !haskey(CONFIG, :mctstreevis)
+  CONFIG[:vis] = true
+end
+if !haskey(CONFIG, :mctstreevis)
+  CONFIG[:mctstreevis] = false
 end
 
-println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), treevis=$(CONFIG[:treevis])")
+println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), treevis=$(CONFIG[:mctstreevis])")
 
 include("../grammar/grammar_typed/GrammarDef.jl") #grammar
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
+elseif CONFIG[:config] == :lower
+  include("lower_config.jl")
 elseif CONFIG[:config] == :normal
   include("config.jl")
 elseif CONFIG[:config] == :higher
@@ -82,24 +86,29 @@ end
 include("../common/labeleddata.jl")
 include("reward.jl")
 include("logs.jl")
+include("../common/format.jl")
 
-if CONFIG[:treevis]
-  include("treeview.jl")
+if CONFIG[:mctstreevis]
+  include("treeview.jl") #mcts tree
+end
+if CONFIG[:vis]
+  include("../common/derivtreevis.jl") #derivation tree
 end
 
 using .GrammarDef
 
 function acasx_mcts2(outdir::AbstractString="./"; seed=1,
-                    runtype::AbstractString="nmacs_vs_nonnmacs",
-                    clusterdataname::AbstractString="",
-                    logfileroot::AbstractString="acasx_mcts2_log",
-                    data::DFSet=DATASET,
-                    data_meta::DataFrame=DATASET_META,
-                    n_iters::Int64=N_ITERS,
-                    searchdepth::Int64=SEARCHDEPTH,
-                    exploration_const::Float64=EXPLORATIONCONST,
-                    q0::Float64=MAX_NEG_REWARD,
-                    treevis::Bool=CONFIG[:treevis])
+                     runtype::AbstractString="nmacs_vs_nonnmacs",
+                     clusterdataname::AbstractString="",
+                     logfileroot::AbstractString="acasx_mcts2_log",
+                     data::DFSet=DATASET,
+                     data_meta::DataFrame=DATASET_META,
+                     n_iters::Int64=N_ITERS,
+                     searchdepth::Int64=SEARCHDEPTH,
+                     exploration_const::Float64=EXPLORATIONCONST,
+                     q0::Float64=MAX_NEG_REWARD,
+                     vis::Bool=CONFIG[:vis],
+                     mctstreevis::Bool=CONFIG[:mctstreevis])
   srand(seed)
 
   Dl = if runtype == "nmacs_vs_nonnmacs"
@@ -138,11 +147,12 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
   @notify_observer(observer, "parameters", ["clusterdataname", clusterdataname])
   @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
   @notify_observer(observer, "parameters", ["data", CONFIG[:data]])
-  @notify_observer(observer, "parameters", ["treevis", CONFIG[:treevis]])
+  @notify_observer(observer, "parameters", ["vis", vis])
+  @notify_observer(observer, "parameters", ["mctstreevis", mctstreevis])
 
   mcts2_observer = Observer()
 
-  if treevis
+  if mctstreevis
     startstate = DerivTreeState() #assumes empty constructor is initial state...
     view, viewstep = viewstep_f(startstate, TREEVIS_INTERVAL)
     add_observer(observer, "tree", viewstep)
@@ -154,12 +164,23 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
 
   result = exprsearch(mcts2_params)
 
+  @notify_observer(observer, "expression", [string(result.expr),
+                                             pretty_string(result.tree, FMT_PRETTY),
+                                             pretty_string(result.tree, FMT_NATURAL, true)])
+
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
-  #save treevis
-  if treevis
-    open("treevis.json", "w") do f
+  #save("$(logfileroot)_derivtree.jld", "tree", result.tree)
+
+
+  if vis
+    derivtreevis(result.tree, "$(logfileroot)_derivtreevis")
+  end
+
+  #save mcts tree
+  if mctstreevis
+    open("mctstreevis.json", "w") do f
       JSON.print(f, view.steps)
     end
   end
@@ -168,3 +189,4 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
 end
 
 end #module
+

@@ -40,11 +40,13 @@ function define_logs(observer::Observer)
   add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "cputime", [Int64, Float64], ["step", "cputime_s"])
   add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals"])
+  add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString], ["raw", "pretty", "natural"])
 
   add_observer(observer, "parameters", push!_f(logs, "parameters"))
   add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
   add_observer(observer, "cputime", push!_f(logs, "cputime"))
   add_observer(observer, "result", push!_f(logs, "result"))
+  add_observer(observer, "expression", push!_f(logs, "expression"))
 
   return logs
 end

@@ -32,49 +32,24 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using TreeToJSON
-using TikzQTrees
+#mdp
+const MAXSTEPS = 50
+const DISCOUNT = 1.0
 
-#include("format.jl")
+#mcts
+const N_ITERS = 2000
+const SEARCHDEPTH = 50
+const EXPLORATIONCONST = 30.0
 
-function get_name(node::DTNode, Dl::DFSetLabeled{Int64})
-  members = sort(Dl.names[node.members], by=x->parse(Int64, x))
-  members_text = if length(members) <= LIMIT_MEMBERS
-    "members=" * join(members, ",")
-  else
-    "members=" * join(members[1:LIMIT_MEMBERS], ",") * ", and $(length(members)-LIMIT_MEMBERS) more."
-  end
-  label = "label=$(node.label)"
-  confidence = "confidence=" * string(signif(node.confidence, 3))
-  #=
-  if isdefined(node.split_rule, :code)
-    #FIXME: switch to DerivationTrees
-    tree = SyntaxTree(string(node.split_rule.code))
-    visit!(tree, rem_double_nots) #remove double nots
-    rule = pretty_string(tree, FMT_PRETTY)
-    s = pretty_string(tree, FMT_NATURAL)
-    natural = uppercase_first(s)
-    fitness = "fitness=" * string(signif(node.split_rule.fitness, 4))
-  else
-    natural = rule = "none"
-    fitness = "fitness=none"
-  end
-  text = join([members_text, label, confidence, rule, natural, fitness], "\\\\")
-  =#
-  text = join([members_text, label, confidence], "\\\\")
-  return text::ASCIIString
-end
+#fitness function
+const W_ENT = 100 #entropy
+const W_LEN = 0.1 #
 
-get_depth(tree::DecisionTree) = get_depth(tree.root)
-get_depth(node::DTNode) = node.depth
-get_children(tree::DecisionTree) = get_children(tree.root)
-get_children(node::DTNode) = node.children
+#reward function
+const MAX_NEG_REWARD = -2000.0
+const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
+const MAXCODELENGTH = 1000000 #disable for now
 
-function dtreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::AbstractString)
-  get_name1(tree::DecisionTree) = get_name(tree.root, Dl)
-  get_name1(node::DTNode) = get_name(node, Dl)
+#vis
+const TREEVIS_INTERVAL = 500
 
-  viscalls = VisCalls(get_name1, get_children, get_depth)
-  write_d3js(dtree, viscalls, "$(fileroot)_d3.json")
-  plottree("$(fileroot)_d3.json", outfileroot="$(fileroot)_d3")
-end

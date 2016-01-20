@@ -54,4 +54,4 @@ const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg
 const MAXCODELENGTH = 1000000 #disable for now
 
 #vis
-const LIMIT_MEMBERS = 30
+const LIMIT_MEMBERS = 20

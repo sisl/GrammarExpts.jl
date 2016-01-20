@@ -78,13 +78,15 @@ else
 end
 
 if CONFIG[:vis]
-  include("../common/dtreevis.jl")
+  include("vishelpers.jl")
+  include("../common/decisiontreevis.jl")
   include("logvis.jl")
 else
   error("data not valid ($(CONFIG[:vis])")
 end
 
 include("../common/labeleddata.jl")
+include("../common/format.jl")
 include("reward.jl")
 include("logs.jl")
 
@@ -113,7 +115,7 @@ end
 function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
                           runtype::AbstractString="nmacs_vs_nonnmacs",
                           clusterdataname::AbstractString="",
-                          logfileroot::AbstractString="acasx_mcts2",
+                          logfileroot::AbstractString="acasx_mcts2_tree_log",
                           data::DFSet=DATASET,
                           data_meta::DataFrame=DATASET_META,
                           n_iters::Int64=N_ITERS,
@@ -161,7 +163,7 @@ function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
 
   #visualize
   if vis
-    dtreevis(dtree, Dl, "$(logfileroot)_vis")
+    decisiontreevis(dtree, Dl, "$(logfileroot)_vis")
     logvis(logs, "$(logfileroot)_logs")
   end
 
