@@ -41,6 +41,7 @@ function define_logs()
   add_folder!(logs, "cputime", [Int64, Float64, Int64], ["step", "cputime_s", "decision_id"])
   add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals", "decision_id"])
   add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString, Int64], ["iteration", "reward", "state", "expr", "decision_id"])
 
   return logs
 end
@@ -69,6 +70,13 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger)
   add_observer(observer, "cputime", append_push!_f(logs, "cputime", decision_id))
   add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
   add_observer(observer, "expression", append_push!_f(logs, "expression", decision_id))
+  add_observer(observer, "current_best", x -> begin
+                 i, reward, state, mdp = x
+                 if rem(i, LOGINTERVAL) == 0
+                   push!(logs, "current_best", [i, reward, string(state.past_actions),
+                                                string(expr_at_state(mdp, state)), decision_id])
+                 end
+               end)
 
   return logs
 end

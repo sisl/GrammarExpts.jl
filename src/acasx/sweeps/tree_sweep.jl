@@ -51,14 +51,14 @@ function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractS
 
     rootreward = logs["result"][1,:total_reward]
     rootexpr = logs["result"][1,:expr]
-    @notify_observer(observer, "result", [seed, n_iters, ec, rootreward, rootexpr])
+    @notify_observer(observer, "result", [seed, n_iters, ec, rootreward, rootexpr, CPUtoq()])
   end
   return f
 end
 
 #observer for this study
 observer = Observer()
-logger = DataFrameLogger([Int64, Int64, Float64, Float64, ASCIIString],
-                         ["seed", "n_iters", "exploration_const", "root_reward", "root_expr"])
+logger = DataFrameLogger([Int64, Int64, Float64, Float64, ASCIIString, Float64],
+                         ["seed", "n_iters", "exploration_const", "root_reward", "root_expr", "cputime_s"])
 add_observer(observer, "result", push!_f(logger))
 
