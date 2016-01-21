@@ -32,41 +32,25 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using RLESUtils: ParamSweeps, Observers, Loggers
-using CPUTime
+const EXPT = :acasx_mcts_tree
+const DATA = :dasc
+const CONFIG = :normal
+const VIS = true
 
-load_expt(:acasx_mcts, config=:normal, data=:libcas098_small, treevis=false)
+const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmctstree_dasc")
+const LOGFILEROOT = "acasxmctstree_dasc"
 
-const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmcts")
-const LOGFILEROOT = "acasxmcts"
+include("tree_sweep.jl")
 
-function caller_f(outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
-  f = function caller(seed::Int64, n_iters::Int64, ec::Float64)
-    CPUtic()
-
-    #make a subdirectory for logs for this run
-    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_niters$(n_iters)_ec$(ec)")
-    mkpath(subdir)
-
-    result = acasx_mcts(subdir, seed=seed, n_iters=n_iters, exploration_const=ec, )
-
-    @notify_observer(observer, "result", [seed, n_iters, ec, result.reward, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
-  end
-  return f
-end
-
-#observer for this study
-observer = Observer()
-logger = DataFrameLogger([Int64, Int64, Float64, Float64, ASCIIString, Int64, Int64, Float64],
-                         ["seed", "n_iters", "exploration_const", "best_reward", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
-add_observer(observer, "result", push!_f(logger))
-f = caller_f(OUTDIR, LOGFILEROOT, observer)
+f = caller_f(acasx_mcts_tree, OUTDIR, LOGFILEROOT, observer)
 
 script = ParamSweep(f)
 push!(script, 1:5) #seed
 push!(script, [100, 500, 1000, 2000, 5000]) #n_iters
 push!(script, [10.0, 30.0, 50.0]) #ec
+
+textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
+         outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
 
 run(script)
 

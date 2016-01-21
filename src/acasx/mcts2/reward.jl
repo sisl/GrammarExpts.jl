@@ -32,7 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("fitness.jl")
+include("../common/fitness.jl")
 
 function define_reward{T}(Dl::DFSetLabeled{T})
   ex = quote

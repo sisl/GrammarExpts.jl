@@ -34,6 +34,6 @@
 
 using RLESUtils.Loggers
 
-function logvis(logs::TaggedDFLogger, fileroot::ASCIIString="logs")
+function logvis(logs::TaggedDFLogger, fileroot::AbstractString="logs")
   #TODO
 end

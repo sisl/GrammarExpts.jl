@@ -32,29 +32,33 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using TreeToJSON
-using TikzQTrees
-using Iterators
+using GrammarExpts
+using RLESUtils: ParamSweeps, Observers, Loggers
+using CPUTime
 
-function derivtreevis(tree::DerivationTree, outfileroot::AbstractString)
+load_expt(EXPT, data=DATA, config=CONFIG, vis=VIS)
 
-  get_name(tree::DerivationTree) = get_name(tree.root)
-  function get_name(node::DerivTreeNode)
-    cmd_text = node.cmd
-    rule_text = split(string(typeof(node.rule)), ".")[end]
-    action_text = string(node.action)
-    expr_text = string(get_expr(node))
-    text = join([cmd_text, rule_text, action_text, expr_text], "\\\\")
-    return text
+mkpath(OUTDIR)
+
+function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
+  f = function caller(seed::Int64, n_iters::Int64, ec::Float64)
+    CPUtic()
+    #make a subdirectory for logs for this run
+    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_niters$(n_iters)_ec$(ec)")
+    mkpath(subdir)
+
+    dtree, logs = func(subdir, seed=seed, n_iters=n_iters, exploration_const=ec)
+
+    rootreward = logs["result"][1,:total_reward]
+    rootexpr = logs["result"][1,:expr]
+    @notify_observer(observer, "result", [seed, n_iters, ec, rootreward, rootexpr])
   end
-
-  get_children(tree::DerivationTree) = get_children(tree.root)
-  get_children(node::DerivTreeNode) = imap(x -> ("", x), node.children)
-  get_depth(tree::DerivationTree) = get_depth(tree.root)
-  get_depth(node::DerivTreeNode) = node.depth
-
-  viscalls = VisCalls(get_name, get_children, get_depth)
-  write_json(tree, viscalls, "$(outfileroot).json")
-  plottree("$(outfileroot).json", outfileroot="$(outfileroot)")
+  return f
 end
+
+#observer for this study
+observer = Observer()
+logger = DataFrameLogger([Int64, Int64, Float64, Float64, ASCIIString],
+                         ["seed", "n_iters", "exploration_const", "root_reward", "root_expr"])
+add_observer(observer, "result", push!_f(logger))
 

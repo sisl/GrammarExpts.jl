@@ -36,10 +36,17 @@ using GrammarExpts
 using RLESUtils: ParamSweeps, Observers, Loggers
 using CPUTime
 
-load_expt(:acasx_mcts2_tree, data=:dasc, config=:normal, vis=true)
+const EXPT = :acasx_mcts2_tree
+const DATA = :libcas098_small
+const CONFIG = :normal
+const VIS = true
 
-const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmcts2tree")
-const LOGFILEROOT = "acasxmcts2tree"
+load_expt(EXPT, data=DATA, config=CONFIG, vis=VIS)
+
+const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmcts2tree_098small")
+const LOGFILEROOT = "acasxmcts2tree_098small"
+
+mkpath(OUTDIR)
 
 function caller_f(outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
   f = function caller(seed::Int64, n_iters::Int64, ec::Float64)
@@ -68,6 +75,9 @@ script = ParamSweep(f)
 push!(script, 1:5) #seed
 push!(script, [100, 500, 1000, 2000, 5000]) #n_iters
 push!(script, [10.0, 30.0, 50.0]) #ec
+
+textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
+         outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
 
 run(script)
 

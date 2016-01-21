@@ -50,14 +50,14 @@ end
 if !haskey(CONFIG, :data)
   CONFIG[:data] = :dasc
 end
-if !haskey(CONFIG, :mctstreevis)
+if !haskey(CONFIG, :vis)
   CONFIG[:vis] = true
 end
 if !haskey(CONFIG, :mctstreevis)
   CONFIG[:mctstreevis] = false
 end
 
-println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), treevis=$(CONFIG[:mctstreevis])")
+println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis]), treevis=$(CONFIG[:mctstreevis])")
 
 include("../grammar/grammar_typed/GrammarDef.jl") #grammar
 
@@ -175,12 +175,12 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
 
 
   if vis
-    derivtreevis(result.tree, "$(logfileroot)_derivtreevis")
+    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
 
   #save mcts tree
   if mctstreevis
-    open("mctstreevis.json", "w") do f
+    open(joinpath(outdir, "mctstreevis.json"), "w") do f
       JSON.print(f, view.steps)
     end
   end

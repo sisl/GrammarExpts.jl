@@ -160,8 +160,8 @@ function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
 
   #visualize
   if vis
-    decisiontreevis(dtree, Dl, "$(logfileroot)_vis")
-    logvis(logs, "$(logfileroot)_logs")
+    decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"))
+    logvis(logs, joinpath(outdir, "$(logfileroot)_logs"))
   end
 
   return dtree, logs
