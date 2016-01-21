@@ -33,7 +33,7 @@
 # *****************************************************************************
 
 using GrammarExpts
-using RLESUtils: ParamSweeps, Observers, Loggers
+using RLESUtils: ParamSweeps, Observers, Loggers, StringUtils, FileUtils
 using CPUTime
 
 load_expt(EXPT, data=DATA, config=CONFIG, vis=VIS)

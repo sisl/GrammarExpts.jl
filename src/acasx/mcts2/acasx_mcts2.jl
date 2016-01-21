@@ -173,7 +173,6 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
 
   #save("$(logfileroot)_derivtree.jld", "tree", result.tree)
 
-
   if vis
     derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
