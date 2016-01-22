@@ -32,26 +32,28 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#mdp
-const MAXSTEPS = 50
-const DISCOUNT = 1.0
+@reexport using RLESUtils: Observers, Loggers
 
-#mcts
-const N_ITERS = 20000
-const SEARCHDEPTH = 50
-const EXPLORATIONCONST = 2000.0
+function define_logs(observer::Observer)
+  logs = TaggedDFLogger()
+  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "action", [Int64, Int64], ["step", "action_id"])
+  add_folder!(logs, "cputime", [Int64, Float64], ["step", "cputime_s"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString], ["iteration", "reward", "state", "expr"])
 
-#fitness function
-const W_ENT = 100 #entropy
-const W_LEN = 0.1 #
+  add_observer(observer, "parameters", push!_f(logs, "parameters"))
+  add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
+  add_observer(observer, "action", push!_f(logs, "action"))
+  add_observer(observer, "cputime", push!_f(logs, "cputime"))
+  add_observer(observer, "result", push!_f(logs, "result"))
+  add_observer(observer, "current_best", x -> begin
+                 i, reward, state = x
+                 if rem(i, LOGINTERVAL) == 0
+                   push!(logs, "current_best", [i, reward, string(state.past_actions), string(get_expr(state))])
+                 end
+               end)
 
-#reward function
-const MAX_NEG_REWARD = -1000.0
-const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
-const MAXCODELENGTH = 1000000 #disable for now
-
-#log
-const LOGINTERVAL = 100
-
-#vis
-const TREEVIS_INTERVAL = Int(N_ITERS / 5)
+  return logs
+end

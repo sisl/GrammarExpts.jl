@@ -32,16 +32,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("../common/fitness.jl")
+include("../common/reward.jl")
 
-function MCTS.get_reward(tree::DerivationTree)
-  reward = if iscomplete(tree)
-    code = get_expr(tree)
-    -get_fitness(code)
-  elseif isterminal(tree) #not-compilable
-    MAX_NEG_REWARD
-  else #each step
-    STEP_REWARD
-  end
-  return reward
-end
+MCTS.get_reward(tree::DerivationTree) = get_reward(tree)

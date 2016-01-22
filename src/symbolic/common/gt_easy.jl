@@ -32,4 +32,4 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-gt(x, y) = 2x + 3y + 1
+gt(x, y) = 2x + 3y + 5

@@ -32,26 +32,17 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#mdp
-const MAXSTEPS = 50
-const DISCOUNT = 1.0
+include("fitness.jl")
 
-#mcts
-const N_ITERS = 20000
-const SEARCHDEPTH = 50
-const EXPLORATIONCONST = 2000.0
-
-#fitness function
-const W_ENT = 100 #entropy
-const W_LEN = 0.1 #
-
-#reward function
-const MAX_NEG_REWARD = -1000.0
-const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
-const MAXCODELENGTH = 1000000 #disable for now
-
-#log
-const LOGINTERVAL = 100
-
-#vis
-const TREEVIS_INTERVAL = Int(N_ITERS / 5)
+function get_reward{T}(tree::DerivationTree,
+                             Dl::DFSetLabeled{T}) #userargs...
+  reward = if iscomplete(tree)
+    code = get_expr(tree)
+    -get_fitness(code, Dl)
+  elseif isterminal(tree) #not-compilable
+    MAX_NEG_REWARD
+  else #each step
+    STEP_REWARD
+  end
+  return reward
+end

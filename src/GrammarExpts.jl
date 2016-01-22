@@ -85,6 +85,11 @@ function load_expt(::Type{Val{:symbolic_mcts}})
   @eval @reexport using .SYMBOLIC_MCTS
 end
 
+function load_expt(::Type{Val{:symbolic_mcts2}})
+  @eval include(joinpath(EXPTDIR, "symbolic/mcts2/symbolic_mcts2.jl"))
+  @eval @reexport using .SYMBOLIC_MCTS2
+end
+
 function load_expt(::Type{Val{:symbolic_ge}})
   @eval include(joinpath(EXPTDIR, "symbolic/ge/symbolic_ge.jl"))
   @eval @reexport using .SYMBOLIC_GE

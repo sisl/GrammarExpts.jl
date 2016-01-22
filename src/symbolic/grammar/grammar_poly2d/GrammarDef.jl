@@ -41,11 +41,10 @@ using GrammaticalEvolution
 function create_grammar()
   @grammar grammar begin
     start = ex
-    ex = number | sum | product | (ex) | value
+    ex = sum | product | (ex) | value
     sum = Expr(:call, :+, ex, ex)
     product = Expr(:call, :*, ex, ex)
-    value = :x | :y | number
-    number = digit
+    value = :x | :y | digit
     digit = 0:9
   end
   return grammar

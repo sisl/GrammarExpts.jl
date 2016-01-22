@@ -33,25 +33,25 @@
 # *****************************************************************************
 
 #mdp
-const MAXSTEPS = 50
+const MAXSTEPS = 25
 const DISCOUNT = 1.0
 
 #mcts
 const N_ITERS = 20000
-const SEARCHDEPTH = 50
+const SEARCHDEPTH = 25
 const EXPLORATIONCONST = 2000.0
 
 #fitness function
-const W_ENT = 100 #entropy
-const W_LEN = 0.1 #
+const XRANGE = 0.0:0.5:10.0
+const YRANGE = 0.0:0.5:10.0
+const W_LEN = 0.01
 
 #reward function
 const MAX_NEG_REWARD = -1000.0
 const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
-const MAXCODELENGTH = 1000000 #disable for now
+
+#treevis
+const TREEVIS_INTERVAL = Int(N_ITERS / 10)
 
 #log
 const LOGINTERVAL = 100
-
-#vis
-const TREEVIS_INTERVAL = Int(N_ITERS / 5)
