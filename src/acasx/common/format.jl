@@ -101,11 +101,11 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["implies"] = (cmd, args) -> "($(args[1]) => $(args[2]))"
 
   count_op(cmd, args, op) = "(count($(args[1])) $op $(args[2]))"
-  fmt["count.1"] = (cmd, args) -> count_op(cmd, args, "<")
-  fmt["count.2"] = (cmd, args) -> count_op(cmd, args, "<=")
-  fmt["count.3"] = (cmd, args) -> count_op(cmd, args, ">")
-  fmt["count.4"] = (cmd, args) -> count_op(cmd, args, ">=")
-  fmt["count.5"] = (cmd, args) -> count_op(cmd, args, "==")
+  fmt["count.1.1.1.1"] = (cmd, args) -> count_op(cmd, args, "<")
+  fmt["count.1.1.1.2"] = (cmd, args) -> count_op(cmd, args, "<=")
+  fmt["count.1.1.2"] = (cmd, args) -> count_op(cmd, args, ">")
+  fmt["count.1.2"] = (cmd, args) -> count_op(cmd, args, ">=")
+  fmt["count.2"] = (cmd, args) -> count_op(cmd, args, "==")
 
   bin_infix_eq(cmd, args) = bin_infix(cmd, args, ".==")
   bin_infix_lt(cmd, args) = bin_infix(cmd, args, ".<")
@@ -240,11 +240,11 @@ function get_format_natural{T<:AbstractString}(colnames::Vector{T})
   fmt["implies"] = (cmd, args) -> "[$(args[1]) implies that $(args[2])]"
 
   count_op(cmd, args, op) = "[count($(args[1])) $op $(args[2])]"
-  fmt["count.1"] = (cmd, args) -> count_op(cmd, args, "is less than")
-  fmt["count.2"] = (cmd, args) -> count_op(cmd, args, "is less than or equal to")
-  fmt["count.3"] = (cmd, args) -> count_op(cmd, args, "is greater than")
-  fmt["count.4"] = (cmd, args) -> count_op(cmd, args, "is greater than or equal to")
-  fmt["count.5"] = (cmd, args) -> count_op(cmd, args, "equals")
+  fmt["count.1.1.1.1"] = (cmd, args) -> count_op(cmd, args, "is less than")
+  fmt["count.1.1.1.2"] = (cmd, args) -> count_op(cmd, args, "is less than or equal to")
+  fmt["count.1.1.2"] = (cmd, args) -> count_op(cmd, args, "is greater than")
+  fmt["count.1.2"] = (cmd, args) -> count_op(cmd, args, "is greater than or equal to")
+  fmt["count.2"] = (cmd, args) -> count_op(cmd, args, "equals")
 
   bin_infix_eq(cmd, args) = bin_infix(cmd, args, "equals")
   bin_infix_lt(cmd, args) = bin_infix(cmd, args, "is less than")

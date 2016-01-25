@@ -32,12 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("fitness.jl")
-
 function get_reward(tree::DerivationTree)
   reward = if iscomplete(tree)
-    code = get_expr(tree)
-    -get_fitness(code)
+    expr = get_expr(tree)
+    -get_fitness(expr)
   elseif isterminal(tree) #not-compilable
     MAX_NEG_REWARD
   else #each step

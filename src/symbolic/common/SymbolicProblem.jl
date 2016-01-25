@@ -32,7 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module SymbolicRegression
+module SymbolicProblem
 
 export Symbolic, create_grammar, get_fitness, to_function
 

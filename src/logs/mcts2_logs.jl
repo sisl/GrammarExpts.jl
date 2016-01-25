@@ -57,3 +57,16 @@ function default_logs(observer::Observer)
 
   return logs
 end
+
+function default_console!(observer::Observer)
+  #console out
+  add_observer(observer, "verbose1", x -> println(x[1]))
+  add_observer(observer, "action", x -> println("step=$(x[1]), action=$(x[2])"))
+  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
+  add_observer(observer, "current_best", x -> begin
+                 i, reward, state = x
+                 if rem(i, 100) == 0
+                   println("step $i: best_reward=$reward, best_state=$(state.past_actions)")
+                 end
+               end)
+end

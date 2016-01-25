@@ -55,8 +55,7 @@ end
 
 println("Configuring: config=$(CONFIG[:config]), gt=$(CONFIG[:gt]), treevis=$(CONFIG[:treevis])")
 
-#2d polynomials with integral coeffs
-include("../grammar/grammar_poly2d/GrammarDef.jl") #grammar
+include("../common/SymbolicProblem.jl")
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
@@ -68,44 +67,50 @@ else
   error("config not valid ($(CONFIG[:config]))")
 end
 
-if CONFIG[:gt] == :easy
-  include("../common/gt_easy.jl")
+const GT_FILE = if CONFIG[:gt] == :easy
+  joinpath(dirname(@__FILE__), "../common/gt_easy.jl")
 elseif CONFIG[:gt] == :higherorder
-  include("../common/gt_higherorder.jl")
+  joinpath(dirname(@__FILE__), "../common/gt_higherorder.jl")
 else
   error("gt not valid ($(CONFIG[:gt]))")
 end
-include("reward.jl")
-include("logs.jl")
+
+include("../../logs/mcts2_logs.jl")
 
 #FIXME
 if CONFIG[:treevis]
   include("treeview.jl")
 end
 
-using .GrammarDef
+using .SymbolicProblem
 
-function symbolic_mcts2(outdir::AbstractString="./"; seed=1,
-                    logfileroot::AbstractString="symbolic_mcts_log",
-                    n_iters::Int64=N_ITERS,
-                    searchdepth::Int64=SEARCHDEPTH,
-                    exploration_const::Float64=EXPLORATIONCONST,
-                    q0::Float64=MAX_NEG_REWARD,
-                    treevis::Bool=CONFIG[:treevis])
+function symbolic_mcts2{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
+                                          logfileroot::AbstractString="symbolic_mcts_log",
+                                          n_iters::Int64=N_ITERS,
+                                          searchdepth::Int64=SEARCHDEPTH,
+                                          exploration_const::Float64=EXPLORATIONCONST,
+                                          q0::Float64=MAX_NEG_REWARD,
+                                          xrange::FloatRange{T}=XRANGE,
+                                          yrange::FloatRange{T}=YRANGE,
+                                          w_len::Float64=W_LEN,
+                                          gt_file::AbstractString=GT_FILE,
+                                          maxsteps::Int64=MAXSTEPS,
+                                          max_neg_reward::Float64=MAX_NEG_REWARD,
+                                          step_reward::Float64=STEP_REWARD,
+                                          treevis::Bool=CONFIG[:treevis])
   srand(seed)
 
-  grammar = create_grammar()
-  tree_params = DerivTreeParams(grammar, MAXSTEPS)
-  mdp_params = DerivTreeMDPParams(grammar)
+  problem = Symbolic(XRANGE, YRANGE, w_len, gt_file)
+
+
 
   observer = Observer()
-  add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
-  add_observer(observer, "current_best", x -> begin
-                 i, reward, state = x
-                 rem(i, 100) == 0 && println("$i: best_reward=$(reward), best_state=$(state.past_actions)")
-               end)
-  logs = define_logs(observer)
+  logs = default_logs(observer)
+  default_console!(observer)
+  @notify_observer(observer, "parameters", ["seed", seed])
+  @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
+  @notify_observer(observer, "parameters", ["data", CONFIG[:gt]])
+  @notify_observer(observer, "parameters", ["w_len", w_len])
 
   if treevis
     view, viewstep = viewstep_f(TREEVIS_INTERVAL)
@@ -115,11 +120,11 @@ function symbolic_mcts2(outdir::AbstractString="./"; seed=1,
   mcts2_observer = Observer()
   #add_observer(mcts2_observer, "terminal_reward", x -> println("r=", x[1], " state=", x[2].past_actions))
 
-  mcts2_params = MCTS2ESParams(tree_params, mdp_params, n_iters, searchdepth,
+  mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
                              exploration_const, q0, mcts2_observer,
                              observer)
 
-  result = exprsearch(mcts2_params)
+  result = exprsearch(mcts2_params, problem)
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)

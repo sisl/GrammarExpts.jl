@@ -33,7 +33,7 @@
 # *****************************************************************************
 
 #grammatical evolution
-const GENOME_SIZE = 50
+const GENOME_SIZE = 25
 const MAXWRAPS = 0
 const DEFAULTCODE = 0
 const TOP_PERCENT = 0.5
@@ -48,6 +48,8 @@ const MAXITERATIONS = 3
 const W_LEN = 0.01
 const XRANGE = 0.0:0.5:10.0
 const YRANGE = 0.0:0.5:10.0
+
+const LOGINTERVAL = 100
 
 #vis
 const HIST_NBINS = 40

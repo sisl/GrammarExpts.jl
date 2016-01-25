@@ -34,7 +34,7 @@
 
 module ACASX_GE
 
-export acasx_ge, configure
+export acasx_ge
 
 using ExprSearch.GE
 using Datasets
@@ -74,7 +74,7 @@ end
 include("../common/labeleddata.jl")
 
 import ExprSearch.GE.get_fitness
-include("fitness.jl")
+include("../common/fitness.jl")
 include("logs.jl")
 
 using .GrammarDef
@@ -82,34 +82,7 @@ using .GrammarDef
 
 #Callbacks
 #################
-function define_stop()
-  tracker = Float64[]
-  ex = quote
-    function GE.stop(iter::Int64, fitness::Float64)
-      if iter == 1
-        empty!($tracker)
-      end
-      push!($tracker, fitness)
-
-      if length($tracker) < STOP_N
-        return false
-      else
-        last_N = ($tracker)[end - STOP_N + 1 : end]
-        return elements_equal(last_N)
-      end
-    end
-  end
-  eval(ex)
-end
-
-function define_fitness{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function GE.get_fitness(code::Union{Expr,Symbol})
-      return get_fitness(code, $Dl)
-    end
-  end
-  eval(ex)
-end
+GE.stop(iter::Int64, fitness::Float64) = false
 
 #nmacs vs nonnmacs
 function acasx_ge(outdir::AbstractString="./"; seed=1,
@@ -140,9 +113,6 @@ function acasx_ge(outdir::AbstractString="./"; seed=1,
     error("runtype not recognized ($runtype)")
   end
 
-  define_stop()
-  define_fitness(Dl)
-
   grammar = create_grammar()
 
   observer = Observer()
@@ -163,7 +133,7 @@ function acasx_ge(outdir::AbstractString="./"; seed=1,
                          top_percent, prob_mutation, mutation_rate, default_code,
                          maxiterations, ge_observer, observer)
 
-  result = exprsearch(ge_params)
+  result = exprsearch(ge_params, Dl)
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)

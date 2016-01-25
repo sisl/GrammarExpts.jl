@@ -89,7 +89,10 @@ function default_logs(observer::Observer)
   add_observer(observer, "parameters", push!_f(logs, "parameters"))
   add_observer(observer, "result", push!_f(logs, "result"))
 
-  #console output
+  return logs
+end
+
+function default_console!(observer::Observer)
   add_observer(observer, "verbose1", x -> println(x[1]))
   add_observer(observer, "best_individual", x -> begin
                  iter, fitness, code = x
@@ -99,7 +102,5 @@ function default_logs(observer::Observer)
                          "length=$(length(code)), code=$(code_short)")
                end)
   add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2])"))
-
-  return logs
 end
 

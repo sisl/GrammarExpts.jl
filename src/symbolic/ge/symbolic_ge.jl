@@ -52,7 +52,7 @@ end
 
 println("Configuring: config=$(CONFIG[:config]), gt=$(CONFIG[:gt])")
 
-include("../grammar/grammar_poly2d/GrammarDef.jl") #grammar
+include("../common/SymbolicProblem.jl")
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
@@ -62,58 +62,51 @@ else
   error("config not valid ($(CONFIG[:config]))")
 end
 
-if CONFIG[:gt] == :easy
-  include("../common/gt_easy.jl")
+const GT_FILE = if CONFIG[:gt] == :easy
+  joinpath(dirname(@__FILE__), "../common/gt_easy.jl")
 elseif CONFIG[:gt] == :higherorder
-  include("../common/gt_higherorder.jl")
+  joinpath(dirname(@__FILE__), "../common/gt_higherorder.jl")
 else
   error("gt not valid ($(CONFIG[:gt]))")
 end
 
-import ExprSearch.GE.get_fitness
-include("../common/fitness.jl")
-include("logs.jl")
+include("../../logs/ge_logs.jl")
 
-using .GrammarDef
+using .SymbolicProblem
 
-#Callbacks
-#################
-GE.stop(iter::Int64, fitness::Float64) = false
-
-#nmacs vs nonnmacs
-function symbolic_ge(outdir::AbstractString="./"; seed=1,
-                  logfileroot::AbstractString="symbolic_ge_log",
-                  genome_size::Int64=GENOME_SIZE,
-                  pop_size::Int64=POP_SIZE,
-                  maxwraps::Int64=MAXWRAPS,
-                  top_percent::Float64=TOP_PERCENT,
-                  prob_mutation::Float64=PROB_MUTATION,
-                  mutation_rate::Float64=MUTATION_RATE,
-                  default_code=DEFAULTCODE,
-                  maxiterations::Int64=MAXITERATIONS)
+function symbolic_ge{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
+                     logfileroot::AbstractString="symbolic_ge_log",
+                     genome_size::Int64=GENOME_SIZE,
+                     pop_size::Int64=POP_SIZE,
+                     maxwraps::Int64=MAXWRAPS,
+                     top_percent::Float64=TOP_PERCENT,
+                     prob_mutation::Float64=PROB_MUTATION,
+                     mutation_rate::Float64=MUTATION_RATE,
+                     default_code=DEFAULTCODE,
+                     maxiterations::Int64=MAXITERATIONS,
+                     xrange::FloatRange{T}=XRANGE,
+                     yrange::FloatRange{T}=YRANGE,
+                     w_len::Float64=W_LEN,
+                     gt_file::AbstractString=GT_FILE)
   srand(seed)
 
-  grammar = create_grammar()
+  problem = Symbolic(XRANGE, YRANGE, w_len, gt_file)
 
   observer = Observer()
-  add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "best_individual", x -> begin
-                 iter, fitness, code = x
-                 code = string(code)
-                 code_short = take(code, 50) |> join
-                 println("generation: $iter, max fitness=$(signif(fitness, 4)),",
-                         "length=$(length(code)), code=$(code_short)")
-               end)
-  add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2])"))
-  logs = define_logs(observer)
+  logs = default_logs(observer)
+  default_console!(observer)
+  @notify_observer(observer, "parameters", ["seed", seed])
+  @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
+  @notify_observer(observer, "parameters", ["data", CONFIG[:gt]])
+  @notify_observer(observer, "parameters", ["w_len", w_len])
 
   ge_observer = Observer()
 
-  ge_params = GEESParams(grammar, genome_size, pop_size, maxwraps,
+  ge_params = GEESParams(genome_size, pop_size, maxwraps,
                          top_percent, prob_mutation, mutation_rate, default_code,
                          maxiterations, ge_observer, observer)
 
-  result = exprsearch(ge_params)
+  result = exprsearch(ge_params, problem)
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)

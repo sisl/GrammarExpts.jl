@@ -33,7 +33,7 @@
 # *****************************************************************************
 
 #grammatical evolution
-const GENOME_SIZE = 20
+const GENOME_SIZE = 50
 const MAXWRAPS = 0
 const DEFAULTCODE = :(eval(false))
 const TOP_PERCENT = 0.5
@@ -51,6 +51,8 @@ const STOP_N = 3
 const MAXCODELENGTH = 1000000 #disable for now
 const W_ENT = 100 #entropy
 const W_LEN = 0.1 #
+
+const LOGINTERVAL = 100
 
 #vis
 const LIMIT_MEMBERS = 30

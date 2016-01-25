@@ -83,9 +83,11 @@ else
   error("data not valid ($data)")
 end
 
+include("../common/ACASXProblem.jl")
+
 include("../common/labeleddata.jl")
 include("reward.jl")
-include("logs.jl")
+include("../../logs/mcts2_logs.jl")
 include("../common/format.jl")
 
 if CONFIG[:mctstreevis]
@@ -95,7 +97,7 @@ if CONFIG[:vis]
   include("../common/derivtreevis.jl") #derivation tree
 end
 
-using .GrammarDef
+using .ACASXProblem
 
 function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                      runtype::AbstractString="nmacs_vs_nonnmacs",
@@ -123,19 +125,13 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
     error("runtype not recognized ($runtype)")
   end
 
-  grammar = create_grammar()
+  problem = ACASXClustering(Dl)
+
   tree_params = DerivTreeParams(grammar, MAXSTEPS)
   mdp_params = DerivTreeMDPParams(grammar)
 
   observer = Observer()
-  add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
-  add_observer(observer, "current_best", x -> begin
-                 i, reward, state = x
-                 rem(i, 100) == 0 && println("$i: best_reward=$(reward), best_state=$(state.past_actions)")
-               end)
-
-  logs = define_logs(observer)
+  logs = default_logs(observer)
   @notify_observer(observer, "parameters", ["seed", seed])
   @notify_observer(observer, "parameters", ["runtype", runtype])
   @notify_observer(observer, "parameters", ["clusterdataname", clusterdataname])
@@ -155,7 +151,7 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                              exploration_const, q0, mcts2_observer,
                              observer)
 
-  result = exprsearch(mcts2_params, Dl)
+  result = exprsearch(mcts2_params)
 
   @notify_observer(observer, "expression", [string(result.expr),
                                              pretty_string(result.tree, FMT_PRETTY),

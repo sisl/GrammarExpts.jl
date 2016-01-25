@@ -33,13 +33,13 @@
 # *****************************************************************************
 
 #mdp
-const MAXSTEPS = 50
+const MAXSTEPS = 25
 const DISCOUNT = 1.0
 
 #mcts
-const N_ITERS = 20000
-const SEARCHDEPTH = 50
-const EXPLORATIONCONST = 2000.0
+const N_ITERS = 50000
+const SEARCHDEPTH = 25
+const EXPLORATIONCONST = 1500.0
 
 #fitness function
 const W_ENT = 100 #entropy
