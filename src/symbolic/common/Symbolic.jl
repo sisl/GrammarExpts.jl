@@ -32,13 +32,25 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarDef
+module SymbolicRegression
 
-export create_grammar, to_function
+export Symbolic, create_grammar, get_fitness, to_function
 
-using GrammaticalEvolution
+using ExprSearch
+import ExprSearch: ExprProblem, create_grammar, get_fitness
 
-function create_grammar()
+type Symbolic{T<:AbstractFloat} <: ExprProblem
+  xrange::FloatRange{T}
+  yrange::FloatRange{T}
+  w_len::Float64
+end
+
+function Symbolic{T<:AbstractFloat}(xrange::FloatRange{T}, yrange::FloatRange{T}, w_len::Float64, gt_file::AbstractString)
+  @eval include($gt_file) #define gt in module scope
+  return Symbolic(xrange, yrange, w_len)
+end
+
+function ExprSearch.create_grammar(problem::Symbolic)
   @grammar grammar begin
     start = ex
     ex = sum | product | (ex) | value
@@ -50,9 +62,22 @@ function create_grammar()
   return grammar
 end
 
-function to_function(code)
-  @eval f(x, y) = $code
+function to_function(problem::Symbolic, expr)
+  @eval f(x, y) = $expr
   return f
+end
+
+function ExprSearch.get_fitness(problem::Symbolic, expr)
+  #mean-square error over a range
+  sum_se = 0.0
+  f = to_function(problem, expr)
+  for x in problem.xrange, y in problem.yrange
+    sum_se += abs2(f(x, y) - gt(x, y))
+  end
+  n = length(problem.xrange) * length(problem.yrange)
+  fitness = sum_se / n + problem.w_len * length(string(expr))
+
+  return fitness
 end
 
 end #module

@@ -34,24 +34,47 @@
 
 @reexport using RLESUtils: Observers, Loggers
 
-function define_logs(observer::Observer)
+function default_logs()
   logs = TaggedDFLogger()
-  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "action", [Int64, Int64], ["step", "action_id"])
-  add_folder!(logs, "cputime", [Int64, Float64], ["step", "cputime_s"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals"])
-  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString], ["iteration", "reward", "state", "expr"])
+  add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
+  add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
+  add_folder!(logs, "cputime", [Int64, Float64, Int64], ["step", "cputime_s", "decision_id"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals", "decision_id"])
+  add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString, Int64], ["iteration", "reward", "state", "expr", "decision_id"])
 
-  add_observer(observer, "parameters", push!_f(logs, "parameters"))
-  add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
-  add_observer(observer, "action", push!_f(logs, "action"))
-  add_observer(observer, "cputime", push!_f(logs, "cputime"))
-  add_observer(observer, "result", push!_f(logs, "result"))
+  return logs
+end
+
+function set_observers!(observer::Observer, logs::TaggedDFLogger)
+  empty!(observer)
+  ####################
+  #print out observers
+  add_observer(observer, "verbose1", x -> println(x[1]))
+  add_observer(observer, "iteration", x -> begin
+                 i = x[1]
+                 rem(i, 100) == 0 && println("iteration $i")
+               end)
+  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
   add_observer(observer, "current_best", x -> begin
                  i, reward, state = x
+                 rem(i, 100) == 0 && println("step $i: best_reward=$(reward), best_state=$(state.past_actions)")
+               end)
+
+  ###################
+  #log observers
+  decision_id = nrow(logs["result"]) > 0 ?
+    maximum(logs["result"][:decision_id]) + 1 : 1
+  add_observer(observer, "parameters", append_push!_f(logs, "parameters", decision_id))
+  add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
+  add_observer(observer, "cputime", append_push!_f(logs, "cputime", decision_id))
+  add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
+  add_observer(observer, "expression", append_push!_f(logs, "expression", decision_id))
+  add_observer(observer, "current_best", x -> begin
+                 i, reward, state, mdp = x
                  if rem(i, LOGINTERVAL) == 0
-                   push!(logs, "current_best", [i, reward, string(state.past_actions), string(get_expr(state))])
+                   push!(logs, "current_best", [i, reward, string(state.past_actions),
+                                                string(expr_at_state(mdp, state)), decision_id])
                  end
                end)
 

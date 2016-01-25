@@ -34,7 +34,7 @@
 
 @reexport using RLESUtils: Observers, Loggers
 
-function define_logs(observer::Observer)
+function default_logs(observer::Observer)
   logs = TaggedDFLogger()
   add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])

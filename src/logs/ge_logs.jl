@@ -35,7 +35,7 @@
 @reexport using RLESUtils: Observers, Loggers
 using Iterators
 
-function define_logs(observer::Observer)
+function default_logs(observer::Observer)
   logs = TaggedDFLogger()
   add_folder!(logs, "fitness", [Int64, Float64], ["iter", "fitness"])
   add_folder!(logs, "fitness5", [Int64, Int64, Float64],
@@ -88,6 +88,17 @@ function define_logs(observer::Observer)
   add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
   add_observer(observer, "parameters", push!_f(logs, "parameters"))
   add_observer(observer, "result", push!_f(logs, "result"))
+
+  #console output
+  add_observer(observer, "verbose1", x -> println(x[1]))
+  add_observer(observer, "best_individual", x -> begin
+                 iter, fitness, code = x
+                 code = string(code)
+                 code_short = take(code, 50) |> join
+                 println("generation: $iter, max fitness=$(signif(fitness, 4)),",
+                         "length=$(length(code)), code=$(code_short)")
+               end)
+  add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2])"))
 
   return logs
 end
