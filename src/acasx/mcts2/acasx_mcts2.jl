@@ -39,7 +39,8 @@ export acasx_mcts2
 using ExprSearch.MCTS2
 using Datasets
 using Reexport
-using JSON
+using JSON, GZip
+using RLESUtils.FileUtils
 
 import GrammarExpts.CONFIG
 
@@ -57,7 +58,7 @@ if !haskey(CONFIG, :mctstreevis)
   CONFIG[:mctstreevis] = false
 end
 
-println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis]), treevis=$(CONFIG[:mctstreevis])")
+println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis]), mctstreevis=$(CONFIG[:mctstreevis])")
 
 include("../common/ACASXProblem.jl")
 using .ACASXProblem
@@ -105,7 +106,6 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                      maxsteps::Int64=MAXSTEPS,
                      max_neg_reward::Float64=MAX_NEG_REWARD,
                      step_reward::Float64=STEP_REWARD)
-  srand(seed)
 
   problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
 
@@ -121,7 +121,7 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
   end
 
   mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
-                             exploration_const, q0, mcts2_observer,
+                             exploration_const, q0, seed, mcts2_observer,
                              observer)
 
   result = exprsearch(mcts2_params, problem)
@@ -148,10 +148,13 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
 
   #save mcts tree
   if mctstreevis
-    open(joinpath(outdir, "mctstreevis.json"), "w") do f
+    GZip.open(joinpath(outdir, "mctstreevis.json.gz"), "w") do f
       JSON.print(f, view.steps)
     end
   end
+
+  textfile(joinpath(outdir, "summary.txt"), "mcts2", seed=seed, n_iters=n_iters,
+           reward=result.reward, expr=string(result.expr))
 
   return result
 end

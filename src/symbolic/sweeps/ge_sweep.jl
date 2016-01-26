@@ -32,27 +32,32 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const EXPT = :acasx_mcts
-const DATA = :dasc
-const CONFIG = :normal
-const VIS = true
+using GrammarExpts
+using RLESUtils: ParamSweeps, Observers, Loggers, StringUtils, FileUtils
+using CPUTime
 
-const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmcts_dasc")
-const LOGFILEROOT = "acasxmcts2_dasc"
+load_expt(EXPT, config=CONFIG, gt=GT, vis=VIS)
 
-include("sweep.jl")
+mkpath(OUTDIR)
 
-f = caller_f(acasx_mcts, OUTDIR, LOGFILEROOT, observer)
-script = ParamSweep(f)
+function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
+  f = function caller(seed::Int64, genome_size::Int64, pop_size::Int64, maxiterations::Int64)
+    CPUtic()
+    #make a subdirectory for logs for this run
+    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_genomesize$(genome_size)_popsize$(pop_size)_maxiters$(maxiterations)")
+    mkpath(subdir)
 
-push!(script, 1:5) #seed
-push!(script, [100, 500, 1000, 2000, 5000]) #n_iters
-push!(script, [10.0, 30.0, 50.0]) #ec
+    result = func(subdir, seed=seed, genome_size=genome_size, pop_size=pop_size, maxiterations=maxiterations)
 
-textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
-         outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
+    @notify_observer(observer, "result", [seed, genome_size, pop_size, maxiterations, result.fitness, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
+  end
+  return f
+end
 
-run(script)
+#observer for this study
+observer = Observer()
+logger = DataFrameLogger([Int64, Int64, Int64, Int64, Float64, ASCIIString, Int64, Int64, Float64],
+                         ["seed", "genome_size", "pop_size", "maxiterations", "fitness", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
+add_observer(observer, "result", push!_f(logger))
 
-#save logs
-save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_log"), logger)
+

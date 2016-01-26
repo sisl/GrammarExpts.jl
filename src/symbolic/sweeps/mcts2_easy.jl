@@ -32,42 +32,26 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using RLESUtils: ParamSweeps, Observers, Loggers
-using CPUTime
+const EXPT = :symbolic_mcts2
+const GT = :easy
+const CONFIG = :highest
+const VIS = true
+const MCTSTREEVIS = false
 
-load_expt(:symbolic_ge, config=:normal, gt=:easy)
+const OUTDIR = Pkg.dir("GrammarExpts/results/symmcts2_easy")
+const LOGFILEROOT = "symmcts2_easy"
 
-const OUTDIR = Pkg.dir("GrammarExpts/results/symge")
-const LOGFILEROOT = "symge"
+include("mcts2_sweep.jl")
 
-function caller_f(outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
-  f = function caller(seed::Int64, genome_size::Int64, pop_size::Int64, maxiterations::Int64)
-    CPUtic()
-
-    #make a subdirectory for logs for this run
-    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_genomesize$(genome_size)_popsize$(pop_size)_maxiters$(maxiterations)")
-    mkpath(subdir)
-
-    result = symbolic_ge(subdir, seed=seed, genome_size=genome_size, pop_size=pop_size, maxiterations=maxiterations)
-
-    @notify_observer(observer, "result", [seed, genome_size, pop_size, maxiterations, result.fitness, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
-  end
-  return f
-end
-
-#observer for this study
-observer = Observer()
-logger = DataFrameLogger([Int64, Int64, Int64, Int64, Float64, ASCIIString, Int64, Int64, Float64],
-                         ["seed", "genome_size", "pop_size", "maxiterations", "fitness", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
-add_observer(observer, "result", push!_f(logger))
-f = caller_f(OUTDIR, LOGFILEROOT, observer)
-
+f = caller_f(symbolic_mcts2, OUTDIR, LOGFILEROOT, observer)
 script = ParamSweep(f)
-push!(script, 1:5) #seed
-push!(script, [50, 100, 150]) #genome_size
-push!(script, [500, 1000, 2000, 4000]) #pop_size
-push!(script, [10, 30, 50]) #maxiterations
+
+push!(script, 1:10) #seed
+push!(script, [100000]) #n_iters
+push!(script, [50.0, 500.0, 1500.0, 2000.0]) #ec
+
+textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, gt=GT, config=CONFIG, vis=VIS,
+         outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
 
 run(script)
 

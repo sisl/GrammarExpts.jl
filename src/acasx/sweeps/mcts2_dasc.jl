@@ -36,18 +36,19 @@ const EXPT = :acasx_mcts2
 const DATA = :dasc
 const CONFIG = :normal
 const VIS = true
+const MCTSTREEVIS = false
 
 const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmcts2_dasc")
 const LOGFILEROOT = "acasxmcts2_dasc"
 
-include("sweep.jl")
+include("mcts2_sweep.jl")
 
 f = caller_f(acasx_mcts2, OUTDIR, LOGFILEROOT, observer)
 script = ParamSweep(f)
 
-push!(script, 1:5) #seed
-push!(script, [100, 500, 1000, 2000, 5000]) #n_iters
-push!(script, [10.0, 30.0, 50.0]) #ec
+push!(script, 1:10) #seed
+push!(script, [100000]) #n_iters
+push!(script, [50.0, 500.0, 1500.0, 2000.0]) #ec
 
 textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
          outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))

@@ -44,11 +44,6 @@ const MAXVALUE = 1000
 const POP_SIZE = 1000
 const MAXITERATIONS = 50
 
-#fitness
-const XRANGE = 0.0:0.5:10.0
-const YRANGE = 0.0:0.5:10.0
-const W_LEN = 0.01
-
 const LOGINTERVAL = 100
 
 #vis

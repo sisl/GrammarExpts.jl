@@ -39,13 +39,17 @@ export Symbolic, create_grammar, get_fitness, to_function
 using ExprSearch
 import ExprSearch: ExprProblem, create_grammar, get_fitness
 
+const XRANGE = 0.0:0.5:10.0
+const YRANGE = 0.0:0.5:10.0
+const W_LEN = 0.1
+
 type Symbolic{T<:AbstractFloat} <: ExprProblem
   xrange::FloatRange{T}
   yrange::FloatRange{T}
   w_len::Float64
 end
 
-function Symbolic{T<:AbstractFloat}(xrange::FloatRange{T}, yrange::FloatRange{T}, w_len::Float64, gt_file::AbstractString)
+function Symbolic{T<:AbstractFloat}(gt_file::AbstractString, xrange::FloatRange{T}=XRANGE, yrange::FloatRange{T}=YRANGE, w_len::Float64=W_LEN)
   @eval include($gt_file) #define gt in module scope
   return Symbolic(xrange, yrange, w_len)
 end

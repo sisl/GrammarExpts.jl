@@ -32,24 +32,25 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const EXPT = :acasx_mcts_tree
-const DATA = :dasc
+const EXPT = :symbolic_ge
+const GT = :easy
 const CONFIG = :normal
 const VIS = true
 
-const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmctstree_dasc")
-const LOGFILEROOT = "acasxmctstree_dasc"
+const OUTDIR = Pkg.dir("GrammarExpts/results/symge_easy")
+const LOGFILEROOT = "symge_easy"
 
-include("tree_sweep.jl")
+include("ge_sweep.jl")
 
-f = caller_f(acasx_mcts_tree, OUTDIR, LOGFILEROOT, observer)
-
+f = caller_f(symbolic_ge, OUTDIR, LOGFILEROOT, observer)
 script = ParamSweep(f)
-push!(script, 1:5) #seed
-push!(script, [100, 500, 1000, 2000, 5000]) #n_iters
-push!(script, [10.0, 30.0, 50.0]) #ec
 
-textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
+push!(script, 1:10) #seed
+push!(script, [25]) #genome_size
+push!(script, [500, 2000]) #pop_size
+push!(script, [10, 30, 50]) #maxiterations
+
+textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, gt=GT, config=CONFIG, vis=VIS,
          outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
 
 run(script)

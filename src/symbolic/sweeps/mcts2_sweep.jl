@@ -32,28 +32,32 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const EXPT = :acasx_mcts2
-const DATA = :libcas098_small
-const CONFIG = :normal
-const VIS = true
-const MCTSTREEVIS = false
+using GrammarExpts
+using RLESUtils: ParamSweeps, Observers, Loggers, StringUtils, FileUtils
+using CPUTime
 
-const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmcts2_098small")
-const LOGFILEROOT = "acasxmcts2_098small"
+load_expt(EXPT, config=CONFIG, gt=GT, vis=VIS)
 
-include("mcts2_sweep.jl")
+mkpath(OUTDIR)
 
-f = caller_f(acasx_mcts2, OUTDIR, LOGFILEROOT, observer)
-script = ParamSweep(f)
+function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
+  f = function caller(seed::Int64, n_iters::Int64=N_ITERS, ec::Float64=EXPLORATIONCONST)
+    CPUtic()
+    #make a subdirectory for logs for this run
+    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_niters$(n_iters)_ec$(ec)")
+    mkpath(subdir)
 
-push!(script, 1:10) #seed
-push!(script, [100000]) #n_iters
-push!(script, [50.0, 500.0, 1500.0, 2000.0]) #ec
+    result = func(subdir, seed=seed, n_iters=n_iters, exploration_const=ec, mctstreevis=MCTSTREEVIS)
 
-textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
-         outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
+    @notify_observer(observer, "result", [seed, n_iters, ec, result.reward, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
+  end
+  return f
+end
 
-run(script)
+#observer for this study
+observer = Observer()
+logger = DataFrameLogger([Int64, Int64, Float64, Float64, ASCIIString, Int64, Int64, Float64],
+                         ["seed", "n_iters", "exploration_const", "best_reward", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
+add_observer(observer, "result", push!_f(logger))
 
-#save logs
-save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_log"), logger)
+

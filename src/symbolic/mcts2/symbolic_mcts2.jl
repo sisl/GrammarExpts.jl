@@ -38,7 +38,7 @@ export symbolic_mcts2
 
 using ExprSearch.MCTS2
 using Reexport
-using JSON
+using JSON, GZip
 
 import GrammarExpts.CONFIG
 
@@ -49,11 +49,11 @@ end
 if !haskey(CONFIG, :gt)
   CONFIG[:gt] = :easy
 end
-if !haskey(CONFIG, :treevis)
-  CONFIG[:treevis] = false
+if !haskey(CONFIG, :mctstreevis)
+  CONFIG[:mctstreevis] = false
 end
 
-println("Configuring: config=$(CONFIG[:config]), gt=$(CONFIG[:gt]), treevis=$(CONFIG[:treevis])")
+println("Configuring: config=$(CONFIG[:config]), gt=$(CONFIG[:gt]), mctstreevis=$(CONFIG[:mctstreevis])")
 
 include("../common/SymbolicProblem.jl")
 
@@ -78,35 +78,31 @@ end
 include("../../logs/mcts2_logs.jl")
 
 #FIXME
-if CONFIG[:treevis]
+if CONFIG[:mctstreevis]
   include("treeview.jl")
 end
 
 using .SymbolicProblem
 
-function symbolic_mcts2{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
-                                          logfileroot::AbstractString="symbolic_mcts_log",
+function symbolic_mcts2(outdir::AbstractString="./"; seed=1,
+                                          logfileroot::AbstractString="symbolic_mcts2_log",
                                           n_iters::Int64=N_ITERS,
                                           searchdepth::Int64=SEARCHDEPTH,
                                           exploration_const::Float64=EXPLORATIONCONST,
                                           q0::Float64=MAX_NEG_REWARD,
-                                          xrange::FloatRange{T}=XRANGE,
-                                          yrange::FloatRange{T}=YRANGE,
-                                          w_len::Float64=W_LEN,
                                           gt_file::AbstractString=GT_FILE,
                                           maxsteps::Int64=MAXSTEPS,
                                           max_neg_reward::Float64=MAX_NEG_REWARD,
                                           step_reward::Float64=STEP_REWARD,
-                                          treevis::Bool=CONFIG[:treevis])
-  srand(seed)
+                                          mctstreevis::Bool=CONFIG[:mctstreevis])
 
-  problem = Symbolic(XRANGE, YRANGE, w_len, gt_file)
+  problem = Symbolic(gt_file)
 
   observer = Observer()
   logs = default_logs(observer)
   default_console!(observer)
 
-  if treevis
+  if mctstreevis
     view, viewstep = viewstep_f(TREEVIS_INTERVAL)
     add_observer(observer, "mcts_tree", viewstep)
   end
@@ -115,7 +111,7 @@ function symbolic_mcts2{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
   #add_observer(mcts2_observer, "terminal_reward", x -> println("r=", x[1], " state=", x[2].past_actions))
 
   mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
-                             exploration_const, q0, mcts2_observer,
+                             exploration_const, q0, seed, mcts2_observer,
                              observer)
 
   result = exprsearch(mcts2_params, problem)
@@ -123,14 +119,13 @@ function symbolic_mcts2{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
   @notify_observer(observer, "parameters", ["seed", seed])
   @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
   @notify_observer(observer, "parameters", ["data", CONFIG[:gt]])
-  @notify_observer(observer, "parameters", ["w_len", w_len])
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
   #save mcts tree
-  if treevis
-    open(joinpath(outdir, "mctstreevis.json"), "w") do f
+  if mctstreevis
+    GZip.open(joinpath(outdir, "mctstreevis.json.gz"), "w") do f
       JSON.print(f, view.steps)
     end
   end

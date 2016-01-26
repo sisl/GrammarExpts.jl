@@ -36,28 +36,28 @@ using GrammarExpts
 using RLESUtils: ParamSweeps, Observers, Loggers, StringUtils, FileUtils
 using CPUTime
 
-load_expt(EXPT, data=DATA, config=CONFIG, vis=VIS)
+load_expt(EXPT, config=CONFIG, data=DATA, vis=VIS)
 
 mkpath(OUTDIR)
 
 function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
-  f = function caller(seed::Int64, n_iters::Int64, ec::Float64)
+  f = function caller(seed::Int64, genome_size::Int64, pop_size::Int64, maxiterations::Int64)
     CPUtic()
     #make a subdirectory for logs for this run
-    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_niters$(n_iters)_ec$(ec)")
+    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_genomesize$(genome_size)_popsize$(pop_size)_maxiters$(maxiterations)")
     mkpath(subdir)
 
-    result = func(subdir, seed=seed, n_iters=n_iters, exploration_const=ec)
+    result = func(subdir, seed=seed, genome_size=genome_size, pop_size=pop_size, maxiterations=maxiterations)
 
-    @notify_observer(observer, "result", [seed, n_iters, ec, result.reward, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
+    @notify_observer(observer, "result", [seed, genome_size, pop_size, maxiterations, result.fitness, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
   end
   return f
 end
 
 #observer for this study
 observer = Observer()
-logger = DataFrameLogger([Int64, Int64, Float64, Float64, ASCIIString, Int64, Int64, Float64],
-                         ["seed", "n_iters", "exploration_const", "best_reward", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
+logger = DataFrameLogger([Int64, Int64, Int64, Int64, Float64, ASCIIString, Int64, Int64, Float64],
+                         ["seed", "genome_size", "pop_size", "maxiterations", "fitness", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
 add_observer(observer, "result", push!_f(logger))
 
 

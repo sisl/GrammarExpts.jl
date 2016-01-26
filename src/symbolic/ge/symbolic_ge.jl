@@ -74,7 +74,7 @@ include("../../logs/ge_logs.jl")
 
 using .SymbolicProblem
 
-function symbolic_ge{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
+function symbolic_ge(outdir::AbstractString="./"; seed=1,
                      logfileroot::AbstractString="symbolic_ge_log",
                      genome_size::Int64=GENOME_SIZE,
                      pop_size::Int64=POP_SIZE,
@@ -84,13 +84,10 @@ function symbolic_ge{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
                      mutation_rate::Float64=MUTATION_RATE,
                      default_code=DEFAULTCODE,
                      maxiterations::Int64=MAXITERATIONS,
-                     xrange::FloatRange{T}=XRANGE,
-                     yrange::FloatRange{T}=YRANGE,
-                     w_len::Float64=W_LEN,
                      gt_file::AbstractString=GT_FILE)
   srand(seed)
 
-  problem = Symbolic(XRANGE, YRANGE, w_len, gt_file)
+  problem = Symbolic(gt_file)
 
   observer = Observer()
   logs = default_logs(observer)

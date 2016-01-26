@@ -32,24 +32,25 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const EXPT = :acasx_mcts
-const DATA = :libcas098_small
-const CONFIG = :normal
+const EXPT = :symbolic_mcts2
+const GT = :hard
+const CONFIG = :highest
 const VIS = true
+const MCTSTREEVIS = false
 
-const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmcts_098small")
-const LOGFILEROOT = "acasxmcts_098small"
+const OUTDIR = Pkg.dir("GrammarExpts/results/symmcts2_hard")
+const LOGFILEROOT = "symmcts2_hard"
 
-include("sweep.jl")
+include("mcts2_sweep.jl")
 
-f = caller_f(acasx_mcts, OUTDIR, LOGFILEROOT, observer)
+f = caller_f(symbolic_mcts2, OUTDIR, LOGFILEROOT, observer)
 script = ParamSweep(f)
 
-push!(script, 1:5) #seed
-push!(script, [100, 500, 1000, 2000, 5000]) #n_iters
-push!(script, [10.0, 30.0, 50.0]) #ec
+push!(script, 1:10) #seed
+push!(script, [100000]) #n_iters
+push!(script, [50.0, 500.0, 1500.0, 2000.0]) #ec
 
-textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
+textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, gt=GT, config=CONFIG, vis=VIS,
          outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
 
 run(script)
