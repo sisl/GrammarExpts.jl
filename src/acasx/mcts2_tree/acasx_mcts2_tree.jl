@@ -44,8 +44,6 @@ using Reexport
 
 import GrammarExpts.CONFIG
 
-include("../grammar/grammar_typed/GrammarDef.jl") #grammar
-
 #defaults
 if !haskey(CONFIG, :config)
   CONFIG[:config] = :test
@@ -58,6 +56,9 @@ if !haskey(CONFIG, :vis)
 end
 
 println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis])")
+
+include("../common/ACASXProblem.jl")
+using .ACASXProblem
 
 if CONFIG[:config] == :test
   include("test_config.jl")
@@ -85,18 +86,14 @@ else
   error("data not valid ($(CONFIG[:vis])")
 end
 
-include("../common/labeleddata.jl")
+include("../../logs/mcts2_tree_logs.jl")
 include("../common/format.jl")
-include("reward.jl")
-include("logs.jl")
 
 include("dtree_callbacks.jl")
 
-using .GrammarDef
+function train_dtree{T}(mcts2_params::MCTS2ESParams, problem::ACASXClustering, Dl::DFSetLabeled{T})
 
-function train_dtree{T}(mcts2_params::MCTS2ESParams, Dl::DFSetLabeled{T})
-
-  logs = define_logs()
+  logs = default_logs()
   num_data = length(Dl)
   T1 = Bool #predict_type
   T2 = Int64 #label_type
@@ -104,13 +101,13 @@ function train_dtree{T}(mcts2_params::MCTS2ESParams, Dl::DFSetLabeled{T})
   p = DTParams(num_data, MAXDEPTH, T1, T2)
 
   dtree = build_tree(p,
-                     Dl, mcts2_params, logs) #userargs...
+                     Dl, problem, mcts2_params, logs) #userargs...
 
   return dtree, logs
 end
 
 function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
-                          runtype::AbstractString="nmacs_vs_nonnmacs",
+                          runtype::Symbol=:nmacs_vs_nonnmacs,
                           clusterdataname::AbstractString="",
                           logfileroot::AbstractString="acasx_mcts2_tree_log",
                           data::DFSet=DATASET,
@@ -119,31 +116,21 @@ function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
                           searchdepth::Int64=SEARCHDEPTH,
                           exploration_const::Float64=EXPLORATIONCONST,
                           q0::Float64=MAX_NEG_REWARD,
-                          vis::Bool=CONFIG[:vis])
+                          vis::Bool=CONFIG[:vis],
+                          maxsteps::Int64=MAXSTEPS,
+                          max_neg_reward::Float64=MAX_NEG_REWARD,
+                          step_reward::Float64=STEP_REWARD,
+                          w_ent::Float64=W_ENT,
+                          w_len::Float64=W_LEN)
   srand(seed)
 
-  Dl = if runtype == "nmacs_vs_nonnmacs"
-    nmacs_vs_nonnmacs(data, data_meta)
-  elseif runtype == "nmac_clusters"
-    clustering = dataset(manuals, clusterdataname)
-    nmac_clusters(clustering, data)
-  elseif runtype == "nonnmacs_extra_cluster"
-    clustering = dataset(manuals, clusterdataname)
-    nonnmacs_extra_cluster(clustering, data, data_meta)
-  else
-    error("runtype not recognized ($runtype)")
-  end
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta, w_ent, w_len)
 
-  grammar = create_grammar()
-  tree_params = DerivTreeParams(grammar, MAXSTEPS)
-  mdp_params = DerivTreeMDPParams(grammar)
+  mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
+                             exploration_const, q0, Observer(), Observer())
 
-  logs = define_logs()
-  mcts2_params = MCTS2ESParams(tree_params, mdp_params, n_iters, searchdepth,
-                             exploration_const, q0, Observer(),
-                             Observer())
-
-  dtree, logs = train_dtree(mcts2_params, Dl)
+  Dl = problem.Dl
+  dtree, logs = train_dtree(mcts2_params, problem, Dl)
 
   #add to log
   push!(logs, "parameters", ["seed", seed, 0])

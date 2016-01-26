@@ -50,6 +50,7 @@ function default_logs(observer::Observer)
   add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString], ["iter", "fitness", "expr"])
 
   add_observer(observer, "fitness", push!_f(logs, "fitness"))
   add_observer(observer, "fitness5", x -> begin
@@ -88,13 +89,17 @@ function default_logs(observer::Observer)
   add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
   add_observer(observer, "parameters", push!_f(logs, "parameters"))
   add_observer(observer, "result", push!_f(logs, "result"))
+  add_observer(observer, "current_best", x -> begin
+                 iter, fitness, expr = x
+                 push!(logs, "current_best", [iter, fitness, string(expr)])
+               end)
 
   return logs
 end
 
 function default_console!(observer::Observer)
   add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "best_individual", x -> begin
+  add_observer(observer, "current_best", x -> begin
                  iter, fitness, code = x
                  code = string(code)
                  code_short = take(code, 50) |> join

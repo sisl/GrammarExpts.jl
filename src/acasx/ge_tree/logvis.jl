@@ -32,6 +32,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("../common/reward.jl")
+using RLESUtils.Loggers
 
-MCTS2.get_reward(tree::DerivationTree) = get_reward(tree)
+function logvis(logs::TaggedDFLogger, fileroot::AbstractString="logs")
+  #TODO
+end

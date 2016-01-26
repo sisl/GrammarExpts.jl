@@ -58,7 +58,9 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger)
   add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
   add_observer(observer, "current_best", x -> begin
                  i, reward, state = x
-                 rem(i, 100) == 0 && println("step $i: best_reward=$(reward), best_state=$(state.past_actions)")
+                 if rem(i, 100) == 0
+                   println("step $i: best_reward=$reward, best_state=$(state.past_actions)")
+                 end
                end)
 
   ###################
@@ -71,12 +73,12 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger)
   add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
   add_observer(observer, "expression", append_push!_f(logs, "expression", decision_id))
   add_observer(observer, "current_best", x -> begin
-                 i, reward, state, mdp = x
+                 i, reward, state = x
                  if rem(i, LOGINTERVAL) == 0
-                   push!(logs, "current_best", [i, reward, string(state.past_actions),
-                                                string(expr_at_state(mdp, state)), decision_id])
+                   push!(logs, "current_best", [i, reward, string(state.past_actions), string(get_expr(state)), decision_id])
                  end
                end)
+
 
   return logs
 end

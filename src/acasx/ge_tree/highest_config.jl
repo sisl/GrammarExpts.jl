@@ -32,27 +32,28 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#mdp
-const MAXSTEPS = 50
-const DISCOUNT = 1.0
+#grammatical evolution
+const GENOME_SIZE = 25
+const MAXWRAPS = 0
+const DEFAULTCODE = :(eval(false))
+const TOP_PERCENT = 0.5
+const PROB_MUTATION = 0.2
+const MUTATION_RATE = 0.2
+const VERBOSITY = 1
+const MAXVALUE = 1000
 
-#mcts
-const N_ITERS = 2000
-const SEARCHDEPTH = 50
-const EXPLORATIONCONST = 30.0
+const POP_SIZE = 2000
+const MAXITERATIONS = 100
 
-#fitness function
-const W_ENT = 100 #entropy
+#decision tree
+const MAXDEPTH = 4
+
+#fitness
+const W_ENT = 100.0 #entropy
 const W_LEN = 0.1 #
 
-#reward function
-const MAX_NEG_REWARD = -2000.0
-const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
-const MAXCODELENGTH = 1000000 #disable for now
-
-#log
-const LOGINTERVAL = 100
-
 #vis
-const TREEVIS_INTERVAL = 500
-
+const LIMIT_MEMBERS = 30
+const HIST_NBINS = 40
+const HIST_EDGES = linspace(0.0, 200.0, HIST_NBINS + 1)
+const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect

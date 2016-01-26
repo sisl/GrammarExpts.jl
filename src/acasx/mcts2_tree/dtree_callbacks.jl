@@ -34,36 +34,39 @@
 
 using DecisionTrees
 
+include("../common/infogain.jl")
+
 function DecisionTrees.get_truth{T}(members::Vector{Int64},
                                  Dl::DFSetLabeled{T}, otherargs...) #userargs...
   return labels(Dl, members)
 end
 
-function classify(result::MCTS2ESResult, Ds::Vector{DataFrame})
-  f = to_function(result.expr)
+function classify(problem::ACASXClustering, result::MCTS2ESResult, Ds::Vector{DataFrame})
+  f = to_function(problem, result.expr)
   return map(f, Ds)
 end
 
 function DecisionTrees.get_splitter{T}(members::Vector{Int64},
-                                      Dl::DFSetLabeled{T}, mcts2_params::MCTS2ESParams, logs::TaggedDFLogger) #userargs...
+                                       Dl::DFSetLabeled{T}, problem::ACASXClustering,
+                                       mcts2_params::MCTS2ESParams, logs::TaggedDFLogger) #userargs...
   set_observers!(mcts2_params.observer, logs)
 
-  Dl_sub = Dl[members]
-  result = exprsearch(mcts2_params, Dl_sub)
+  problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
+  result = exprsearch(mcts2_params, problem)
 
   @notify_observer(mcts2_params.observer, "expression",
                    [string(result.expr),
                     pretty_string(result.tree, FMT_PRETTY),
                     pretty_string(result.tree, FMT_NATURAL, true)])
 
-  predicts = classify(result, records(Dl_sub))
+  predicts = classify(problem, result, records(Dl_sub))
   info_gain, _, _ = get_metrics(predicts, labels(Dl_sub))
 
   return info_gain > 0 ? result : nothing
 end
 
 function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},
-                                     Dl::DFSetLabeled{T}, otherargs...) #userargs...
-  return classify(result, records(Dl, members))
+                                     Dl::DFSetLabeled{T}, problem::ACASXClustering, otherargs...) #userargs...
+  return classify(problem, result, records(Dl, members))
 end
 

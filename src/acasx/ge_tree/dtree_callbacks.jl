@@ -34,45 +34,40 @@
 
 using DecisionTrees
 
-function define_truth{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_truth(members::Vector{Int64})
-      return $(Dl).labels[members]
-    end
-  end
-  eval(ex)
+include("../common/infogain.jl")
+
+function DecisionTrees.get_truth{T}(members::Vector{Int64},
+                                 Dl::DFSetLabeled{T}, otherargs...) #userargs...
+  return labels(Dl, members)
 end
 
-function classify(result::GEESResult, Ds::Vector{DataFrame})
-  f = to_function(result.expr)
+function classify(problem::ACASXClustering, result::GEESResult, Ds::Vector{DataFrame})
+  f = to_function(problem, result.expr)
   return map(f, Ds)
 end
 
-function define_splitter{T}(Dl::DFSetLabeled{T}, ge_params::GEESParams, logs::TaggedDFLogger)
-  ex = quote
-    function DecisionTrees.get_splitter(members::Vector{Int64})
-      set_observers!($(ge_params).observer, $logs)
-      Dl_sub = $(Dl)[members]
+function DecisionTrees.get_splitter{T}(members::Vector{Int64},
+                                       Dl::DFSetLabeled{T}, problem::ACASXClustering,
+                                       ge_params::GEESParams, logs::TaggedDFLogger) #userargs...
+  set_observers!(ge_params.observer, logs)
 
-      define_fitness(Dl_sub)
+  problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
+  result = exprsearch(ge_params, problem)
 
-      result = exprsearch($ge_params)
+  @notify_observer(ge_params.observer, "expression",
+                   [string(result.expr),
+                    "none", "none"]) #FIXME...
+                    #pretty_string(result.tree, FMT_PRETTY),
+                    #pretty_string(result.tree, FMT_NATURAL, true)])
 
-      predicts = classify(result, Dl_sub.records)
-      info_gain, _, _ = get_metrics(predicts, Dl_sub.labels)
+  predicts = classify(problem, result, records(Dl_sub))
+  info_gain, _, _ = get_metrics(predicts, labels(Dl_sub))
 
-      return info_gain > 0 ? result : nothing
-    end
-  end
-  eval(ex)
+  return info_gain > 0 ? result : nothing
 end
 
-function define_labels{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function DecisionTrees.get_labels(result::SearchResult, members::Vector{Int64})
-      return classify(result, $(Dl).records[members])
-    end
-  end
-  eval(ex)
+function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},
+                                     Dl::DFSetLabeled{T}, problem::ACASXClustering, otherargs...) #userargs...
+  return classify(problem, result, records(Dl, members))
 end
 

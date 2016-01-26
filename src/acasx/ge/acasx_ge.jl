@@ -50,15 +50,20 @@ end
 if !haskey(CONFIG, :data)
   CONFIG[:data] = :dasc
 end
+if !haskey(CONFIG, :vis)
+  CONFIG[:vis] = true
+end
 
-println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data])")
+println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis])")
 
-include("../grammar/grammar_typed/GrammarDef.jl") #grammar
+include("../common/ACASXProblem.jl")
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
 elseif CONFIG[:config] == :normal
   include("config.jl")
+elseif CONFIG[:config] == :highest
+  include("highest_config.jl")
 else
   error("config not valid ($config)")
 end
@@ -71,25 +76,21 @@ else
   error("data not valid ($data)")
 end
 
-include("../common/labeleddata.jl")
+include("../../logs/ge_logs.jl")
+include("../common/format.jl")
 
-import ExprSearch.GE.get_fitness
-include("../common/fitness.jl")
-include("logs.jl")
+if CONFIG[:vis]
+  include("../common/derivtreevis.jl") #derivation tree
+end
 
-using .GrammarDef
-
-
-#Callbacks
-#################
-GE.stop(iter::Int64, fitness::Float64) = false
+using .ACASXProblem
 
 #nmacs vs nonnmacs
 function acasx_ge(outdir::AbstractString="./"; seed=1,
-                  runtype::AbstractString="nmacs_vs_nonnmacs",
+                  runtype::Symbol=:nmacs_vs_nonnmacs,
                   clusterdataname::AbstractString="",
                   logfileroot::AbstractString="acasx_ge_log",
-                  data::DFSet=DATASET,
+                  data::DFSet=DATASET, #preload to avoid reloading for each run
                   data_meta::DataFrame=DATASET_META,
                   genome_size::Int64=GENOME_SIZE,
                   pop_size::Int64=POP_SIZE,
@@ -98,42 +99,24 @@ function acasx_ge(outdir::AbstractString="./"; seed=1,
                   prob_mutation::Float64=PROB_MUTATION,
                   mutation_rate::Float64=MUTATION_RATE,
                   default_code::Expr=DEFAULTCODE,
-                  maxiterations::Int64=MAXITERATIONS)
+                  maxiterations::Int64=MAXITERATIONS,
+                  w_ent::Float64=W_ENT,
+                  w_len::Float64=W_LEN)
   srand(seed)
 
-  Dl = if runtype == "nmacs_vs_nonnmacs"
-    nmacs_vs_nonnmacs(data, data_meta)
-  elseif runtype == "nmac_clusters"
-    clustering = dataset(manuals, clusterdataname)
-    nmac_clusters(clustering, data)
-  elseif runtype == "nonnmacs_extra_cluster"
-    clustering = dataset(manuals, clusterdataname)
-    nonnmacs_extra_cluster(clustering, data, data_meta)
-  else
-    error("runtype not recognized ($runtype)")
-  end
-
-  grammar = create_grammar()
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta, w_ent, w_len)
 
   observer = Observer()
-  add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "best_individual", x -> begin
-                 iter, fitness, code = x
-                 code = string(code)
-                 code_short = take(code, 50) |> join
-                 println("generation: $iter, max fitness=$(signif(fitness, 4)),",
-                         "length=$(length(code)), code=$(code_short)")
-               end)
-  add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2])"))
-  logs = define_logs(observer)
+  logs = default_logs(observer)
+  default_console!(observer)
 
   ge_observer = Observer()
 
-  ge_params = GEESParams(grammar, genome_size, pop_size, maxwraps,
+  ge_params = GEESParams(genome_size, pop_size, maxwraps,
                          top_percent, prob_mutation, mutation_rate, default_code,
                          maxiterations, ge_observer, observer)
 
-  result = exprsearch(ge_params, Dl)
+  result = exprsearch(ge_params, problem)
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)

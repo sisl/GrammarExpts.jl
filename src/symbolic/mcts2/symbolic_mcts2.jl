@@ -102,15 +102,9 @@ function symbolic_mcts2{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
 
   problem = Symbolic(XRANGE, YRANGE, w_len, gt_file)
 
-
-
   observer = Observer()
   logs = default_logs(observer)
   default_console!(observer)
-  @notify_observer(observer, "parameters", ["seed", seed])
-  @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
-  @notify_observer(observer, "parameters", ["data", CONFIG[:gt]])
-  @notify_observer(observer, "parameters", ["w_len", w_len])
 
   if treevis
     view, viewstep = viewstep_f(TREEVIS_INTERVAL)
@@ -125,6 +119,11 @@ function symbolic_mcts2{T<:AbstractFloat}(outdir::AbstractString="./"; seed=1,
                              observer)
 
   result = exprsearch(mcts2_params, problem)
+
+  @notify_observer(observer, "parameters", ["seed", seed])
+  @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
+  @notify_observer(observer, "parameters", ["data", CONFIG[:gt]])
+  @notify_observer(observer, "parameters", ["w_len", w_len])
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)

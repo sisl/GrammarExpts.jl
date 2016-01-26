@@ -32,35 +32,5 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using ExprSearch.GE
-
-function define_stop()
-  tracker = Float64[]
-  ex = quote
-    function GE.stop(iter::Int64, fitness::Float64)
-      if iter == 1
-        empty!($tracker)
-      end
-      push!($tracker, fitness)
-
-      if length($tracker) < STOP_N
-        return false
-      else
-        last_N = ($tracker)[end - STOP_N + 1 : end]
-        return elements_equal(last_N)
-      end
-    end
-  end
-  eval(ex)
-end
-
-#FIXME: rewrite these sneak-in callbacks as a convenience macro
-function define_fitness{T}(Dl::DFSetLabeled{T})
-  ex = quote
-    function GE.get_fitness(code::Union{Expr,Symbol})
-      return get_fitness(code, $Dl)
-    end
-  end
-  eval(ex)
-end
-
+get_tree(result::GEESResult) = result.tree
+get_metric(result::GEESResult) = result.fitness

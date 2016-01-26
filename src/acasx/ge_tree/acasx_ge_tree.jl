@@ -51,15 +51,21 @@ end
 if !haskey(CONFIG, :data)
   CONFIG[:data] = :dasc
 end
+if !haskey(CONFIG, :vis)
+  CONFIG[:vis] = true
+end
 
-println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data])")
+println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis])")
 
-include("../grammar/grammar_typed/GrammarDef.jl") #grammar
+include("../common/ACASXProblem.jl")
+using .ACASXProblem
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
 elseif CONFIG[:config] == :normal
   include("config.jl")
+elseif CONFIG[:config] == :highest
+  include("highest_config.jl")
 else
   error("config not valid ($config)")
 end
@@ -72,77 +78,81 @@ else
   error("data not valid ($data)")
 end
 
-include("../common/labeleddata.jl")
+if CONFIG[:vis]
+  include("vishelpers.jl")
+  include("../common/decisiontreevis.jl")
+  include("logvis.jl")
+else
+  error("data not valid ($(CONFIG[:vis])")
+end
 
-import ExprSearch.GE.get_fitness
-include("fitness.jl")
-include("logs.jl")
+include("../../logs/ge_tree_logs.jl")
+include("../common/format.jl")
 
-include("ge_callbacks.jl")
 include("dtree_callbacks.jl")
 
-using .GrammarDef
+function train_dtree{T}(ge_params::GEESParams, problem::ACASXClustering, Dl::DFSetLabeled{T})
 
-function train_dtree{T}(ge_params::GEESParams, Dl::DFSetLabeled{T})
-
-  logs = define_logs()
+  logs = default_logs()
   num_data = length(Dl)
   T1 = Bool #predict_type
   T2 = Int64 #label_type
 
-  define_truth(Dl)
-  define_splitter(Dl, ge_params, logs)
-  define_labels(Dl)
-
   p = DTParams(num_data, MAXDEPTH, T1, T2)
 
-  dtree = build_tree(p)
+  dtree = build_tree(p,
+                     Dl, problem, ge_params, logs) #userargs
+
   return dtree, logs
 end
 
 #nmacs vs nonnmacs
 function acasx_ge_tree(outdir::AbstractString="./"; seed=1,
-                  runtype::AbstractString="nmacs_vs_nonnmacs",
-                  clusterdataname::AbstractString="",
-                  logfileroot::AbstractString="acasx_ge_log",
-                  data::DFSet=DATASET,
-                  data_meta::DataFrame=DATASET_META,
-                  genome_size::Int64=GENOME_SIZE,
-                  pop_size::Int64=POP_SIZE,
-                  maxwraps::Int64=MAXWRAPS,
-                  top_percent::Float64=TOP_PERCENT,
-                  prob_mutation::Float64=PROB_MUTATION,
-                  mutation_rate::Float64=MUTATION_RATE,
-                  default_code::Expr=DEFAULTCODE,
-                  maxiterations::Int64=MAXITERATIONS)
+                       runtype::Symbol=:nmacs_vs_nonnmacs,
+                       clusterdataname::AbstractString="",
+                       logfileroot::AbstractString="acasx_ge_log",
+                       data::DFSet=DATASET,
+                       data_meta::DataFrame=DATASET_META,
+                       genome_size::Int64=GENOME_SIZE,
+                       pop_size::Int64=POP_SIZE,
+                       maxwraps::Int64=MAXWRAPS,
+                       top_percent::Float64=TOP_PERCENT,
+                       prob_mutation::Float64=PROB_MUTATION,
+                       mutation_rate::Float64=MUTATION_RATE,
+                       default_code::Expr=DEFAULTCODE,
+                       maxiterations::Int64=MAXITERATIONS,
+                       vis::Bool=CONFIG[:vis],
+                       w_ent::Float64=W_ENT,
+                       w_len::Float64=W_LEN)
   srand(seed)
 
-  Dl = if runtype == "nmacs_vs_nonnmacs"
-    nmacs_vs_nonnmacs(data, data_meta)
-  elseif runtype == "nmac_clusters"
-    clustering = dataset(manuals, clusterdataname)
-    nmac_clusters(clustering, data)
-  elseif runtype == "nonnmacs_extra_cluster"
-    clustering = dataset(manuals, clusterdataname)
-    nonnmacs_extra_cluster(clustering, data, data_meta)
-  else
-    error("runtype not recognized ($runtype)")
-  end
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta, w_ent, w_len)
 
-  grammar = create_grammar()
-  define_stop() #stopping criterion
-
-  logs = define_logs()
-  ge_params = GEESParams(grammar, genome_size, pop_size, maxwraps,
+  ge_params = GEESParams(genome_size, pop_size, maxwraps,
                          top_percent, prob_mutation, mutation_rate, default_code,
                          maxiterations, Observer(), Observer())
 
-  dtree, logs = train_dtree(ge_params, Dl)
+  Dl = problem.Dl
+  dtree, logs = train_dtree(ge_params, problem, Dl)
+
+  #add to log
+  push!(logs, "parameters", ["seed", seed, 0])
+  push!(logs, "parameters", ["runtype", runtype, 0])
+  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
+  push!(logs, "parameters", ["config", CONFIG[:config], 0])
+  push!(logs, "parameters", ["data", CONFIG[:data], 0])
+  push!(logs, "parameters", ["treevis", CONFIG[:vis], 0])
 
   outfile = joinpath(outdir, "$(logfileroot).json")
   Obj2Dict.save_obj(outfile, dtree)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
+
+  #visualize
+  if vis
+    decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"))
+    logvis(logs, joinpath(outdir, "$(logfileroot)_logs"))
+  end
 
   return dtree, logs
 end

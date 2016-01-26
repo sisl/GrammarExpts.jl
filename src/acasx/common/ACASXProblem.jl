@@ -32,23 +32,49 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarDef
+module ACASXProblem
 
-export create_grammar, to_function
+export ACASXClustering, create_grammar, get_fitness, to_function
 
-using DataFrames
-using GrammaticalEvolution
+using DataFrameSets
+using ExprSearch
+import ExprSearch: ExprProblem, create_grammar, get_fitness
+
+include("../common/labeleddata.jl")
 
 typealias RealVec Union{DataArray{Float64,1}, Vector{Float64}}
 
-function create_grammar()
+type ACASXClustering{T} <: ExprProblem
+  Dl::DFSetLabeled{T}
+  w_ent::Float64
+  w_len::Float64
+end
+
+function ACASXClustering(runtype::Symbol, data::DFSet,
+                         clusterdataname::AbstractString, data_meta::DataFrame,
+                         w_ent::Float64, w_len::Float64)
+  Dl = if runtype == :nmacs_vs_nonnmacs
+    nmacs_vs_nonnmacs(data, data_meta)
+  elseif runtype == :nmac_clusters
+    clustering = dataset(manuals, clusterdataname)
+    nmac_clusters(clustering, data)
+  elseif runtype == :nonnmacs_extra_cluster
+    clustering = dataset(manuals, clusterdataname)
+    nonnmacs_extra_cluster(clustering, data, data_meta)
+  else
+    error("runtype not recognized ($runtype)")
+  end
+
+  return ACASXClustering(Dl, w_ent, w_len)
+end
+
+include("infogain.jl")
+
+function ExprSearch.create_grammar(problem::ACASXClustering)
   @grammar grammar begin
     start = bin
 
-    bin = always | eventually #| top_not | top_and | top_or
-    #top_and = Expr(:&&, bin, bin)
-    #top_or = Expr(:||, bin, bin)
-    #top_not = Expr(:call, :!, bin)
+    bin = always | eventually
     always = Expr(:call, :G, bin_vec) #global
     eventually = Expr(:call, :F, bin_vec) #future
 
@@ -236,9 +262,20 @@ ctgt = count_gt
 ctge = count_gte
 cteq = count_eq
 
-function to_function(code::Union{Symbol, Expr})
-  @eval f(D) = $code
+function to_function(problem::ACASXClustering, expr)
+  @eval f(D) = $expr
   return f
+end
+
+function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
+  Dl = problem.Dl
+
+  codelen = length(string(expr))
+
+  f = to_function(problem, expr)
+  predicts = map(f, Dl.records)
+  _, _, ent_post = get_metrics(predicts, Dl.labels)
+  return problem.w_ent * ent_post + problem.w_len * codelen
 end
 
 end #module

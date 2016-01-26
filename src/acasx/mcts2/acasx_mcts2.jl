@@ -59,16 +59,12 @@ end
 
 println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis]), treevis=$(CONFIG[:mctstreevis])")
 
-include("../grammar/grammar_typed/GrammarDef.jl") #grammar
+include("../common/ACASXProblem.jl")
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
-elseif CONFIG[:config] == :lower
-  include("lower_config.jl")
 elseif CONFIG[:config] == :normal
   include("config.jl")
-elseif CONFIG[:config] == :higher
-  include("higher_config.jl")
 elseif CONFIG[:config] == :highest
   include("highest_config.jl")
 else
@@ -83,10 +79,6 @@ else
   error("data not valid ($data)")
 end
 
-include("../common/ACASXProblem.jl")
-
-include("../common/labeleddata.jl")
-include("reward.jl")
 include("../../logs/mcts2_logs.jl")
 include("../common/format.jl")
 
@@ -100,7 +92,7 @@ end
 using .ACASXProblem
 
 function acasx_mcts2(outdir::AbstractString="./"; seed=1,
-                     runtype::AbstractString="nmacs_vs_nonnmacs",
+                     runtype::Symbol=:nmacs_vs_nonnmacs,
                      clusterdataname::AbstractString="",
                      logfileroot::AbstractString="acasx_mcts2_log",
                      data::DFSet=DATASET,
@@ -110,35 +102,19 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                      exploration_const::Float64=EXPLORATIONCONST,
                      q0::Float64=MAX_NEG_REWARD,
                      vis::Bool=CONFIG[:vis],
-                     mctstreevis::Bool=CONFIG[:mctstreevis])
+                     mctstreevis::Bool=CONFIG[:mctstreevis],
+                     maxsteps::Int64=MAXSTEPS,
+                     max_neg_reward::Float64=MAX_NEG_REWARD,
+                     step_reward::Float64=STEP_REWARD,
+                     w_ent::Float64=W_ENT,
+                     w_len::Float64=W_LEN)
   srand(seed)
 
-  Dl = if runtype == "nmacs_vs_nonnmacs"
-    nmacs_vs_nonnmacs(data, data_meta)
-  elseif runtype == "nmac_clusters"
-    clustering = dataset(manuals, clusterdataname)
-    nmac_clusters(clustering, data)
-  elseif runtype == "nonnmacs_extra_cluster"
-    clustering = dataset(manuals, clusterdataname)
-    nonnmacs_extra_cluster(clustering, data, data_meta)
-  else
-    error("runtype not recognized ($runtype)")
-  end
-
-  problem = ACASXClustering(Dl)
-
-  tree_params = DerivTreeParams(grammar, MAXSTEPS)
-  mdp_params = DerivTreeMDPParams(grammar)
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta, w_ent, w_len)
 
   observer = Observer()
   logs = default_logs(observer)
-  @notify_observer(observer, "parameters", ["seed", seed])
-  @notify_observer(observer, "parameters", ["runtype", runtype])
-  @notify_observer(observer, "parameters", ["clusterdataname", clusterdataname])
-  @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
-  @notify_observer(observer, "parameters", ["data", CONFIG[:data]])
-  @notify_observer(observer, "parameters", ["vis", vis])
-  @notify_observer(observer, "parameters", ["mctstreevis", mctstreevis])
+  default_console!(observer)
 
   mcts2_observer = Observer()
 
@@ -147,12 +123,19 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
     add_observer(observer, "mcts_tree", viewstep)
   end
 
-  mcts2_params = MCTS2ESParams(tree_params, mdp_params, n_iters, searchdepth,
+  mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
                              exploration_const, q0, mcts2_observer,
                              observer)
 
-  result = exprsearch(mcts2_params)
+  result = exprsearch(mcts2_params, problem)
 
+  @notify_observer(observer, "parameters", ["seed", seed])
+  @notify_observer(observer, "parameters", ["runtype", runtype])
+  @notify_observer(observer, "parameters", ["clusterdataname", clusterdataname])
+  @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
+  @notify_observer(observer, "parameters", ["data", CONFIG[:data]])
+  @notify_observer(observer, "parameters", ["vis", vis])
+  @notify_observer(observer, "parameters", ["mctstreevis", mctstreevis])
   @notify_observer(observer, "expression", [string(result.expr),
                                              pretty_string(result.tree, FMT_PRETTY),
                                              pretty_string(result.tree, FMT_NATURAL, true)])

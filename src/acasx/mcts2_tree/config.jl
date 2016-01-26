@@ -33,25 +33,24 @@
 # *****************************************************************************
 
 #mdp
-const MAXSTEPS = 50
+const MAXSTEPS = 25
 const DISCOUNT = 1.0
 
 #mcts
 const N_ITERS = 5000
-const SEARCHDEPTH = 50
-const EXPLORATIONCONST = 30.0
+const SEARCHDEPTH = 25
+const EXPLORATIONCONST = 1500.0
 
 #fitness function
-const W_ENT = 100 #entropy
+const W_ENT = 100.0 #entropy
 const W_LEN = 0.1 #
 
 #decision tree
 const MAXDEPTH = 4
 
 #reward function
-const MAX_NEG_REWARD = -2000.0
+const MAX_NEG_REWARD = -1000.0
 const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
-const MAXCODELENGTH = 1000000 #disable for now
 
 #log
 const LOGINTERVAL = 100

@@ -49,7 +49,8 @@ function default_logs()
               ["iter", "iteration_time_s", "decision_id"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
   add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64], ["fitness", "expr", "decision_id"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals", "decision_id"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, Int64], ["iter", "fitness", "expr", "decision_id"])
 
   return logs
 end
@@ -109,6 +110,10 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger)
   add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
   add_observer(observer, "parameters", append_push!_f(logs, "parameters", decision_id))
   add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
+  add_observer(observer, "current_best", x -> begin
+                 iter, fitness, expr = x
+                 push!(logs, "current_best", [iter, fitness, string(expr), decision_id])
+               end)
   ##############
 
   return logs

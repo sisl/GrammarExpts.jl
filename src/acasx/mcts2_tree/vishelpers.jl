@@ -35,4 +35,3 @@
 
 get_tree(result::MCTS2ESResult) = result.tree
 get_metric(result::MCTS2ESResult) = -result.reward
-
