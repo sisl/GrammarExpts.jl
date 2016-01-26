@@ -33,7 +33,7 @@
 # *****************************************************************************
 
 #grammatical evolution
-const GENOME_SIZE = 25
+const GENOME_SIZE = 20
 const MAXWRAPS = 0
 const DEFAULTCODE = :(eval(false))
 const TOP_PERCENT = 0.5
@@ -47,10 +47,6 @@ const MAXITERATIONS = 100
 
 #decision tree
 const MAXDEPTH = 4
-
-#fitness
-const W_ENT = 100.0 #entropy
-const W_LEN = 0.1 #
 
 #vis
 const LIMIT_MEMBERS = 30

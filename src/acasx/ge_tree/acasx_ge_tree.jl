@@ -121,12 +121,10 @@ function acasx_ge_tree(outdir::AbstractString="./"; seed=1,
                        mutation_rate::Float64=MUTATION_RATE,
                        default_code::Expr=DEFAULTCODE,
                        maxiterations::Int64=MAXITERATIONS,
-                       vis::Bool=CONFIG[:vis],
-                       w_ent::Float64=W_ENT,
-                       w_len::Float64=W_LEN)
+                       vis::Bool=CONFIG[:vis])
   srand(seed)
 
-  problem = ACASXClustering(runtype, data, clusterdataname, data_meta, w_ent, w_len)
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
 
   ge_params = GEESParams(genome_size, pop_size, maxwraps,
                          top_percent, prob_mutation, mutation_rate, default_code,

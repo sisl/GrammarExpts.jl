@@ -60,7 +60,7 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger)
   ####################
   #print out observers
   add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "best_individual", x -> begin
+  add_observer(observer, "current_best", x -> begin
                  iter, fitness, code = x
                  code = string(code)
                  code_short = take(code, 50) |> join

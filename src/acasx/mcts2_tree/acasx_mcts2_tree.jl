@@ -119,12 +119,10 @@ function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
                           vis::Bool=CONFIG[:vis],
                           maxsteps::Int64=MAXSTEPS,
                           max_neg_reward::Float64=MAX_NEG_REWARD,
-                          step_reward::Float64=STEP_REWARD,
-                          w_ent::Float64=W_ENT,
-                          w_len::Float64=W_LEN)
+                          step_reward::Float64=STEP_REWARD)
   srand(seed)
 
-  problem = ACASXClustering(runtype, data, clusterdataname, data_meta, w_ent, w_len)
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
 
   mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
                              exploration_const, q0, Observer(), Observer())

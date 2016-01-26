@@ -38,15 +38,10 @@ const DISCOUNT = 1.0
 
 #mcts
 const N_ITERS = 2000
-const SEARCHDEPTH = 40
-const EXPLORATIONCONST = 30.0
-const SAFETYLIMIT = 30 #max steps to terminal
-
-#fitness function
-const W_ENT = 100 #entropy
-const W_LEN = 0.1 #
+const SEARCHDEPTH = 20
+const EXPLORATIONCONST = 1500.0
+const SAFETYLIMIT = 20 #max steps to terminal
 
 #reward function
-const MAX_NEG_REWARD = -2000.0
+const MAX_NEG_REWARD = -1000.0
 const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
-const MAXCODELENGTH = 1000000 #disable for now

@@ -81,6 +81,7 @@ function get_map(num_aircraft::Int64 = 2)
   end
   D["converging"] = "aircraft are converging"
   D["abs_alt_diff"] = "absolute altitude difference"
+  D["horizontal_range"] = "horizontal range"
   return D
 end
 
@@ -164,6 +165,61 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["alt_lte.2"] = bin_infix_lte
   fmt["abs_altdiff_lte"] = bin_infix_lte
 
+  abs_bin_infix_op(cmd, args, op) = "(abs($(args[1])) $op $(args[2]))"
+  abs_bin_infix_eq(cmd, args) = abs_bin_infix_op(cmd, args, ".==")
+  abs_bin_infix_lt(cmd, args) = abs_bin_infix_op(cmd, args, ".<")
+  abs_bin_infix_lte(cmd, args) = abs_bin_infix_op(cmd, args, ".<=")
+  fmt["vrate_abseq.1"] = abs_bin_infix_eq
+  fmt["vrate_abseq.2"] = abs_bin_infix_eq
+  fmt["altdiff_abseq"] = abs_bin_infix_eq
+  fmt["chi_angle_abseq.1"] = abs_bin_infix_eq
+  fmt["chi_angle_abseq.2"] = abs_bin_infix_eq
+  fmt["psi_angle_abseq"] = abs_bin_infix_eq
+  fmt["sr_abseq"] = abs_bin_infix_eq
+  fmt["tds_abseq.1"] = abs_bin_infix_eq
+  fmt["tds_abseq.2"] = abs_bin_infix_eq
+  fmt["timer_abseq.1"] = abs_bin_infix_eq
+  fmt["timer_abseq.2"] = abs_bin_infix_eq
+  fmt["psid_abseq.1"] = abs_bin_infix_eq
+  fmt["psid_abseq.2"] = abs_bin_infix_eq
+  fmt["v_abseq.1"] = abs_bin_infix_eq
+  fmt["v_abseq.2"] = abs_bin_infix_eq
+  fmt["alt_abseq.1"] = abs_bin_infix_eq
+  fmt["alt_abseq.2"] = abs_bin_infix_eq
+  fmt["vrate_abslt.1"] = abs_bin_infix_eq
+  fmt["vrate_abslt.2"] = abs_bin_infix_eq
+  fmt["altdiff_abslt"] = abs_bin_infix_eq
+  fmt["chi_angle_abslt.1"] = abs_bin_infix_lt
+  fmt["chi_angle_abslt.2"] = abs_bin_infix_lt
+  fmt["psi_angle_abslt"] = abs_bin_infix_lt
+  fmt["sr_abslt"] = abs_bin_infix_lt
+  fmt["tds_abslt.1"] = abs_bin_infix_lt
+  fmt["tds_abslt.2"] = abs_bin_infix_lt
+  fmt["timer_abslt.1"] = abs_bin_infix_lt
+  fmt["psid_abslt.1"] = abs_bin_infix_lt
+  fmt["psid_abslt.2"] = abs_bin_infix_lt
+  fmt["v_abslt.1"] = abs_bin_infix_lt
+  fmt["v_abslt.2"] = abs_bin_infix_lt
+  fmt["alt_abslt.1"] = abs_bin_infix_lt
+  fmt["alt_abslt.2"] = abs_bin_infix_lt
+  fmt["vrate_abslte.1"] = abs_bin_infix_lte
+  fmt["vrate_abslte.2"] = abs_bin_infix_lte
+  fmt["altdiff_abslte"] = abs_bin_infix_lte
+  fmt["chi_angle_abslte.1"] = abs_bin_infix_lte
+  fmt["chi_angle_abslte.2"] = abs_bin_infix_lte
+  fmt["psi_angle_abslte"] = abs_bin_infix_lte
+  fmt["sr_abslte"] = abs_bin_infix_lte
+  fmt["tds_abslte.1"] = abs_bin_infix_lte
+  fmt["tds_abslte.2"] = abs_bin_infix_lte
+  fmt["timer_abslte.1"] = abs_bin_infix_lte
+  fmt["timer_abslte.2"] = abs_bin_infix_lte
+  fmt["psid_abslte.1"] = abs_bin_infix_lte
+  fmt["psid_abslte.2"] = abs_bin_infix_lte
+  fmt["v_abslte.1"] = abs_bin_infix_lte
+  fmt["v_abslte.2"] = abs_bin_infix_lte
+  fmt["alt_abslte.1"] = abs_bin_infix_lte
+  fmt["alt_abslte.2"] = abs_bin_infix_lte
+
   diff_infix_op(cmd, args, op) = "($(args[1]) - $(args[2]) $op $(args[3]))"
   diff_infix_eq(cmd, args) = diff_infix_op(cmd, args, ".==")
   diff_infix_lt(cmd, args) = diff_infix_op(cmd, args, ".<")
@@ -189,6 +245,32 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["timer_diff_lte"] = diff_infix_lte
   fmt["psid_diff_lte"] = diff_infix_lte
   fmt["v_diff_lte"] = diff_infix_lte
+
+  abs_diff_infix_op(cmd, args, op) = "(abs($(args[1]) - $(args[2])) $op $(args[3]))"
+  abs_diff_infix_eq(cmd, args) = abs_diff_infix_op(cmd, args, ".==")
+  abs_diff_infix_lt(cmd, args) = abs_diff_infix_op(cmd, args, ".<")
+  abs_diff_infix_lte(cmd, args) = abs_diff_infix_op(cmd, args, ".<=")
+  fmt["vrate_absdiff_eq"] = abs_diff_infix_eq
+  fmt["chi_angle_absdiff_eq"] = abs_diff_infix_eq
+  fmt["psi_angle_absdiff_eq"] = abs_diff_infix_eq
+  fmt["tds_absdiff_eq"] = abs_diff_infix_eq
+  fmt["timer_absdiff_eq"] = abs_diff_infix_eq
+  fmt["psid_absdiff_eq"] = abs_diff_infix_eq
+  fmt["v_absdiff_eq"] = abs_diff_infix_eq
+  fmt["vrate_absdiff_lt"] = abs_diff_infix_lt
+  fmt["chi_angle_absdiff_lt"] = abs_diff_infix_lt
+  fmt["psi_angle_absdiff_lt"] = abs_diff_infix_lt
+  fmt["tds_absdiff_lt"] = abs_diff_infix_lt
+  fmt["timer_absdiff_lt"] = abs_diff_infix_lt
+  fmt["psid_absdiff_lt"] = abs_diff_infix_lt
+  fmt["v_absdiff_lt"] = abs_diff_infix_lt
+  fmt["vrate_absdiff_lte"] = abs_diff_infix_lte
+  fmt["chi_angle_absdiff_lte"] = abs_diff_infix_lte
+  fmt["psi_angle_absdiff_lte"] = abs_diff_infix_lte
+  fmt["tds_absdiff_lte"] = abs_diff_infix_lte
+  fmt["timer_absdiff_lte"] = abs_diff_infix_lte
+  fmt["psid_absdiff_lte"] = abs_diff_infix_lte
+  fmt["v_absdiff_lte"] = abs_diff_infix_lte
 
   feat(cmd, args) = "$(colnames[parse(Int, args[1])])"
   fmt["bin_feat"] = feat
@@ -303,6 +385,61 @@ function get_format_natural{T<:AbstractString}(colnames::Vector{T})
   fmt["alt_lte.2"] = bin_infix_lte
   fmt["abs_altdiff_lte"] = bin_infix_lte
 
+  abs_bin_infix_op(cmd, args, op) = "[the absolute value of $(args[1]) $op $(args[2]))]"
+  abs_bin_infix_eq(cmd, args) = abs_bin_infix_op(cmd, args, "equals")
+  abs_bin_infix_lt(cmd, args) = abs_bin_infix_op(cmd, args, "is less than")
+  abs_bin_infix_lte(cmd, args) = abs_bin_infix_op(cmd, args, "is less than or equal to")
+  fmt["vrate_abseq.1"] = abs_bin_infix_eq
+  fmt["vrate_abseq.2"] = abs_bin_infix_eq
+  fmt["altdiff_abseq"] = abs_bin_infix_eq
+  fmt["chi_angle_abseq.1"] = abs_bin_infix_eq
+  fmt["chi_angle_abseq.2"] = abs_bin_infix_eq
+  fmt["psi_angle_abseq"] = abs_bin_infix_eq
+  fmt["sr_abseq"] = abs_bin_infix_eq
+  fmt["tds_abseq.1"] = abs_bin_infix_eq
+  fmt["tds_abseq.2"] = abs_bin_infix_eq
+  fmt["timer_abseq.1"] = abs_bin_infix_eq
+  fmt["timer_abseq.2"] = abs_bin_infix_eq
+  fmt["psid_abseq.1"] = abs_bin_infix_eq
+  fmt["psid_abseq.2"] = abs_bin_infix_eq
+  fmt["v_abseq.1"] = abs_bin_infix_eq
+  fmt["v_abseq.2"] = abs_bin_infix_eq
+  fmt["alt_abseq.1"] = abs_bin_infix_eq
+  fmt["alt_abseq.2"] = abs_bin_infix_eq
+  fmt["vrate_abslt.1"] = abs_bin_infix_eq
+  fmt["vrate_abslt.2"] = abs_bin_infix_eq
+  fmt["altdiff_abslt"] = abs_bin_infix_eq
+  fmt["chi_angle_abslt.1"] = abs_bin_infix_lt
+  fmt["chi_angle_abslt.2"] = abs_bin_infix_lt
+  fmt["psi_angle_abslt"] = abs_bin_infix_lt
+  fmt["sr_abslt"] = abs_bin_infix_lt
+  fmt["tds_abslt.1"] = abs_bin_infix_lt
+  fmt["tds_abslt.2"] = abs_bin_infix_lt
+  fmt["timer_abslt.1"] = abs_bin_infix_lt
+  fmt["psid_abslt.1"] = abs_bin_infix_lt
+  fmt["psid_abslt.2"] = abs_bin_infix_lt
+  fmt["v_abslt.1"] = abs_bin_infix_lt
+  fmt["v_abslt.2"] = abs_bin_infix_lt
+  fmt["alt_abslt.1"] = abs_bin_infix_lt
+  fmt["alt_abslt.2"] = abs_bin_infix_lt
+  fmt["vrate_abslte.1"] = abs_bin_infix_lte
+  fmt["vrate_abslte.2"] = abs_bin_infix_lte
+  fmt["altdiff_abslte"] = abs_bin_infix_lte
+  fmt["chi_angle_abslte.1"] = abs_bin_infix_lte
+  fmt["chi_angle_abslte.2"] = abs_bin_infix_lte
+  fmt["psi_angle_abslte"] = abs_bin_infix_lte
+  fmt["sr_abslte"] = abs_bin_infix_lte
+  fmt["tds_abslte.1"] = abs_bin_infix_lte
+  fmt["tds_abslte.2"] = abs_bin_infix_lte
+  fmt["timer_abslte.1"] = abs_bin_infix_lte
+  fmt["timer_abslte.2"] = abs_bin_infix_lte
+  fmt["psid_abslte.1"] = abs_bin_infix_lte
+  fmt["psid_abslte.2"] = abs_bin_infix_lte
+  fmt["v_abslte.1"] = abs_bin_infix_lte
+  fmt["v_abslte.2"] = abs_bin_infix_lte
+  fmt["alt_abslte.1"] = abs_bin_infix_lte
+  fmt["alt_abslte.2"] = abs_bin_infix_lte
+
   diff_infix_op(cmd, args, op) = "[the difference between $(args[1]) and $(args[2]) $op $(args[3])]"
   diff_infix_eq(cmd, args) = diff_infix_op(cmd, args, "equals")
   diff_infix_lt(cmd, args) = diff_infix_op(cmd, args, "is less than")
@@ -328,6 +465,32 @@ function get_format_natural{T<:AbstractString}(colnames::Vector{T})
   fmt["timer_diff_lte"] = diff_infix_lte
   fmt["psid_diff_lte"] = diff_infix_lte
   fmt["v_diff_lte"] = diff_infix_lte
+
+  abs_diff_infix_op(cmd, args, op) = "[the absolute difference between $(args[1]) and $(args[2]) $op $(args[3])]"
+  abs_diff_infix_eq(cmd, args) = abs_diff_infix_op(cmd, args, "equals")
+  abs_diff_infix_lt(cmd, args) = abs_diff_infix_op(cmd, args, "is less than")
+  abs_diff_infix_lte(cmd, args) = abs_diff_infix_op(cmd, args, "is less than or equal to")
+  fmt["vrate_absdiff_eq"] = abs_diff_infix_eq
+  fmt["chi_angle_absdiff_eq"] = abs_diff_infix_eq
+  fmt["psi_angle_absdiff_eq"] = abs_diff_infix_eq
+  fmt["tds_absdiff_eq"] = abs_diff_infix_eq
+  fmt["timer_absdiff_eq"] = abs_diff_infix_eq
+  fmt["psid_absdiff_eq"] = abs_diff_infix_eq
+  fmt["v_absdiff_eq"] = abs_diff_infix_eq
+  fmt["vrate_absdiff_lt"] = abs_diff_infix_lt
+  fmt["chi_angle_absdiff_lt"] = abs_diff_infix_lt
+  fmt["psi_angle_absdiff_lt"] = abs_diff_infix_lt
+  fmt["tds_absdiff_lt"] = abs_diff_infix_lt
+  fmt["timer_absdiff_lt"] = abs_diff_infix_lt
+  fmt["psid_absdiff_lt"] = abs_diff_infix_lt
+  fmt["v_absdiff_lt"] = abs_diff_infix_lt
+  fmt["vrate_absdiff_lte"] = abs_diff_infix_lte
+  fmt["chi_angle_absdiff_lte"] = abs_diff_infix_lte
+  fmt["psi_angle_absdiff_lte"] = abs_diff_infix_lte
+  fmt["tds_absdiff_lte"] = abs_diff_infix_lte
+  fmt["timer_absdiff_lte"] = abs_diff_infix_lte
+  fmt["psid_absdiff_lte"] = abs_diff_infix_lte
+  fmt["v_absdiff_lte"] = abs_diff_infix_lte
 
   feat(cmd, args) = "[$(colnames[parse(Int, args[1])])]"
   fmt["bin_feat"] = feat

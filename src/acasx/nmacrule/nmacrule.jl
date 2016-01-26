@@ -32,21 +32,49 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#mdp
-const MAXSTEPS = 20
-const DISCOUNT = 1.0
+include("../common/ACASXProblem.jl")
+using .ACASXProblem
 
-#mcts
-const N_ITERS = 200
-const SEARCHDEPTH = 20
-const EXPLORATIONCONST = 1500.0
+using ExprSearch
+using DerivationTrees
 
-#reward function
-const MAX_NEG_REWARD = -1000.0
-const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
+const CONF_DATA = :libcas098_small
+const NMAC_SEQUENCE = Int64[2, 2, 7, 11, 7, 7, 5, 3, 10]
+#results in :(F((D[:,76] .< 100) & (D[:,77] .< 500))) which is 38 chars
 
-#log
-const LOGINTERVAL = 100
+include("config.jl")
 
-#vis
-const TREEVIS_INTERVAL = Int(N_ITERS / 5)
+if CONF_DATA == :dasc
+  include("../common/data_dasc.jl")
+elseif CONF_DATA == :libcas098_small
+  include("../common/data_libcas098_small.jl")
+end
+
+function setup(; runtype::Symbol=:nmacs_vs_nonnmacs,
+               clusterdataname::AbstractString="",
+               data::DFSet=DATASET,
+               data_meta::DataFrame=DATASET_META,
+               maxsteps::Int64=MAXSTEPS)
+
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
+
+  grammar = create_grammar(problem)
+  tree_params = DerivTreeParams(grammar, maxsteps)
+  tree = DerivationTree(tree_params)
+
+  return problem, tree
+end
+
+function playsequence(problem::ExprProblem, tree::DerivationTree,
+                      sequence::Vector{Int64}=NMAC_SEQUENCE)
+  play!(tree, sequence)
+  expr = get_expr(tree)
+  fitness = get_fitness(problem, expr)
+
+  return tree, fitness, expr
+end
+
+function nmacrule()
+  problem, tree = setup()
+  return tree, fitness, expr = playsequence(problem, tree)
+end

@@ -32,6 +32,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-include("../common/reward.jl")
+#mdp
+const MAXSTEPS = 25
+const DISCOUNT = 1.0
 
-MCTS.get_reward{T}(tree::DerivationTree, Dl::DFSetLabeled{T}) = get_reward(tree, Dl)
+#mcts
+const N_ITERS = 10000
+const SEARCHDEPTH = 25
+const EXPLORATIONCONST = 1500.0
+
+#reward function
+const MAX_NEG_REWARD = -1000.0
+const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
+
+#log
+const LOGINTERVAL = 100
+
+#vis
+const TREEVIS_INTERVAL = Int(N_ITERS / 5)

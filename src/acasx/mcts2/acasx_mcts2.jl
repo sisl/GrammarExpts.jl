@@ -60,6 +60,7 @@ end
 println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis]), treevis=$(CONFIG[:mctstreevis])")
 
 include("../common/ACASXProblem.jl")
+using .ACASXProblem
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
@@ -89,8 +90,6 @@ if CONFIG[:vis]
   include("../common/derivtreevis.jl") #derivation tree
 end
 
-using .ACASXProblem
-
 function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                      runtype::Symbol=:nmacs_vs_nonnmacs,
                      clusterdataname::AbstractString="",
@@ -105,12 +104,10 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                      mctstreevis::Bool=CONFIG[:mctstreevis],
                      maxsteps::Int64=MAXSTEPS,
                      max_neg_reward::Float64=MAX_NEG_REWARD,
-                     step_reward::Float64=STEP_REWARD,
-                     w_ent::Float64=W_ENT,
-                     w_len::Float64=W_LEN)
+                     step_reward::Float64=STEP_REWARD)
   srand(seed)
 
-  problem = ACASXClustering(runtype, data, clusterdataname, data_meta, w_ent, w_len)
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
 
   observer = Observer()
   logs = default_logs(observer)
