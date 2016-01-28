@@ -32,84 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+#tree
+const MAXSTEPS = 25
 
-export load_expt
+#SA
+const T_INIT = 50.0
+const ALPHA = 0.8
+const N_EPOCHS = 100
 
-using Reexport
-
-global CONFIG
-const EXPTDIR = dirname(@__FILE__)
-
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-#pass keyword arguments as config into the loaded module
-function load_expt(s::Symbol; kwargs...)
-  global CONFIG = Dict{Symbol,Any}(kwargs)
-  load_expt(Val{s})
-end
-
-function load_expt(::Type{Val{:acasx_mcts}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts/acasx_mcts.jl"))
-  @eval @reexport using .ACASX_MCTS
-end
-
-function load_expt(::Type{Val{:acasx_mcts2}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts2/acasx_mcts2.jl"))
-  @eval @reexport using .ACASX_MCTS2
-end
-
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
-end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-function load_expt(::Type{Val{:acasx_mcts_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts_tree/acasx_mcts_tree.jl"))
-  @eval @reexport using .ACASX_MCTS_Tree
-end
-
-function load_expt(::Type{Val{:acasx_mcts2_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts2_tree/acasx_mcts2_tree.jl"))
-  @eval @reexport using .ACASX_MCTS2_Tree
-end
-
-function load_expt(::Type{Val{:symbolic_mcts}})
-  @eval include(joinpath(EXPTDIR, "symbolic/mcts/symbolic_mcts.jl"))
-  @eval @reexport using .SYMBOLIC_MCTS
-end
-
-function load_expt(::Type{Val{:symbolic_mcts2}})
-  @eval include(joinpath(EXPTDIR, "symbolic/mcts2/symbolic_mcts2.jl"))
-  @eval @reexport using .SYMBOLIC_MCTS2
-end
-
-function load_expt(::Type{Val{:symbolic_ge}})
-  @eval include(joinpath(EXPTDIR, "symbolic/ge/symbolic_ge.jl"))
-  @eval @reexport using .SYMBOLIC_GE
-end
-
-function load_expt(::Type{Val{:symbolic_sa}})
-  @eval include(joinpath(EXPTDIR, "symbolic/sa/symbolic_sa.jl"))
-  @eval @reexport using .SYMBOLIC_SA
-end
-
-function load_expt(::Type{Val{:ant_ge}})
-  @eval include(joinpath(EXPTDIR, "ant/ge/ant_ge.jl"))
-  @eval @reexport using .ANT_GE
-end
-
-function load_expt(::Type{Val{:ant_mcts}})
-  @eval include(joinpath(EXPTDIR, "ant/mcts/ant_mcts.jl"))
-  @eval @reexport using .ANT_MCTS
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module
+#log
+const LOGINTERVAL = 100
