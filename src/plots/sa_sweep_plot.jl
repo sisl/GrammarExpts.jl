@@ -32,13 +32,19 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#tree
-const MAXSTEPS = 25
+using Gadfly
+using DataFrames
+using RLESUtils.Loggers
 
-#SA
-const T_INIT = 1.48e30
-const ALPHA = 0.9928
-const N_EPOCHS = 10000
+function nevals_fitness_avg(funclogfile::AbstractString)
+  dir = dirname(funclogfile)
+  D = readtable(funclogfile)
+  D1 = D[:,[:seed, :n_evals, :best_fitness]]
+  D2 = aggregate(D1,[:n_evals], [mean, std])
 
-#log
-const LOGINTERVAL = 100
+  ymins = D2[:, :best_fitness_mean] - D2[:, :best_fitness_std] ./ sqrt(2 * (D2[:, :seed_mean] - 1))
+  ymaxs = D2[:, :best_fitness_mean] + D2[:, :best_fitness_std] ./ sqrt(2 * (D2[:, :seed_mean] - 1))
+  p = plot(D2, x="n_evals", y="best_fitness_mean", ymin=ymins, ymax=ymaxs,
+           Geom.point, Geom.line, Geom.errorbar)
+  draw(PDF(joinpath(dir, "nevals_fitness_avg.pdf"), 11inch, 8.5inch), p)
+end

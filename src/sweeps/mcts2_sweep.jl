@@ -32,13 +32,42 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#tree
-const MAXSTEPS = 25
+using RLESUtils: ParamSweeps, Observers, Loggers, StringUtils, FileUtils
+using CPUTime
 
-#SA
-const T_INIT = 1.48e30
-const ALPHA = 0.9928
-const N_EPOCHS = 10000
+mkpath(OUTDIR)
 
-#log
-const LOGINTERVAL = 100
+function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractString, observer::Observer,
+                  funclogger::DataFrameLogger)
+  f = function caller(seed::Int64, n_iters::Int64=N_ITERS, ec::Float64=EXPLORATIONCONST)
+    CPUtic()
+    #make a subdirectory for logs for this run
+    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_niters$(n_iters)_ec$(ec)")
+    mkpath(subdir)
+
+    func_observer = Observer()
+    add_observer(func_observer, "current_best", x -> begin
+                   iter, reward, state = x
+                   if rem(iter, LOGINTERVAL) == 0
+                     push!(funclogger, [seed, ec, iter, reward])
+                   end
+                 end)
+
+    result = func(subdir, seed=seed, n_iters=n_iters, exploration_const=ec, mctstreevis=MCTSTREEVIS,
+                  observer=func_observer)
+
+    @notify_observer(observer, "result", [seed, n_iters, ec, result.reward, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
+  end
+  return f
+end
+
+#observer for this study
+observer = Observer()
+logger = DataFrameLogger([Int64, Int64, Float64, Float64, ASCIIString, Int64, Int64, Float64],
+                         ["seed", "n_iters", "exploration_const", "best_reward", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
+add_observer(observer, "result", push!_f(logger))
+
+funclogger = DataFrameLogger([Int64, Float64, Int64, Float64],
+                              ["seed", "exploration_const", "iteration", "best_reward"])
+
+

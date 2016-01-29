@@ -85,20 +85,20 @@ end
 using .SymbolicProblem
 
 function symbolic_mcts2(outdir::AbstractString="./"; seed=1,
-                                          logfileroot::AbstractString="symbolic_mcts2_log",
-                                          n_iters::Int64=N_ITERS,
-                                          searchdepth::Int64=SEARCHDEPTH,
-                                          exploration_const::Float64=EXPLORATIONCONST,
-                                          q0::Float64=MAX_NEG_REWARD,
-                                          gt_file::AbstractString=GT_FILE,
-                                          maxsteps::Int64=MAXSTEPS,
-                                          max_neg_reward::Float64=MAX_NEG_REWARD,
-                                          step_reward::Float64=STEP_REWARD,
-                                          mctstreevis::Bool=CONFIG[:mctstreevis])
+                        logfileroot::AbstractString="symbolic_mcts2_log",
+                        n_iters::Int64=N_ITERS,
+                        searchdepth::Int64=SEARCHDEPTH,
+                        exploration_const::Float64=EXPLORATIONCONST,
+                        q0::Float64=MAX_NEG_REWARD,
+                        gt_file::AbstractString=GT_FILE,
+                        maxsteps::Int64=MAXSTEPS,
+                        max_neg_reward::Float64=MAX_NEG_REWARD,
+                        step_reward::Float64=STEP_REWARD,
+                        mctstreevis::Bool=CONFIG[:mctstreevis],
+                        observer::Observer=Observer())
 
   problem = Symbolic(gt_file)
 
-  observer = Observer()
   logs = default_logs(observer)
   default_console!(observer)
 

@@ -32,13 +32,39 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#tree
-const MAXSTEPS = 25
+using RLESUtils: ParamSweeps, Observers, Loggers, StringUtils, FileUtils
+using CPUTime
 
-#SA
-const T_INIT = 1.48e30
-const ALPHA = 0.9928
-const N_EPOCHS = 10000
+mkpath(OUTDIR)
 
-#log
-const LOGINTERVAL = 100
+function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractString, observer::Observer,
+                  funclogger::DataFrameLogger)
+  f = function caller(seed::Int64)
+    CPUtic()
+    #make a subdirectory for logs for this run
+    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)")
+    mkpath(subdir)
+
+    func_observer = Observer()
+    add_observer(func_observer, "current_best", x -> begin
+                   i, fitness, expr = x
+                   if rem(i, LOGINTERVAL) == 0
+                     push!(funclogger, [seed, i, fitness, string(expr)])
+                   end
+                 end)
+
+    result = func(subdir, seed=seed, observer=func_observer)
+
+    @notify_observer(observer, "result", [seed, result.fitness, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
+  end
+  return f
+end
+
+#observer for this study
+observer = Observer()
+logger = DataFrameLogger([Int64, Float64, ASCIIString, Int64, Int64, Float64],
+                         ["seed", "fitness", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
+add_observer(observer, "result", push!_f(logger))
+
+funclogger = DataFrameLogger([Int64, Int64, Float64, ASCIIString],
+                              ["seed", "n_evals", "best_fitness", "expr"])

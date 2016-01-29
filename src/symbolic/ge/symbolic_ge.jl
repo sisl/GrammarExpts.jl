@@ -95,7 +95,6 @@ function symbolic_ge(outdir::AbstractString="./"; seed=1,
   @notify_observer(observer, "parameters", ["seed", seed])
   @notify_observer(observer, "parameters", ["config", CONFIG[:config]])
   @notify_observer(observer, "parameters", ["data", CONFIG[:gt]])
-  @notify_observer(observer, "parameters", ["w_len", w_len])
 
   ge_observer = Observer()
 

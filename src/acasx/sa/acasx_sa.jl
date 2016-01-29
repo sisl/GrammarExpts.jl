@@ -32,9 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module SYMBOLIC_SA
+module ACASX_SA
 
-export symbolic_sa, symbolic_temp_params
+export acasx_sa, acasx_temp_params
 
 using ExprSearch.SA
 using Reexport
@@ -45,46 +45,58 @@ import GrammarExpts.CONFIG
 if !haskey(CONFIG, :config)
   CONFIG[:config] = :test
 end
-if !haskey(CONFIG, :gt)
-  CONFIG[:gt] = :easy
+if !haskey(CONFIG, :data)
+  CONFIG[:data] = :dasc
+end
+if !haskey(CONFIG, :vis)
+  CONFIG[:vis] = true
 end
 
-println("Configuring: config=$(CONFIG[:config]), gt=$(CONFIG[:gt])")
+println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis])")
 
-include("../common/SymbolicProblem.jl")
+include("../common/ACASXProblem.jl")
+using .ACASXProblem
 
 if CONFIG[:config] == :test
   include("test_config.jl") #for testing
 elseif CONFIG[:config] == :normal
   include("config.jl")
+elseif CONFIG[:config] == :highest
+  include("highest_config.jl")
 else
-  error("config not valid ($(CONFIG[:config]))")
+  error("config not valid ($config)")
 end
 
-const GT_FILE = if CONFIG[:gt] == :easy
-  joinpath(dirname(@__FILE__), "../common/gt_easy.jl")
-elseif CONFIG[:gt] == :hard
-  joinpath(dirname(@__FILE__), "../common/gt_hard.jl")
+if CONFIG[:data] == :dasc
+  include("../common/data_dasc.jl")
+elseif CONFIG[:data] == :libcas098_small
+  include("../common/data_libcas098_small.jl")
 else
-  error("gt not valid ($(CONFIG[:gt]))")
+  error("data not valid ($data)")
 end
 
 #include("../../logs/sa_logs.jl")
+include("../common/format.jl")
 
-using .SymbolicProblem
+if CONFIG[:vis]
+  include("../common/derivtreevis.jl") #derivation tree
+end
 
-function symbolic_sa(outdir::AbstractString="./"; seed=1,
-                     logfileroot::AbstractString="symbolic_sa_log",
-                     gt_file::AbstractString=GT_FILE,
-                     maxsteps::Int64=MAXSTEPS,
-                     T1::Float64=T_INIT,
-                     alpha::Float64=ALPHA,
-                     n_epochs::Int64=N_EPOCHS,
-                     observer::Observer=Observer())
+function acasx_sa(outdir::AbstractString="./"; seed=1,
+                  logfileroot::AbstractString="acasx_sa_log",
+                  runtype::Symbol=:nmacs_vs_nonnmacs,
+                  clusterdataname::AbstractString="",
+                  data::DFSet=DATASET,
+                  data_meta::DataFrame=DATASET_META,
+                  maxsteps::Int64=MAXSTEPS,
+                  T1::Float64=T_INIT,
+                  alpha::Float64=ALPHA,
+                  n_epochs::Int64=N_EPOCHS,
+                  observer::Observer=Observer())
 
   srand(seed)
 
-  problem = Symbolic(gt_file)
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
 
   add_observer(observer, "temperature", x -> begin
                  if rem(x[1], LOGINTERVAL) == 0
@@ -107,17 +119,20 @@ function symbolic_sa(outdir::AbstractString="./"; seed=1,
 end
 
 
-function symbolic_temp_params(P1::Float64=0.8; seed=1,
-                     gt_file::AbstractString=GT_FILE,
-                     n_epochs::Int64=N_EPOCHS,
-                     Tfinal::Float64=0.1,
-                     maxsteps::Int64=MAXSTEPS,
-                     N::Int64=500,
-                     ntrials::Int64=10)
+function acasx_temp_params(P1::Float64=0.8; seed=1,
+                              n_epochs::Int64=N_EPOCHS,
+                              Tfinal::Float64=0.1,
+                              runtype::Symbol=:nmacs_vs_nonnmacs,
+                              clusterdataname::AbstractString="",
+                              data::DFSet=DATASET,
+                              data_meta::DataFrame=DATASET_META,
+                              maxsteps::Int64=MAXSTEPS,
+                              N::Int64=1000,
+                              ntrials::Int64=10)
 
   srand(seed)
 
-  problem = Symbolic(gt_file)
+  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
   T1, alpha, n_epochs = estimate_temp_params(problem, P1, n_epochs, Tfinal, maxsteps, N, ntrials)
 
   return T1, alpha, n_epochs

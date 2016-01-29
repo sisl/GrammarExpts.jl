@@ -105,11 +105,11 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                      mctstreevis::Bool=CONFIG[:mctstreevis],
                      maxsteps::Int64=MAXSTEPS,
                      max_neg_reward::Float64=MAX_NEG_REWARD,
-                     step_reward::Float64=STEP_REWARD)
+                     step_reward::Float64=STEP_REWARD,
+                     observer::Observer=Observer())
 
   problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
 
-  observer = Observer()
   logs = default_logs(observer)
   default_console!(observer)
 

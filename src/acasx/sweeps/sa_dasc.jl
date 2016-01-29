@@ -32,13 +32,34 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#tree
-const MAXSTEPS = 25
+const EXPT = :acasx_sa
+const DATA = :dasc
+const CONFIG = :normal
+const VIS = true
+const LOGINTERVAL = 500
 
-#SA
-const T_INIT = 1.48e30
-const ALPHA = 0.9928
-const N_EPOCHS = 10000
+const OUTDIR = Pkg.dir("GrammarExpts/results/acasxsa_dasc")
+const LOGFILEROOT = "acasxsa_dasc"
 
-#log
-const LOGINTERVAL = 100
+using GrammarExpts
+load_expt(EXPT, config=CONFIG, data=DATA, vis=VIS)
+
+include("../../sweeps/sa_sweep.jl")
+
+f = caller_f(acasx_sa, OUTDIR, LOGFILEROOT, observer, funclogger)
+script = ParamSweep(f)
+
+push!(script, 1:10) #seed
+
+textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
+         outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
+
+run(script)
+
+#save logs
+save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_log"), logger)
+save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog"), funclogger)
+
+#plot
+include("../../plots/sa_sweep_plot.jl")
+nevals_fitness_avg(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog.csv.gz"))

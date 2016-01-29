@@ -32,13 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#tree
-const MAXSTEPS = 25
+files = ["ge_easy.jl", "mcts2_easy.jl", "sa_easy.jl"]
 
-#SA
-const T_INIT = 1.48e30
-const ALPHA = 0.9928
-const N_EPOCHS = 10000
+parallel_include(files)
 
-#log
-const LOGINTERVAL = 100

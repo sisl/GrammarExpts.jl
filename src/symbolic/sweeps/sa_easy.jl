@@ -32,32 +32,34 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using RLESUtils: ParamSweeps, Observers, Loggers, StringUtils, FileUtils
-using CPUTime
+const EXPT = :symbolic_sa
+const GT = :easy
+const CONFIG = :normal
+const VIS = true
+const LOGINTERVAL = 500
 
+const OUTDIR = Pkg.dir("GrammarExpts/results/symsa_easy")
+const LOGFILEROOT = "symsa_easy"
+
+using GrammarExpts
 load_expt(EXPT, config=CONFIG, gt=GT, vis=VIS)
 
-mkpath(OUTDIR)
+include("../../sweeps/sa_sweep.jl")
 
-function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
-  f = function caller(seed::Int64, genome_size::Int64, pop_size::Int64, maxiterations::Int64)
-    CPUtic()
-    #make a subdirectory for logs for this run
-    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_genomesize$(genome_size)_popsize$(pop_size)_maxiters$(maxiterations)")
-    mkpath(subdir)
+f = caller_f(symbolic_sa, OUTDIR, LOGFILEROOT, observer, funclogger)
+script = ParamSweep(f)
 
-    result = func(subdir, seed=seed, genome_size=genome_size, pop_size=pop_size, maxiterations=maxiterations)
+push!(script, 1:10) #seed
 
-    @notify_observer(observer, "result", [seed, genome_size, pop_size, maxiterations, result.fitness, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
-  end
-  return f
-end
+textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, gt=GT, config=CONFIG, vis=VIS,
+         outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
 
-#observer for this study
-observer = Observer()
-logger = DataFrameLogger([Int64, Int64, Int64, Int64, Float64, ASCIIString, Int64, Int64, Float64],
-                         ["seed", "genome_size", "pop_size", "maxiterations", "fitness", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
-add_observer(observer, "result", push!_f(logger))
+run(script)
 
+#save logs
+save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_log"), logger)
+save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog"), funclogger)
 
+#plot
+include("../../plots/sa_sweep_plot.jl")
+nevals_fitness_avg(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog.csv.gz"))

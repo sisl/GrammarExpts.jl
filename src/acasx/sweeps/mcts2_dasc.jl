@@ -37,18 +37,22 @@ const DATA = :dasc
 const CONFIG = :normal
 const VIS = true
 const MCTSTREEVIS = false
+const LOGINTERVAL = 500
 
 const OUTDIR = Pkg.dir("GrammarExpts/results/acasxmcts2_dasc")
 const LOGFILEROOT = "acasxmcts2_dasc"
 
-include("mcts2_sweep.jl")
+using GrammarExpts
+load_expt(EXPT, data=DATA, config=CONFIG, vis=VIS)
 
-f = caller_f(acasx_mcts2, OUTDIR, LOGFILEROOT, observer)
+include("../../sweeps/mcts2_sweep.jl")
+
+f = caller_f(acasx_mcts2, OUTDIR, LOGFILEROOT, observer, funclogger)
 script = ParamSweep(f)
 
-push!(script, 1:10) #seed
-push!(script, [100000]) #n_iters
-push!(script, [50.0, 500.0, 1500.0, 2000.0]) #ec
+push!(script, 1:5) #seed
+push!(script, [20000]) #n_iters
+push!(script, [500.0, 1500.0, 2000.0]) #ec
 
 textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, data=DATA, config=CONFIG, vis=VIS,
          outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
@@ -57,3 +61,9 @@ run(script)
 
 #save logs
 save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_log"), logger)
+save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog"), funclogger)
+
+#plot
+include("../../plots/mcts2_sweep_plot.jl")
+param_reward_avg(joinpath(OUTDIR, "$(LOGFILEROOT)_log.csv.gz"))
+nevals_reward_avg(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog.csv.gz"))

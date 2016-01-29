@@ -37,13 +37,17 @@ const GT = :easy
 const CONFIG = :highest
 const VIS = true
 const MCTSTREEVIS = false
+const LOGINTERVAL = 500
 
 const OUTDIR = Pkg.dir("GrammarExpts/results/symmcts2_easy")
 const LOGFILEROOT = "symmcts2_easy"
 
-include("mcts2_sweep.jl")
+using GrammarExpts
+load_expt(EXPT, config=CONFIG, gt=GT, vis=VIS)
 
-f = caller_f(symbolic_mcts2, OUTDIR, LOGFILEROOT, observer)
+include("../../sweeps/mcts2_sweep.jl")
+
+f = caller_f(symbolic_mcts2, OUTDIR, LOGFILEROOT, observer, funclogger)
 script = ParamSweep(f)
 
 push!(script, 1:10) #seed
@@ -57,3 +61,9 @@ run(script)
 
 #save logs
 save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_log"), logger)
+save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog"), funclogger)
+
+#plot
+include("../../plots/mcts2_sweep_plot.jl")
+param_reward_avg(joinpath(OUTDIR, "$(LOGFILEROOT)_log.csv.gz"))
+nevals_reward_avg(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog.csv.gz"))

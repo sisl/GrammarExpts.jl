@@ -40,15 +40,18 @@ const VIS = true
 const OUTDIR = Pkg.dir("GrammarExpts/results/symge_easy")
 const LOGFILEROOT = "symge_easy"
 
-include("ge_sweep.jl")
+using GrammarExpts
+load_expt(EXPT, config=CONFIG, gt=GT, vis=VIS)
 
-f = caller_f(symbolic_ge, OUTDIR, LOGFILEROOT, observer)
+include("../../sweeps/ge_sweep.jl")
+
+f = caller_f(symbolic_ge, OUTDIR, LOGFILEROOT, observer, funclogger)
 script = ParamSweep(f)
 
 push!(script, 1:10) #seed
 push!(script, [25]) #genome_size
 push!(script, [500, 2000]) #pop_size
-push!(script, [10, 30, 50]) #maxiterations
+push!(script, [50]) #maxiterations
 
 textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, gt=GT, config=CONFIG, vis=VIS,
          outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))
@@ -57,3 +60,9 @@ run(script)
 
 #save logs
 save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_log"), logger)
+save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog"), funclogger)
+
+#plot
+include("../../plots/ge_sweep_plot.jl")
+param_fitness_avg(joinpath(OUTDIR, "$(LOGFILEROOT)_log.csv.gz"))
+nevals_fitness_avg(joinpath(OUTDIR, "$(LOGFILEROOT)_funclog.csv.gz"))

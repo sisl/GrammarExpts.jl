@@ -32,13 +32,30 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#tree
-const MAXSTEPS = 25
+using Gadfly
+using DataFrames
+using RLESUtils.Loggers
 
-#SA
-const T_INIT = 1.48e30
-const ALPHA = 0.9928
-const N_EPOCHS = 10000
+function param_reward_avg(sweeplog::AbstractString)
+  D = readtable(sweeplog)
+  D1 = D[:,[:seed,:n_iters,:exploration_const,:best_reward]]
+  D2 = aggregate(D1,[:n_iters, :exploration_const], [mean, std])
 
-#log
-const LOGINTERVAL = 100
+  ymins = D2[:, :best_reward_mean] - D2[:, :best_reward_std] ./ sqrt(2 * (D2[:, :seed_mean] - 1))
+  ymaxs = D2[:, :best_reward_mean] + D2[:, :best_reward_std] ./ sqrt(2 * (D2[:, :seed_mean] - 1))
+  p = plot(D2, x="exploration_const", y="best_reward_mean", ymin=ymins, ymax=ymaxs,
+           Geom.point, Geom.line, Geom.errorbar)
+  draw(PDF("ec_reward_avg.pdf", 4inch, 3inch), p)
+end
+
+function nevals_reward_avg(funclogfile::AbstractString)
+  D = readtable(funclogfile)
+  D1 = D[:,[:seed, :exploration_const, :n_evals, :best_reward]]
+  D2 = aggregate(D1,[:exploration_const, :n_evals], [mean, std])
+
+  ymins = D2[:, :best_reward_mean] - D2[:, :best_reward_std] ./ sqrt(2 * (D2[:, :seed_mean] - 1))
+  ymaxs = D2[:, :best_reward_mean] + D2[:, :best_reward_std] ./ sqrt(2 * (D2[:, :seed_mean] - 1))
+  p = plot(D2, x="n_evals", y="best_reward_mean", ymin=ymins, ymax=ymaxs, color="exploration_const",
+           Geom.point, Geom.line, Geom.errorbar)
+  draw(PDF("nevals_reward_avg.pdf", 11inch, 8.5inch), p)
+end
