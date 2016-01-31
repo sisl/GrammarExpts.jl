@@ -37,8 +37,8 @@ const MAXSTEPS = 25
 
 #SA
 const T_INIT = 1.48e30
-const ALPHA = 0.9928
-const N_EPOCHS = 10000
+const ALPHA = 0.99856
+const N_EPOCHS = 50000
 
 #log
 const LOGINTERVAL = 100

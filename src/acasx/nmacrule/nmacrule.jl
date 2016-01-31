@@ -38,7 +38,7 @@ using .ACASXProblem
 using ExprSearch
 using DerivationTrees
 
-const CONF_DATA = :libcas098_small
+const CONF_DATA = :dasc
 const NMAC_SEQUENCE = Int64[2, 2, 7, 11, 7, 7, 5, 3, 10]
 #results in :(F((D[:,76] .< 100) & (D[:,77] .< 500))) which is 38 chars
 

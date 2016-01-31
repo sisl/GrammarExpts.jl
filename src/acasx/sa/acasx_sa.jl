@@ -92,6 +92,8 @@ function acasx_sa(outdir::AbstractString="./"; seed=1,
                   T1::Float64=T_INIT,
                   alpha::Float64=ALPHA,
                   n_epochs::Int64=N_EPOCHS,
+                  n_batches::Int64=N_BATCHES,
+                  n_starts::Int64=N_STARTS,
                   observer::Observer=Observer())
 
   srand(seed)
@@ -99,21 +101,23 @@ function acasx_sa(outdir::AbstractString="./"; seed=1,
   problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
 
   add_observer(observer, "temperature", x -> begin
-                 if rem(x[1], LOGINTERVAL) == 0
-                   println("i=$(x[1]), T=$(x[2])")
+                 if rem(x[2], LOGINTERVAL) == 0
+                   println("start=$(x[1]), i=$(x[2]), T=$(x[3])")
                  end
                end)
   add_observer(observer, "current_best", x -> begin
-                 if rem(x[1], LOGINTERVAL) == 0
-                   println("i=$(x[1]), fitness=$(x[2]), expr=$(x[3])")
+                 if rem(x[2], LOGINTERVAL) == 0
+                   println("start=$(x[1]), i=$(x[2]), fitness=$(x[3]), expr=$(x[4])")
                  end
                end)
   #logs = default_logs(observer)
   #default_console!(observer)
 
-  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, observer)
+  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
+  psa_params = PSAESParams(n_batches, sa_params)
 
-  result = exprsearch(sa_params, problem)
+  #result = exprsearch(sa_params, problem)
+  result = exprsearch(psa_params, problem)
 
   return result
 end
@@ -121,7 +125,7 @@ end
 
 function acasx_temp_params(P1::Float64=0.8; seed=1,
                               n_epochs::Int64=N_EPOCHS,
-                              Tfinal::Float64=0.1,
+                              Tfinal::Float64=1.0,
                               runtype::Symbol=:nmacs_vs_nonnmacs,
                               clusterdataname::AbstractString="",
                               data::DFSet=DATASET,

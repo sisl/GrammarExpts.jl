@@ -51,7 +51,7 @@ function caller_f(func::Function, outdir::AbstractString, logfileroot::AbstractS
                    push!(funclogger, [seed, pop_size, maxiterations, gen * pop_size, fitness, string(code)])
                  end)
 
-    result = func(subdir, seed=seed, genome_size=genome_size, pop_size=pop_size, maxiterations=maxiterations)
+    result = func(subdir, seed=seed, genome_size=genome_size, pop_size=pop_size, maxiterations=maxiterations, observer=func_observer)
 
     @notify_observer(observer, "result", [seed, genome_size, pop_size, maxiterations, result.fitness, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
   end
@@ -61,7 +61,7 @@ end
 #observer for this study
 observer = Observer()
 logger = DataFrameLogger([Int64, Int64, Int64, Int64, Float64, ASCIIString, Int64, Int64, Float64],
-                         ["seed", "genome_size", "pop_size", "maxiterations", "fitness", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
+                         ["seed", "genome_size", "pop_size", "maxiterations", "best_fitness", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
 add_observer(observer, "result", push!_f(logger))
 
 funclogger = DataFrameLogger([Int64, Int64, Int64, Int64, Float64, ASCIIString],

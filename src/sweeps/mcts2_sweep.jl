@@ -68,6 +68,6 @@ logger = DataFrameLogger([Int64, Int64, Float64, Float64, ASCIIString, Int64, In
 add_observer(observer, "result", push!_f(logger))
 
 funclogger = DataFrameLogger([Int64, Float64, Int64, Float64],
-                              ["seed", "exploration_const", "iteration", "best_reward"])
+                              ["seed", "exploration_const", "n_evals", "best_reward"])
 
 

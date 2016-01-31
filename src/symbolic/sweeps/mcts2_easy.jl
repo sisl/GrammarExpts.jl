@@ -52,7 +52,7 @@ script = ParamSweep(f)
 
 push!(script, 1:10) #seed
 push!(script, [100000]) #n_iters
-push!(script, [50.0, 500.0, 1500.0, 2000.0]) #ec
+push!(script, [0.0]) #[500.0, 1500.0, 2000.0]) #ec
 
 textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, gt=GT, config=CONFIG, vis=VIS,
          outdir=OUTDIR, logfileroot=LOGFILEROOT, script=dump2string(script))

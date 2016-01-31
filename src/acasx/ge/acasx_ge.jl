@@ -99,12 +99,12 @@ function acasx_ge(outdir::AbstractString="./"; seed=1,
                   prob_mutation::Float64=PROB_MUTATION,
                   mutation_rate::Float64=MUTATION_RATE,
                   default_code::Expr=DEFAULTCODE,
-                  maxiterations::Int64=MAXITERATIONS)
+                  maxiterations::Int64=MAXITERATIONS,
+                  observer::Observer=Observer())
   srand(seed)
 
   problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
 
-  observer = Observer()
   logs = default_logs(observer)
   default_console!(observer)
 

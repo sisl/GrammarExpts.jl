@@ -84,12 +84,12 @@ function symbolic_ge(outdir::AbstractString="./"; seed=1,
                      mutation_rate::Float64=MUTATION_RATE,
                      default_code=DEFAULTCODE,
                      maxiterations::Int64=MAXITERATIONS,
-                     gt_file::AbstractString=GT_FILE)
+                     gt_file::AbstractString=GT_FILE,
+                     observer::Observer=Observer())
   srand(seed)
 
   problem = Symbolic(gt_file)
 
-  observer = Observer()
   logs = default_logs(observer)
   default_console!(observer)
   @notify_observer(observer, "parameters", ["seed", seed])

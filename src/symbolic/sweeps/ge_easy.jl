@@ -48,9 +48,9 @@ include("../../sweeps/ge_sweep.jl")
 f = caller_f(symbolic_ge, OUTDIR, LOGFILEROOT, observer, funclogger)
 script = ParamSweep(f)
 
-push!(script, 1:10) #seed
+push!(script, 1:5) #seed
 push!(script, [25]) #genome_size
-push!(script, [500, 2000]) #pop_size
+push!(script, [500])#, 2000]) #pop_size
 push!(script, [50]) #maxiterations
 
 textfile(joinpath(OUTDIR, "description.txt"), expt=EXPT, gt=GT, config=CONFIG, vis=VIS,

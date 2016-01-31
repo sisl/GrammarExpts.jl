@@ -39,6 +39,8 @@ const MAXSTEPS = 20
 const T_INIT = 50.0
 const ALPHA = 0.8
 const N_EPOCHS = 100
+const N_STARTS = 1
+const N_BATCHES = 2
 
 #log
 const LOGINTERVAL = 100
