@@ -20,7 +20,7 @@
 # of this software and associated documentation files (the "Software"), to
 # deal in the Software without restriction, including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, , and to permit persons to whom the Software is
+# sell copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED
@@ -32,24 +32,16 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#mdp
-const MAXSTEPS = 20
-const DISCOUNT = 1.0
+module TestModule
 
-#mcts
-const N_ITERS = 50000
-const SEARCHDEPTH = 20
-const EXPLORATIONCONST = 2000.0
+export testfunction, showme
 
-#decision tree
-const MAXDEPTH = 4
+using GrammarExpts.configure
+import GrammarExpts.CONFIG
 
-#reward function
-const MAX_NEG_REWARD = -1000.0
-const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
+config = configure(CONFIG, a=true, b=1, c="0.88")
 
-#log
-const LOGINTERVAL = 100
+testfunction() = println("Hello World!")
+showme(s::Symbol) = println("$s=", config[s])
 
-#vis
-const LIMIT_MEMBERS = 20
+end

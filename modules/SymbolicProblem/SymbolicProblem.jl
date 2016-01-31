@@ -32,89 +32,61 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module SymbolicProblem
 
-export load_module, configure
-export load_expt #deprecated
+export Symbolic, create_grammar, get_fitness, to_function
 
-using Reexport
+using ExprSearch
+import ExprSearch: ExprProblem, create_grammar, get_fitness
 
-global CONFIG
-const EXPTDIR = dirname(@__FILE__)
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+const DIR = dirname(@__FILE__)
+const XRANGE = 0.0:0.5:10.0
+const YRANGE = 0.0:0.5:10.0
+const W_LEN = 0.1
 
-function load_module(M::ASCIIString; kwargs...)
-  global CONFIG = Dict{Symbol,Any}(kwargs)
-  eval(Main, include(joinpath(MODULEDIR, M, M) * ".jl"))
+type Symbolic{T<:AbstractFloat} <: ExprProblem
+  xrange::FloatRange{T}
+  yrange::FloatRange{T}
+  w_len::Float64
 end
 
-function configure(userconfig::Dict{Symbol,Any}; defaultconfig...)
-  config = Dict{Symbol,Any}(defaultconfig)
-  for (k, v) in userconfig
-    config[k] = v
+function Symbolic{T<:AbstractFloat}(gt_file::AbstractString, xrange::FloatRange{T}=XRANGE, yrange::FloatRange{T}=YRANGE, w_len::Float64=W_LEN)
+  if !endswith(gt_file, ".jl")
+    gt_file *= ".jl"
   end
-  return config
+
+  @eval include(joinpath($DIR, $gt_file)) #define gt in module scope
+  return Symbolic(xrange, yrange, w_len)
 end
 
-#load experiments dynamically
-#keeps the experiments separate, so that they don't clash at compile time
-#esp the overloads
-#pass keyword arguments as config into the loaded module
-function load_expt(s::Symbol; kwargs...)
-  global CONFIG = Dict{Symbol,Any}(kwargs)
-  load_expt(Val{s})
+function ExprSearch.create_grammar(problem::Symbolic)
+  @grammar grammar begin
+    start = ex
+    ex = sum | product | (ex) | value
+    sum = Expr(:call, :+, ex, ex)
+    product = Expr(:call, :*, ex, ex)
+    value = :x | :y | digit
+    digit = 0:9
+  end
+  return grammar
 end
 
-function load_expt(::Type{Val{:acasx_mcts2}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts2/acasx_mcts2.jl"))
-  @eval @reexport using .ACASX_MCTS2
+function to_function(problem::Symbolic, expr)
+  @eval f(x, y) = $expr
+  return f
 end
 
-function load_expt(::Type{Val{:acasx_ge}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge/acasx_ge.jl"))
-  @eval @reexport using .ACASX_GE
+function ExprSearch.get_fitness(problem::Symbolic, expr)
+  #mean-square error over a range
+  sum_se = 0.0
+  f = to_function(problem, expr)
+  for x in problem.xrange, y in problem.yrange
+    sum_se += abs2(f(x, y) - gt(x, y))
+  end
+  n = length(problem.xrange) * length(problem.yrange)
+  fitness = sum_se / n + problem.w_len * length(string(expr))
+
+  return fitness
 end
 
-function load_module(::Type{Val{:acasx_sa}})
-  @eval include(joinpath(EXPTDIR, "acasx/sa/acasx_sa.jl"))
-  @eval @reexport using .ACASX_SA
-end
-
-function load_expt(::Type{Val{:acasx_ge_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/ge_tree/acasx_ge_tree.jl"))
-  @eval @reexport using .ACASX_GE_Tree
-end
-
-function load_expt(::Type{Val{:acasx_mcts2_tree}})
-  @eval include(joinpath(EXPTDIR, "acasx/mcts2_tree/acasx_mcts2_tree.jl"))
-  @eval @reexport using .ACASX_MCTS2_Tree
-end
-
-function load_expt(::Type{Val{:symbolic_mcts2}})
-  @eval include(joinpath(EXPTDIR, "symbolic/mcts2/symbolic_mcts2.jl"))
-  @eval @reexport using .SYMBOLIC_MCTS2
-end
-
-function load_expt(::Type{Val{:symbolic_ge}})
-  @eval include(joinpath(EXPTDIR, "symbolic/ge/symbolic_ge.jl"))
-  @eval @reexport using .SYMBOLIC_GE
-end
-
-function load_expt(::Type{Val{:symbolic_sa}})
-  @eval include(joinpath(EXPTDIR, "symbolic/sa/symbolic_sa.jl"))
-  @eval @reexport using .SYMBOLIC_SA
-end
-
-function load_expt(::Type{Val{:ant_ge}})
-  @eval include(joinpath(EXPTDIR, "ant/ge/ant_ge.jl"))
-  @eval @reexport using .ANT_GE
-end
-
-function load_expt(::Type{Val{:ant_mcts}})
-  @eval include(joinpath(EXPTDIR, "ant/mcts2/ant_mcts2.jl"))
-  @eval @reexport using .ANT_MCTS2
-end
-
-load_expt{T}(::Type{Val{T}}) = error("experiment not defined")
-
-end # module
+end #module

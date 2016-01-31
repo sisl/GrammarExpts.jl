@@ -20,7 +20,7 @@
 # of this software and associated documentation files (the "Software"), to
 # deal in the Software without restriction, including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, , and to permit persons to whom the Software is
+# sell copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED
@@ -32,24 +32,56 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#mdp
-const MAXSTEPS = 20
-const DISCOUNT = 1.0
+function nmac_clusters(clustering::DataFrame, Ds::DFSet)
+  ids = map(x -> parse(Int, x), names(Ds))
+  labeldict = Dict{Int64,Int64}() #facilitate random access
+  for row in eachrow(clustering)
+    labeldict[row[:encounter_id]] = row[:label]
+  end
+  inds = find(x -> haskey(labeldict, x), ids)
+  sublabels = map(x -> labeldict[x], ids[inds])
+  subDs = Ds[inds]
+  return DFSetLabeled(subDs, sublabels)
+end
 
-#mcts
-const N_ITERS = 50000
-const SEARCHDEPTH = 20
-const EXPLORATIONCONST = 2000.0
+function nonnmacs_extra_cluster(clustering::DataFrame, Ds::DFSet, meta::DataFrame)
+  ids = map(x -> parse(Int, x), names(Ds))
+  labeldict = Dict{Int64,Int64}() #facilitate random access
+  for row in eachrow(clustering)
+    labeldict[row[:encounter_id]] = row[:label]
+  end
 
-#decision tree
-const MAXDEPTH = 4
+  nmacdict = Dict{Int64,Bool}() #facilitate random access
+  for row in eachrow(meta)
+    nmacdict[row[:encounter_id]] = row[:nmac]
+  end
 
-#reward function
-const MAX_NEG_REWARD = -1000.0
-const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
+  nonnmac_label = maximum(clustering[:label]) + 1
+  labels = map(ids) do id
+    label = if haskey(labeldict, id)
+      labeldict[id]
+    else
+      @assert nmacdict[id] == false
+      nonnmac_label
+    end
+    return label
+  end
+  return DFSetLabeled(Ds, labels)
+end
 
-#log
-const LOGINTERVAL = 100
-
-#vis
-const LIMIT_MEMBERS = 20
+function nmacs_vs_nonnmacs(Ds::DFSet, meta::DataFrame)
+  ids = map(x -> parse(Int, x), names(Ds))
+  nmac_ids = meta[meta[:nmac] .== true, :encounter_id]
+  nonnmac_ids = meta[meta[:nmac] .== false, :encounter_id]
+  labels = map(ids) do id
+    label = if id in nmac_ids
+      1
+    elseif id in nonnmac_ids
+      2
+    else
+      error("encounter id not found: $id")
+    end
+    return label
+  end
+  return DFSetLabeled(Ds, labels)
+end

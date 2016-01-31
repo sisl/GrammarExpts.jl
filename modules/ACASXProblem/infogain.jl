@@ -20,7 +20,7 @@
 # of this software and associated documentation files (the "Software"), to
 # deal in the Software without restriction, including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, , and to permit persons to whom the Software is
+# sell copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED
@@ -32,24 +32,18 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#mdp
-const MAXSTEPS = 20
-const DISCOUNT = 1.0
+function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
+  true_ids = find(predicts)
+  false_ids = find(!predicts)
+  ent_pre = truth |> proportions |> entropy
+  ent_true = !isempty(true_ids) ?
+    truth[true_ids] |> proportions |> entropy : 0.0
+  ent_false = !isempty(false_ids) ?
+    truth[false_ids] |> proportions |> entropy : 0.0
+  w1 = length(true_ids) / length(truth)
+  w2 = length(false_ids) / length(truth)
+  ent_post = w1 * ent_true + w2 * ent_false #miminize entropy after split
+  info_gain = ent_pre - ent_post
+  return (info_gain, ent_pre, ent_post) #entropy pre/post split
+end
 
-#mcts
-const N_ITERS = 50000
-const SEARCHDEPTH = 20
-const EXPLORATIONCONST = 2000.0
-
-#decision tree
-const MAXDEPTH = 4
-
-#reward function
-const MAX_NEG_REWARD = -1000.0
-const STEP_REWARD = 0.0 #use step reward instead of discount to not discount neg rewards
-
-#log
-const LOGINTERVAL = 100
-
-#vis
-const LIMIT_MEMBERS = 20
