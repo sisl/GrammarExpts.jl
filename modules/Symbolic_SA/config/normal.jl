@@ -32,19 +32,17 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+#tree
+[
+  (:maxsteps, 25),
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+  #SA
+  (:T1, 1.48e30),
+  (:alpha, 0.99956),
+  (:n_epochs, 5000),
+  (:n_starts, 5),
+  (:n_batches, 15),
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
-  end
-end
-
-load_to_path()
-
-end # module
+  #log
+  (:gt_file, "gt_easy.jl")
+]

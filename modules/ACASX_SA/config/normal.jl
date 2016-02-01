@@ -32,44 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using RLESUtils: ParamSweeps, Observers, Loggers
-using CPUTime
+#tree
+[(:maxsteps, 20),
 
-load_expt(:acasx_ge, config=:normal, data=:libcas098_small)
-
-const OUTDIR = Pkg.dir("GrammarExpts/results/acasxge")
-const LOGFILEROOT = "acasxge"
-
-function caller_f(outdir::AbstractString, logfileroot::AbstractString, observer::Observer)
-  f = function caller(seed::Int64, genome_size::Int64, pop_size::Int64, maxiterations::Int64)
-    CPUtic()
-
-    #make a subdirectory for logs for this run
-    subdir = joinpath(OUTDIR, "$(LOGFILEROOT)_seed$(seed)_genomesize$(genome_size)_popsize$(pop_size)_maxiters$(maxiterations)")
-    mkpath(subdir)
-
-    result = acasx_ge(subdir, seed=seed, genome_size=genome_size, pop_size=pop_size, maxiterations=maxiterations)
-
-    @notify_observer(observer, "result", [seed, genome_size, pop_size, maxiterations, result.fitness, string(result.expr), result.best_at_eval, result.totalevals, CPUtoq()])
-  end
-  return f
-end
-
-#observer for this study
-observer = Observer()
-logger = DataFrameLogger([Int64, Int64, Int64, Int64, Float64, ASCIIString, Int64, Int64, Float64],
-                         ["seed", "genome_size", "pop_size", "maxiterations", "fitness", "expr", "best_at_eval", "total_evals", "CPU_time_s"])
-add_observer(observer, "result", push!_f(logger))
-f = caller_f(OUTDIR, LOGFILEROOT, observer)
-
-script = ParamSweep(f)
-push!(script, 1:5) #seed
-push!(script, [50, 100, 150]) #genome_size
-push!(script, [500, 1000, 2000, 3000]) #pop_size
-push!(script, [10, 30, 50]) #maxiterations
-
-run(script)
-
-#save logs
-save_log(joinpath(OUTDIR, "$(LOGFILEROOT)_log"), logger)
+#SA
+(:T1, 12.184),
+(:alpha, 0.99976),
+(:n_epochs, 5000),
+(:n_starts, 25),
+(:n_batches, 4)]

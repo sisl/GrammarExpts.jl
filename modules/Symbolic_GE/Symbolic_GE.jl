@@ -32,19 +32,62 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module Symbolic_GE
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+export configure, symbolic_ge
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
-  end
+using ExprSearch.GE
+using RLESUtils.ArrayUtils
+using Reexport
+
+using GrammarExpts
+using SymbolicProblem, Configure, GE_Logs
+
+const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
+
+configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
+
+function symbolic_ge(outdir::AbstractString="./"; seed=1,
+                     logfileroot::AbstractString="symbolic_ge_log",
+
+                     genome_size::Int64=20,
+                     pop_size::Int64=50,
+                     maxwraps::Int64=0,
+                     top_percent::Float64=0.5,
+                     prob_mutation::Float64=0.2,
+                     mutation_rate::Float64=0.2,
+                     defaultcode::Any=0.0,
+                     maxiterations::Int64=3,
+                     maxvalue::Int64=1000,
+
+                     gt_file::AbstractString="gt_easy.jl",
+                     maxsteps::Int64=25,
+
+                     hist_nbins::Int64=40,
+                     hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
+                     hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
+                     loginterval::Int64=100,
+                     observer::Observer=Observer())
+  srand(seed)
+
+  problem = Symbolic(gt_file)
+
+  logs = default_logs(observer, hist_edges, hist_mids)
+  default_console!(observer)
+  @notify_observer(observer, "parameters", ["seed", seed])
+
+  ge_observer = Observer()
+
+  ge_params = GEESParams(genome_size, pop_size, maxwraps,
+                         top_percent, prob_mutation, mutation_rate, defaultcode,
+                         maxiterations, ge_observer, observer)
+
+  result = exprsearch(ge_params, problem)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
+
+  return result
 end
 
-load_to_path()
-
-end # module
+end #module

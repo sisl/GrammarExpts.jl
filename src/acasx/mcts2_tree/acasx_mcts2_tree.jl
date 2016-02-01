@@ -109,6 +109,7 @@ end
 function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
                           runtype::Symbol=:nmacs_vs_nonnmacs,
                           clusterdataname::AbstractString="",
+                          manuals::AbstractString="",
                           logfileroot::AbstractString="acasx_mcts2_tree_log",
                           data::DFSet=DATASET,
                           data_meta::DataFrame=DATASET_META,
@@ -121,7 +122,7 @@ function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
                           max_neg_reward::Float64=MAX_NEG_REWARD,
                           step_reward::Float64=STEP_REWARD)
 
-  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname, data_meta)
 
   mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
                              exploration_const, q0, seed, Observer(), Observer())

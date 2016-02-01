@@ -32,19 +32,19 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module Configure
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+export _configure
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
+function _configure(path::AbstractString, configs::AbstractString...)
+  config = Dict{Symbol,Any}()
+  for f in configs
+    kvs = include(joinpath(path, f) * ".jl")
+    for (k, v) in kvs
+      config[k] = v
+    end
   end
+  return config
 end
 
-load_to_path()
-
-end # module
+end #module

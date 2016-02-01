@@ -32,19 +32,25 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+const HIST_NBINS = 40
+const HIST_EDGES = linspace(0.0, 200.0, HIST_NBINS + 1)
+const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+#grammatical evolution
+[
+  (:genome_size, 20),
+  (:maxwraps, 0),
+  (:defaultcode, :(eval(false))),
+  (:top_percent, 0.5),
+  (:prob_mutation, 0.2),
+  (:mutation_rate, 0.2),
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
-  end
-end
+  (:pop_size, 2000),
+  (:maxiterations, 50),
 
-load_to_path()
-
-end # module
+  #vis
+  (:limit_members, 30),
+  (:hist_nbins, HIST_NBINS),
+  (:hist_edges, HIST_EDGES),
+  (:hist_mids, HIST_MIDS)
+]

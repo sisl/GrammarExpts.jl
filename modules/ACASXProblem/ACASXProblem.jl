@@ -57,6 +57,21 @@ type ACASXClustering{T} <: ExprProblem
   w_len::Float64
 end
 
+function ACASXClustering(runtype::Symbol, dataname::AbstractString, meta_name::AbstractString,
+                         manuals::AbstractString, clustername::AbstractString,
+                         w_ent::Float64=W_ENT, w_len::Float64=W_LEN)
+  out = if runtype == :nmacs_vs_nonnmacs
+    ACASXClustering(dataname, meta_name, w_ent, w_len)
+  elseif runtype == :nmac_clusters
+    ACASXClustering(dataname, manuals, clustername, w_ent, w_len)
+  elseif runtype == :nonnmacs_extra_cluster
+    ACASXClustering(dataname, meta_name, manuals, clustername, w_ent, w_len)
+  else
+    error("Runtype not defined ($runtype)")
+  end
+  return out
+end
+
 #nmacs vs non-nmacs
 function ACASXClustering(dataname::AbstractString,
                          meta_name::AbstractString,

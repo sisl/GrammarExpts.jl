@@ -32,19 +32,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module MCTSTreeView
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+using POMDPs.State
+using GBMCTSView
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
+function viewstep_f(interval::Int64)
+  view = TreeView()
+  function viewstep(i::Int64, tree::Dict{UInt64,StateNode}, state::State)
+    if rem(i, interval) == 0
+      logstep!(view, tree, state, state)
+    end
   end
+  viewstep{T}(x::Vector{T}) = viewstep(x...)
+
+  return view, viewstep
 end
 
-load_to_path()
-
-end # module
+end #module

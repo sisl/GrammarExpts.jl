@@ -32,19 +32,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+const N_ITERS = 10000
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+#mdp
+[
+  (:maxsteps, 20),
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
-  end
-end
+  #mcts
+  (:n_iters, N_ITERS),
+  (:searchdepth, 20),
+  (:explorationconst, 2000.0),
 
-load_to_path()
+  #reward function
+  (:max_neg_reward, -1000.0),
+  (:step_reward, 0.0),
 
-end # module
+  #vis
+  (:treevis_interval, Int(N_ITERS / 5))
+]

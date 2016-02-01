@@ -32,19 +32,33 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module DerivTreeVis
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+using DerivationTrees
+using TreeToJSON
+using TikzQTrees
+using Iterators
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
+function derivtreevis(tree::DerivationTree, outfileroot::AbstractString)
+
+  get_name(tree::DerivationTree) = get_name(tree.root)
+  function get_name(node::DerivTreeNode)
+    cmd_text = node.cmd
+    rule_text = split(string(typeof(node.rule)), ".")[end]
+    action_text = string(node.action)
+    expr_text = string(get_expr(node))
+    text = join([cmd_text, rule_text, action_text, expr_text], "\\\\")
+    return text
   end
+
+  get_children(tree::DerivationTree) = get_children(tree.root)
+  get_children(node::DerivTreeNode) = imap(x -> ("", x), node.children)
+  get_depth(tree::DerivationTree) = get_depth(tree.root)
+  get_depth(node::DerivTreeNode) = node.depth
+
+  viscalls = VisCalls(get_name, get_children, get_depth)
+  write_json(tree, viscalls, "$(outfileroot).json")
+  plottree("$(outfileroot).json", outfileroot="$(outfileroot)")
 end
 
-load_to_path()
-
-end # module
+end #module

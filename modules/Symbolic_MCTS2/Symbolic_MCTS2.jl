@@ -32,19 +32,77 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module Symbolic_MCTS2
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+export configure, symbolic_mcts2
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
+using ExprSearch.MCTS2
+using Reexport
+using JSON, GZip
+using RLESUtils.FileUtils
+
+using GrammarExpts
+using SymbolicProblem, Configure, MCTS2_Logs
+using DerivTreeVis, MCTSTreeView
+
+const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
+
+configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
+
+function symbolic_mcts2(outdir::AbstractString="./"; seed=1,
+                        logfileroot::AbstractString="symbolic_mcts2_log",
+
+                        gt_file::AbstractString="gt_easy.jl",
+                        maxsteps::Int64=25,
+
+                        n_iters::Int64=200,
+                        searchdepth::Int64=20,
+                        explorationconst::Float64=2000.0,
+                        q0::Float64=-1000.0,
+                        max_neg_reward::Float64=-1000.0,
+                        step_reward::Float64=0.0,
+
+                        loginterval::Int64=100,
+                        vis::Bool=true,
+                        mctstreevis::Bool=false,
+                        treevis_interval::Int64=50,
+                        observer::Observer=Observer())
+
+  problem = Symbolic(gt_file)
+
+  logs = default_logs(observer, loginterval)
+  default_console!(observer)
+
+  if mctstreevis
+    view, viewstep = viewstep_f(treevis_interval)
+    add_observer(observer, "mcts_tree", viewstep)
   end
+
+  mcts2_observer = Observer()
+  #add_observer(mcts2_observer, "terminal_reward", x -> println("r=", x[1], " state=", x[2].past_actions))
+
+  mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
+                             explorationconst, q0, seed, mcts2_observer,
+                             observer)
+
+  result = exprsearch(mcts2_params, problem)
+
+  @notify_observer(observer, "parameters", ["seed", seed])
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
+
+  #save mcts tree
+  if mctstreevis
+    GZip.open(joinpath(outdir, "mctstreevis.json.gz"), "w") do f
+      JSON.print(f, view.steps)
+    end
+  end
+
+  textfile(joinpath(outdir, "summary.txt"), "mcts2", seed=seed, n_iters=n_iters,
+           reward=result.reward, expr=string(result.expr))
+
+  return result
 end
 
-load_to_path()
-
-end # module
+end #module

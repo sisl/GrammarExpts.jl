@@ -36,6 +36,7 @@ module ACASXProblem
 
 export ACASXClustering, create_grammar, get_fitness, to_function
 
+using Datasets
 using DataFrameSets
 using ExprSearch
 import ExprSearch: ExprProblem, create_grammar, get_fitness
@@ -54,7 +55,7 @@ type ACASXClustering{T} <: ExprProblem
   w_len::Float64
 end
 
-function ACASXClustering(runtype::Symbol, data::DFSet,
+function ACASXClustering(runtype::Symbol, data::DFSet, manuals::ASCIIString,
                          clusterdataname::AbstractString, data_meta::DataFrame,
                          w_ent::Float64=W_ENT, w_len::Float64=W_LEN)
   Dl = if runtype == :nmacs_vs_nonnmacs

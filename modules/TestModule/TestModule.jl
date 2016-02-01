@@ -36,12 +36,6 @@ module TestModule
 
 export testfunction, showme
 
-using GrammarExpts.configure
-import GrammarExpts.CONFIG
-
-config = configure(CONFIG, a=true, b=1, c="0.88")
-
 testfunction() = println("Hello World!")
-showme(s::Symbol) = println("$s=", config[s])
 
 end

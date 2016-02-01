@@ -34,85 +34,49 @@
 
 module ACASX_SA
 
-export acasx_sa, acasx_temp_params
+export configure, acasx_sa, acasx_temp_params
 
 using ExprSearch.SA
 using Reexport
 
 using GrammarExpts
-import GrammarExpts.CONFIG
+using ACASXProblem, DerivTreeVis, Configure
 
-#defaults
-if !haskey(CONFIG, :config)
-  CONFIG[:config] = :test
-end
-if !haskey(CONFIG, :data)
-  CONFIG[:data] = :dasc
-end
-if !haskey(CONFIG, :vis)
-  CONFIG[:vis] = true
-end
+const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-println("Configuring: config=$(CONFIG[:config]), data=$(CONFIG[:data]), vis=$(CONFIG[:vis])")
-
-load_module("ACASXProblem")
-using ACASXProblem
-
-if CONFIG[:config] == :test
-  include("test_config.jl") #for testing
-elseif CONFIG[:config] == :normal
-  include("config.jl")
-elseif CONFIG[:config] == :highest
-  include("highest_config.jl")
-else
-  error("config not valid ($config)")
-end
-
-if CONFIG[:data] == :dasc
-  include("../common/data_dasc.jl")
-elseif CONFIG[:data] == :libcas098_small
-  include("../common/data_libcas098_small.jl")
-else
-  error("data not valid ($data)")
-end
-
-#include("../../logs/sa_logs.jl")
-
-if CONFIG[:vis]
-  include("../common/derivtreevis.jl") #derivation tree
-end
-
-function configure(; config=:test,
-                   runtype=:nmacs_vs_nonnmacs,
-                   vis=true)
-
-end
+configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
 
 function acasx_sa(outdir::AbstractString="./"; seed=1,
                   logfileroot::AbstractString="acasx_sa_log",
+
                   runtype::Symbol=:nmacs_vs_nonnmacs,
-                  clusterdataname::AbstractString="",
-                  data::DFSet=DATASET,
-                  data_meta::DataFrame=DATASET_META,
-                  maxsteps::Int64=MAXSTEPS,
-                  T1::Float64=T_INIT,
-                  alpha::Float64=ALPHA,
-                  n_epochs::Int64=N_EPOCHS,
-                  n_batches::Int64=N_BATCHES,
-                  n_starts::Int64=N_STARTS,
+                  data::AbstractString="dasc",
+                  data_meta::AbstractString="dasc_meta",
+                  manuals::AbstractString="dasc_manual",
+                  clusterdataname::AbstractString="josh1",
+
+                  maxsteps::Int64=20,
+                  T1::Float64=12.184,
+                  alpha::Float64=0.99976,
+                  n_epochs::Int64=50,
+                  n_starts::Int64=1,
+                  n_batches::Int64=1,
+                  loginterval::Int64=100,
+
+                  vis::Bool=true,
                   observer::Observer=Observer())
 
   srand(seed)
 
-  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
+  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
   add_observer(observer, "temperature", x -> begin
-                 if rem(x[2], LOGINTERVAL) == 0
+                 if rem(x[2], loginterval) == 0
                    println("start=$(x[1]), i=$(x[2]), T=$(x[3])")
                  end
                end)
   add_observer(observer, "current_best", x -> begin
-                 if rem(x[2], LOGINTERVAL) == 0
+                 if rem(x[2], loginterval) == 0
                    println("start=$(x[1]), i=$(x[2]), fitness=$(x[3]), expr=$(x[4])")
                  end
                end)
@@ -122,7 +86,6 @@ function acasx_sa(outdir::AbstractString="./"; seed=1,
   sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
   psa_params = PSAESParams(n_batches, sa_params)
 
-  #result = exprsearch(sa_params, problem)
   result = exprsearch(psa_params, problem)
 
   return result
@@ -130,15 +93,16 @@ end
 
 
 function acasx_temp_params(P1::Float64=0.8; seed=1,
-                              n_epochs::Int64=N_EPOCHS,
-                              Tfinal::Float64=1.0,
-                              runtype::Symbol=:nmacs_vs_nonnmacs,
-                              clusterdataname::AbstractString="",
-                              data::DFSet=DATASET,
-                              data_meta::DataFrame=DATASET_META,
-                              maxsteps::Int64=MAXSTEPS,
-                              N::Int64=1000,
-                              ntrials::Int64=10)
+                           n_epochs::Int64=1,
+                           Tfinal::Float64=1.0,
+                           runtype::Symbol=:nmacs_vs_nonnmacs,
+                           data::AbstractString="dasc",
+                           data_meta::AbstractString="dasc_meta",
+                           manuals::AbstractString="dasc_manual",
+                           clusterdataname::AbstractString="josh1",
+                           maxsteps::Int64=20,
+                           N::Int64=1000,
+                           ntrials::Int64=10)
 
   srand(seed)
 

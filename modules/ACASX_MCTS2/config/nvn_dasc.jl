@@ -32,19 +32,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+#nmacs vs nonnmacs
+[(:runtype, :nmacs_vs_nonnmacs),
+(:data, "dasc"),
+(:data_meta, "dasc_meta"),
+(:manuals, ""),
+(:clusterdataname, "")]
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
-  end
-end
-
-load_to_path()
-
-end # module

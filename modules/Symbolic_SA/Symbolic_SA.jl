@@ -32,19 +32,72 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module Symbolic_SA
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+export configure, symbolic_sa, symbolic_temp_params
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, subdir)
-  end
+using ExprSearch.SA
+using Reexport
+
+using GrammarExpts
+using SymbolicProblem, Configure
+
+const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
+
+configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
+
+function symbolic_sa(outdir::AbstractString="./"; seed=1,
+                     logfileroot::AbstractString="symbolic_sa_log",
+
+                     gt_file::AbstractString="gt_easy.jl",
+                     maxsteps::Int64=25,
+                     T1::Float64=50.0,
+                     alpha::Float64=0.8,
+                     n_epochs::Int64=100,
+                     n_starts::Int64=1,
+                     n_batches::Int64=1,
+
+                     loginterval::Int64=100,
+                     observer::Observer=Observer())
+
+  srand(seed)
+
+  problem = Symbolic(gt_file)
+
+  add_observer(observer, "temperature", x -> begin
+                 if rem(x[2], loginterval) == 0
+                   println("start=$(x[1]), i=$(x[2]), T=$(x[3])")
+                 end
+               end)
+  add_observer(observer, "current_best", x -> begin
+                 if rem(x[2], loginterval) == 0
+                   println("start=$(x[1]), i=$(x[2]), fitness=$(x[3]), expr=$(x[4])")
+                 end
+               end)
+
+  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
+  psa_params = PSAESParams(n_batches, sa_params)
+
+  result = exprsearch(psa_params, problem)
+
+  return result
 end
 
-load_to_path()
 
-end # module
+function symbolic_temp_params(P1::Float64=0.8; seed=1,
+                     gt_file::AbstractString=GT_FILE,
+                     n_epochs::Int64=N_EPOCHS,
+                     Tfinal::Float64=0.1,
+                     maxsteps::Int64=MAXSTEPS,
+                     N::Int64=500,
+                     ntrials::Int64=10)
+
+  srand(seed)
+
+  problem = Symbolic(gt_file)
+  T1, alpha, n_epochs = estimate_temp_params(problem, P1, n_epochs, Tfinal, maxsteps, N, ntrials)
+
+  return T1, alpha, n_epochs
+end
+
+end #module
