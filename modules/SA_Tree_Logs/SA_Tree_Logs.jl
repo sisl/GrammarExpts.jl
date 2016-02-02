@@ -32,44 +32,32 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module ACASX_SA
+module SA_Tree_Logs
 
-export configure, acasx_sa, acasx_temp_params
+export default_logs, set_observers!
 
-using ExprSearch.SA
+using DataFrames
+using DerivationTrees
 using Reexport
+@reexport using RLESUtils: Observers, Loggers
 
-using GrammarExpts
-using ACASXProblem, DerivTreeVis, Configure
+function default_logs()
+  logs = TaggedDFLogger()
+  #=
+  add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
+  add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
+  add_folder!(logs, "cputime", [Int64, Float64, Int64], ["step", "cputime_s", "decision_id"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals", "decision_id"])
+  add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString, Int64], ["iteration", "reward", "state", "expr", "decision_id"])
+=#
+  return logs
+end
 
-const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
-
-configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
-
-function acasx_sa(outdir::AbstractString="./"; seed=1,
-                  logfileroot::AbstractString="acasx_sa_log",
-
-                  runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dasc",
-                  data_meta::AbstractString="dasc_meta",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
-
-                  maxsteps::Int64=20,
-                  T1::Float64=12.184,
-                  alpha::Float64=0.99976,
-                  n_epochs::Int64=50,
-                  n_starts::Int64=1,
-                  n_batches::Int64=1,
-
-                  loginterval::Int64=100,
-                  vis::Bool=true,
-                  observer::Observer=Observer())
-
-  srand(seed)
-
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
-
+function set_observers!(observer::Observer, logs::TaggedDFLogger, loginterval::Int64)
+  empty!(observer)
+  ####################
+  #print out observers
   add_observer(observer, "temperature", x -> begin
                  if rem(x[2], loginterval) == 0
                    println("start=$(x[1]), i=$(x[2]), T=$(x[3])")
@@ -80,36 +68,27 @@ function acasx_sa(outdir::AbstractString="./"; seed=1,
                    println("start=$(x[1]), i=$(x[2]), fitness=$(x[3]), expr=$(x[4])")
                  end
                end)
-  #logs = default_logs(observer)
-  #default_console!(observer)
-
-  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
-  psa_params = PSAESParams(n_batches, sa_params)
-
-  result = exprsearch(psa_params, problem)
-
-  return result
-end
 
 
-function acasx_temp_params(P1::Float64=0.8; seed=1,
-                           n_epochs::Int64=1,
-                           Tfinal::Float64=1.0,
-                           runtype::Symbol=:nmacs_vs_nonnmacs,
-                           data::AbstractString="dasc",
-                           data_meta::AbstractString="dasc_meta",
-                           manuals::AbstractString="dasc_manual",
-                           clusterdataname::AbstractString="josh1",
-                           maxsteps::Int64=20,
-                           N::Int64=1000,
-                           ntrials::Int64=10)
+  ###################
+  #log observers
+  #=
+  decision_id = nrow(logs["result"]) > 0 ?
+    maximum(logs["result"][:decision_id]) + 1 : 1
+  add_observer(observer, "parameters", append_push!_f(logs, "parameters", decision_id))
+  add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
+  add_observer(observer, "cputime", append_push!_f(logs, "cputime", decision_id))
+  add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
+  add_observer(observer, "expression", append_push!_f(logs, "expression", decision_id))
+  add_observer(observer, "current_best", x -> begin
+                 i, reward, state = x
+                 if rem(i, loginterval) == 0
+                   push!(logs, "current_best", [i, reward, string(state.past_actions), string(get_expr(state)), decision_id])
+                 end
+               end)
+  =#
 
-  srand(seed)
-
-  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
-  T1, alpha, n_epochs = estimate_temp_params(problem, P1, n_epochs, Tfinal, maxsteps, N, ntrials)
-
-  return T1, alpha, n_epochs
+  return logs
 end
 
 end #module

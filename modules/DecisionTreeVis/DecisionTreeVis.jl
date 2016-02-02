@@ -32,13 +32,53 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#nmacs vs nonnmacs
-[
-  (:runtype, :nmacs_vs_nonnmacs),
-  (:data, "dasc"),
-  (:data_meta, "dasc_meta"),
-  (:manuals, ""),
-  (:clusterdataname, "")
-]
+module DecisionTreeVis
 
+export decisiontreevis, get_tree, get_metric
 
+using DecisionTrees, DerivationTrees
+using DataFrameSets
+using TreeToJSON
+using TikzQTrees
+using RLESUtils.LatexUtils
+
+get_tree() = error("get_tree not defined")
+get_metric() = error("get_metric not defined")
+
+function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::AbstractString,
+                            limit_members::Int64, fmt_pretty::Format, fmt_natural::Format)
+  get_depth(tree::DecisionTree) = get_depth(tree.root)
+  get_depth(node::DTNode) = node.depth
+  get_children(tree::DecisionTree) = get_children(tree.root)
+  get_children(node::DTNode) = node.children
+
+  get_name(tree::DecisionTree) = get_name(tree.root)
+  function get_name(node::DTNode)
+    members = sort(Dl.names[node.members], by=x->parse(Int64, x))
+    members_text = if length(members) <= limit_members
+      "members=" * join(members, ",")
+    else
+      "members=" * join(members[1:limit_members], ",") * ", and $(length(members)-limit_members) more."
+    end
+    label = "label=$(node.label)"
+    confidence = "confidence=" * string(signif(node.confidence, 3))
+    if node.split_rule != nothing
+      tree = get_tree(node.split_rule)
+      expr = string(get_expr(tree))
+      pretty = pretty_string(tree, fmt_pretty)
+      natural = pretty_string(tree, fmt_natural, true)
+      score = "fitness (lower is better)=" * string(signif(get_metric(node.split_rule), 4))
+    else
+      expr = pretty = natural = "none"
+      score = "fitness (lower is better)=none"
+    end
+    text = join([members_text, label, confidence, expr, pretty, natural, score], "\\\\")
+    return text
+  end
+
+  viscalls = VisCalls(get_name, get_children, get_depth)
+  write_json(dtree, viscalls, "$(fileroot)_decisiontree.json")
+  plottree("$(fileroot)_decisiontree.json", outfileroot="$(fileroot)_decisiontree")
+end
+
+end #module

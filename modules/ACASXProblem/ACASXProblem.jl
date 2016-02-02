@@ -116,17 +116,17 @@ function ExprSearch.create_grammar(problem::ACASXClustering)
   @grammar grammar begin
     start = bin
 
-    bin = always | eventually
+    bin = always | eventually | implies | count
     always = Expr(:call, :G, bin_vec) #global
     eventually = Expr(:call, :F, bin_vec) #future
+    implies = Expr(:call, :Y, bin_vec, bin_vec)
+    count = Expr(:call, :ctlt, bin_vec, timestep) | Expr(:call, :ctle, bin_vec, timestep) | Expr(:call, :ctgt, bin_vec, timestep) | Expr(:call, :ctge, bin_vec, timestep) | Expr(:call, :cteq, bin_vec, timestep)
 
     #produces a bin_vec
-    bin_vec = bin_feat | and | or | not | implies | eq | lt | lte | abseq | abslt | abslte | diff_eq | diff_lt | diff_lte | sign | count | absdiff_eq | absdiff_lt | absdiff_lte
+    bin_vec = bin_feat | and | or | not  | eq | lt | lte | abseq | abslt | abslte | diff_eq | diff_lt | diff_lte | sign | absdiff_eq | absdiff_lt | absdiff_lte
     and = Expr(:call, :&, bin_vec, bin_vec)
     or = Expr(:call, :|, bin_vec, bin_vec)
     not = Expr(:call, :!, bin_vec)
-    implies = Expr(:call, :Y, bin_vec, bin_vec)
-    count = Expr(:call, :ctlt, bin_vec, timestep) | Expr(:call, :ctle, bin_vec, timestep) | Expr(:call, :ctgt, bin_vec, timestep) | Expr(:call, :ctge, bin_vec, timestep) | Expr(:call, :cteq, bin_vec, timestep)
 
     #equal
     eq = vrate_eq | altdiff_eq | chi_angle_eq | psi_angle_eq | sr_eq | tds_eq | timer_eq | psid_eq | v_eq | alt_eq | abs_altdiff_eq
@@ -345,24 +345,15 @@ abs_diff_lt(v1::RealVec, v2::RealVec, b::Real) = abs(v1 - v2) .< b
 
 eventually(v::AbstractVector{Bool}) = any(v)
 globally(v::AbstractVector{Bool}) = all(v)
-implies(v1::AbstractVector{Bool}, v2::AbstractVector{Bool}) = !v1 | v2
+implies(v1::AbstractVector{Bool}, v2::AbstractVector{Bool}) = all(!v1 | v2)
 
 sign_(v1::RealVec, v2::RealVec) = (sign(v1) .* sign(v2)) .>= 0.0 #same sign, 0 matches any sign
 
-count_eq(v::AbstractVector{Bool}, b::Real) = count_(v) .== b
-count_lt(v::AbstractVector{Bool}, b::Real) = count_(v) .< b
-count_lte(v::AbstractVector{Bool}, b::Real) = count_(v) .<= b
-count_gt(v::AbstractVector{Bool}, b::Real) = count_(v) .> b
-count_gte(v::AbstractVector{Bool}, b::Real) = count_(v) .>= b
-
-function count_(v::AbstractVector{Bool})
-  A = Array(Float64, length(v))
-  A[end] = Float64(v[end])
-  for i = (length(v) - 1) : -1 : 1 #reverse cumsum
-    A[i] = Float64(v[i]) + A[i + 1]
-  end
-  return A
-end
+count_eq(v::AbstractVector{Bool}, b::Real) = count(identity, v) .== b
+count_lt(v::AbstractVector{Bool}, b::Real) = count(identity, v) .< b
+count_lte(v::AbstractVector{Bool}, b::Real) = count(identity, v) .<= b
+count_gt(v::AbstractVector{Bool}, b::Real) = count(identity, v) .> b
+count_gte(v::AbstractVector{Bool}, b::Real) = count(identity, v) .>= b
 
 #shorthands used in grammar to reduce impact on code length
 abeq = abs_eq

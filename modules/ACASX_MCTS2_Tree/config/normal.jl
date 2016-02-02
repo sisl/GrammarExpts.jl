@@ -20,7 +20,7 @@
 # of this software and associated documentation files (the "Software"), to
 # deal in the Software without restriction, including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, and to permit persons to whom the Software is
+# sell copies of the Software, , and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED
@@ -32,13 +32,19 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#nmacs vs nonnmacs
 [
-  (:runtype, :nmacs_vs_nonnmacs),
-  (:data, "dasc"),
-  (:data_meta, "dasc_meta"),
-  (:manuals, ""),
-  (:clusterdataname, "")
+  #mdp
+  (:maxsteps, 20),
+
+  #mcts
+  (:n_iters, 50000),
+  (:searchdepth , 20),
+  (:explorationconst, 2000.0),
+
+  #decision tree
+  (:maxdepth, 5),
+
+  #reward function
+  (:max_neg_reward, -1000.0),
+  (:step_reward, 0.0) #use step reward instead of discount to not discount neg rewards
 ]
-
-

@@ -32,13 +32,45 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#nmacs vs nonnmacs
-[
-  (:runtype, :nmacs_vs_nonnmacs),
-  (:data, "dasc"),
-  (:data_meta, "dasc_meta"),
-  (:manuals, ""),
-  (:clusterdataname, "")
-]
+using DecisionTrees
+import DecisionTreeVis: get_tree, get_metric
 
+include("infogain.jl")
+
+function DecisionTrees.get_truth{T}(members::Vector{Int64},
+                                 Dl::DFSetLabeled{T}, otherargs...) #userargs...
+  return labels(Dl, members)
+end
+
+function classify(problem::ACASXClustering, result::MCTS2ESResult, Ds::Vector{DataFrame})
+  f = to_function(problem, result.expr)
+  return map(f, Ds)
+end
+
+function DecisionTrees.get_splitter{T}(members::Vector{Int64},
+                                       Dl::DFSetLabeled{T}, problem::ACASXClustering,
+                                       mcts2_params::MCTS2ESParams, logs::TaggedDFLogger, loginterval::Int64) #userargs...
+  set_observers!(mcts2_params.observer, logs, loginterval)
+
+  problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
+  result = exprsearch(mcts2_params, problem)
+
+  @notify_observer(mcts2_params.observer, "expression",
+                   [string(result.expr),
+                    pretty_string(result.tree, FMT_PRETTY),
+                    pretty_string(result.tree, FMT_NATURAL, true)])
+
+  predicts = classify(problem, result, records(Dl_sub))
+  info_gain, _, _ = get_metrics(predicts, labels(Dl_sub))
+
+  return info_gain > 0 ? result : nothing
+end
+
+function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},
+                                     Dl::DFSetLabeled{T}, problem::ACASXClustering, otherargs...) #userargs...
+  return classify(problem, result, records(Dl, members))
+end
+
+DecisionTreeVis.get_tree(result::MCTS2ESResult) = result.tree
+DecisionTreeVis.get_metric(result::MCTS2ESResult) = -result.reward
 

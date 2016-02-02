@@ -34,11 +34,11 @@
 
 #nmacs vs nonnmacs
 [
-  (:runtype, :nmacs_vs_nonnmacs),
+  (:runtype, :nonnmacs_extra_cluster),
   (:data, "dasc"),
   (:data_meta, "dasc_meta"),
-  (:manuals, ""),
-  (:clusterdataname, "")
+  (:manuals, "dasc_manual"),
+  (:clusterdataname, "josh1")
 ]
 
 

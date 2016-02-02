@@ -32,84 +32,90 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module ACASX_SA
+module ACASX_SA_Tree
 
-export configure, acasx_sa, acasx_temp_params
+export configure, acasx_sa_tree
 
+using DecisionTrees
 using ExprSearch.SA
+using Datasets
+using RLESUtils.Obj2Dict
 using Reexport
 
 using GrammarExpts
-using ACASXProblem, DerivTreeVis, Configure
+using Configure, ACASXProblem, SA_Tree_Logs
+using DerivTreeVis, DecisionTreeVis
+
+include("dtree_callbacks.jl")
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
 configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
 
-function acasx_sa(outdir::AbstractString="./"; seed=1,
-                  logfileroot::AbstractString="acasx_sa_log",
+function train_dtree{T}(psa_params::PSAESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
+                        loginterval::Int64, maxdepth::Int64)
 
-                  runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dasc",
-                  data_meta::AbstractString="dasc_meta",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
+  logs = default_logs()
+  num_data = length(Dl)
+  T1 = Bool #predict_type
+  T2 = Int64 #label_type
 
-                  maxsteps::Int64=20,
-                  T1::Float64=12.184,
-                  alpha::Float64=0.99976,
-                  n_epochs::Int64=50,
-                  n_starts::Int64=1,
-                  n_batches::Int64=1,
+  p = DTParams(num_data, maxdepth, T1, T2)
 
-                  loginterval::Int64=100,
-                  vis::Bool=true,
-                  observer::Observer=Observer())
+  dtree = build_tree(p,
+                     Dl, problem, psa_params, logs, loginterval) #userargs...
 
-  srand(seed)
+  return dtree, logs
+end
+
+function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
+                       logfileroot::AbstractString="acasx_sa_tree_log",
+
+                       runtype::Symbol=:nmacs_vs_nonnmacs,
+                       data::AbstractString="dasc",
+                       data_meta::AbstractString="dasc_meta",
+                       manuals::AbstractString="dasc_manual",
+                       clusterdataname::AbstractString="josh1",
+
+                       maxsteps::Int64=20,
+                       T1::Float64=12.184,
+                       alpha::Float64=0.99976,
+                       n_epochs::Int64=50,
+                       n_starts::Int64=1,
+                       n_batches::Int64=1,
+                       maxdepth::Int64=1,
+
+                       loginterval::Int64=100,
+                       vis::Bool=true,
+                       limit_members::Int64=20)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
-  add_observer(observer, "temperature", x -> begin
-                 if rem(x[2], loginterval) == 0
-                   println("start=$(x[1]), i=$(x[2]), T=$(x[3])")
-                 end
-               end)
-  add_observer(observer, "current_best", x -> begin
-                 if rem(x[2], loginterval) == 0
-                   println("start=$(x[1]), i=$(x[2]), fitness=$(x[3]), expr=$(x[4])")
-                 end
-               end)
-  #logs = default_logs(observer)
-  #default_console!(observer)
-
-  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
+  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, Observer())
   psa_params = PSAESParams(n_batches, sa_params)
 
-  result = exprsearch(psa_params, problem)
+  Dl = problem.Dl
+  dtree, logs = train_dtree(psa_params, problem, Dl, loginterval, maxdepth)
 
-  return result
-end
+  #add to log
+  push!(logs, "parameters", ["seed", seed, 0])
+  push!(logs, "parameters", ["runtype", runtype, 0])
+  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
 
+  outfile = joinpath(outdir, "$(logfileroot).json")
+  Obj2Dict.save_obj(outfile, dtree)
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
 
-function acasx_temp_params(P1::Float64=0.8; seed=1,
-                           n_epochs::Int64=1,
-                           Tfinal::Float64=1.0,
-                           runtype::Symbol=:nmacs_vs_nonnmacs,
-                           data::AbstractString="dasc",
-                           data_meta::AbstractString="dasc_meta",
-                           manuals::AbstractString="dasc_manual",
-                           clusterdataname::AbstractString="josh1",
-                           maxsteps::Int64=20,
-                           N::Int64=1000,
-                           ntrials::Int64=10)
+  #visualize
+  if vis
+    decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"), limit_members,
+                    FMT_PRETTY, FMT_NATURAL)
+    #logvis(logs, joinpath(outdir, "$(logfileroot)_logs"))
+  end
 
-  srand(seed)
-
-  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
-  T1, alpha, n_epochs = estimate_temp_params(problem, P1, n_epochs, Tfinal, maxsteps, N, ntrials)
-
-  return T1, alpha, n_epochs
+  return dtree, logs
 end
 
 end #module
+

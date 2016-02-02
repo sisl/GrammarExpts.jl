@@ -20,7 +20,7 @@
 # of this software and associated documentation files (the "Software"), to
 # deal in the Software without restriction, including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, and to permit persons to whom the Software is
+# sell copies of the Software, , and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED
@@ -32,13 +32,14 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#nmacs vs nonnmacs
 [
-  (:runtype, :nmacs_vs_nonnmacs),
-  (:data, "dasc"),
-  (:data_meta, "dasc_meta"),
-  (:manuals, ""),
-  (:clusterdataname, "")
+  #tree
+  (:maxsteps, 20),
+
+  #SA
+  (:T1, 12.184),
+  (:alpha, 0.99976),
+  (:n_epochs, 5000),
+  (:n_starts, 25),
+  (:n_batches, 4)
 ]
-
-

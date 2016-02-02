@@ -32,12 +32,14 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#tree
-[(:maxsteps, 20),
+[
+  #tree
+  (:maxsteps, 20),
 
-#SA
-(:T1, 12.184),
-(:alpha, 0.99976),
-(:n_epochs, 5000),
-(:n_starts, 25),
-(:n_batches, 4)]
+  #SA
+  (:T1, 12.184),
+  (:alpha, 0.99976),
+  (:n_epochs, 5000),
+  (:n_starts, 25),
+  (:n_batches, 4)
+]
