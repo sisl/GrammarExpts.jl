@@ -87,7 +87,7 @@ function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
 
                        loginterval::Int64=100,
                        vis::Bool=true,
-                       limit_members::Int64=20)
+                       limit_members::Int64=10)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
@@ -98,9 +98,9 @@ function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
   dtree, logs = train_dtree(psa_params, problem, Dl, loginterval, maxdepth)
 
   #add to log
-  push!(logs, "parameters", ["seed", seed, 0])
-  push!(logs, "parameters", ["runtype", runtype, 0])
-  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
+  #push!(logs, "parameters", ["seed", seed, 0])
+  #push!(logs, "parameters", ["runtype", runtype, 0])
+  #push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
 
   outfile = joinpath(outdir, "$(logfileroot).json")
   Obj2Dict.save_obj(outfile, dtree)

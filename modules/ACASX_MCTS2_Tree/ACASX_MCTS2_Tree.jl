@@ -88,7 +88,7 @@ function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
 
                           loginterval::Int64=100,
                           vis::Bool=true,
-                          limit_members::Int64=20)
+                          limit_members::Int64=10)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 

@@ -73,5 +73,5 @@ function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64
 end
 
 DecisionTreeVis.get_tree(result::SAESResult) = result.tree
-DecisionTreeVis.get_metric(result::SAESResult) = -result.reward
+DecisionTreeVis.get_metric(result::SAESResult) = result.fitness
 

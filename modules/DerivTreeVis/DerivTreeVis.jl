@@ -34,6 +34,8 @@
 
 module DerivTreeVis
 
+export derivtreevis
+
 using DerivationTrees
 using TreeToJSON
 using TikzQTrees
