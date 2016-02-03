@@ -34,9 +34,13 @@
 
 module Configure
 
-export _configure
+export configure, configure_path
 
-function _configure(path::AbstractString, configs::AbstractString...)
+#user should define the form on the right side for their specific symbols/modules
+configure(m::Module, configs::AbstractString...) = configure(Val{symbol(m)}, configs...)
+configure(s::Symbol, configs::AbstractString...) = configure(Val{s}, configs...)
+
+function configure_path(path::AbstractString, configs::AbstractString...)
   config = Dict{Symbol,Any}()
   for f in configs
     kvs = include(joinpath(path, f) * ".jl")

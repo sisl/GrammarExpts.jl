@@ -41,5 +41,8 @@
   (:alpha, 0.99976),
   (:n_epochs, 5000),
   (:n_starts, 25),
-  (:n_batches, 4)
+  (:n_batches, 4),
+
+  #decision tree
+  (:maxdepth, 4)
 ]

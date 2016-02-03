@@ -32,68 +32,49 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module ACASX_GE
+module Sweeper
 
-export configure, acasx_ge
+export configure, sweeper
 
-using ExprSearch.GE
-using Datasets
-using RLESUtils.ArrayUtils
-using Reexport
-
-using GrammarExpts
-using ACASXProblem, GE_Logs, DerivTreeVis, Configure
+using GrammarExpts, Configure
+using RLESUtils: ParamSweeps, Observers, Loggers, Vectorizer
+using CPUTime
 import Configure.configure
 
+const RESULTDIR = joinpath(dirname(@__FILE__), "../../results")
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-configure(::Type{Val{:ACASX_GE}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:Sweeper}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-#nmacs vs nonnmacs
-function acasx_ge(outdir::AbstractString="./"; seed=1,
-                  logfileroot::AbstractString="acasx_ge_log",
+function sweeper(f::Function, result_type::Type, baseconfig::Dict{Symbol,Any}=Dict{Symbol,Any}();
+                  outdir::AbstractString=RESULTDIR,
+                  logfileroot::AbstractString="sweeper_log",
+                  kwargs::Iterable...
+                  )
+  mkpath(outdir)
+  script = KWParamSweep(f; kwargs...)
 
-                  runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dasc",
-                  data_meta::AbstractString="dasc_meta",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
+  keynames = collect(keys(script))
+  valtypes = map(x -> eltype(collect(x)), values(script))
+  valtypes = convert(Vector{Type}, valtypes)
 
-                  genome_size::Int64=20,
-                  pop_size::Int64=50,
-                  maxwraps::Int64=0,
-                  top_percent::Float64=0.5,
-                  prob_mutation::Float64=0.2,
-                  mutation_rate::Float64=0.2,
-                  defaultcode::Union{Symbol,Expr}=:(eval(false)),
-                  maxiterations::Int64=3,
+  observer = Observer()
+  logs = TaggedDFLogger()
+  add_folder!(logs, "result", vcat(valtypes, vectypes(result_type)), vcat(keynames, vecnames(result_type)))
+  add_observer(observer, "result", push!_f(logs, "result"))
 
-                  limit_members::Int64=30,
-                  hist_nbins::Int64=40,
-                  hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
-                  hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
-                  loginterval::Int64=100,
+  results = map(script) do kvs
+    result = f(; kvs...)
 
-                  observer::Observer=Observer())
-  srand(seed)
+    vs = map(x -> x[2], kvs)
+    @notify_observer(observer, "result", vcat(vs, vectorize(result)))
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+    return result
+  end
 
-  logs = default_logs(observer, hist_edges, hist_mids)
-  default_console!(observer)
+  save_log(joinpath(outdir, logfileroot), logs)
 
-  ge_observer = Observer()
-
-  ge_params = GEESParams(genome_size, pop_size, maxwraps,
-                         top_percent, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, ge_observer, observer)
-
-  result = exprsearch(ge_params, problem)
-
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
-
-  return result
+  return results
 end
 
 end #module

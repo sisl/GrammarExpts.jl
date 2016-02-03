@@ -45,12 +45,13 @@ using Reexport
 using GrammarExpts
 using Configure, ACASXProblem, SA_Tree_Logs
 using DerivTreeVis, DecisionTreeVis
+import Configure.configure
 
 include("dtree_callbacks.jl")
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_SA_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function train_dtree{T}(psa_params::PSAESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
                         loginterval::Int64, maxdepth::Int64)

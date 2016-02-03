@@ -41,10 +41,11 @@ using Reexport
 
 using GrammarExpts
 using ACASXProblem, DerivTreeVis, Configure
+import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_SA}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function acasx_sa(outdir::AbstractString="./"; seed=1,
                   logfileroot::AbstractString="acasx_sa_log",

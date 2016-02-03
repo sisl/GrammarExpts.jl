@@ -44,10 +44,11 @@ using RLESUtils.FileUtils
 using GrammarExpts
 using SymbolicProblem, Configure, MCTS2_Logs
 using DerivTreeVis, MCTSTreeView
+import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
+configure(::Type{Val{:Symbolic_MCTS2}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function symbolic_mcts2(outdir::AbstractString="./"; seed=1,
                         logfileroot::AbstractString="symbolic_mcts2_log",

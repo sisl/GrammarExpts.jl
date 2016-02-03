@@ -41,10 +41,11 @@ using Reexport
 
 using GrammarExpts
 using SymbolicProblem, Configure
+import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
+configure(::Type{Val{:Symbolic_SA}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function symbolic_sa(outdir::AbstractString="./"; seed=1,
                      logfileroot::AbstractString="symbolic_sa_log",

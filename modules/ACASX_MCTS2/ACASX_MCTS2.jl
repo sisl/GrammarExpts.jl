@@ -45,10 +45,11 @@ using RLESUtils.FileUtils
 using GrammarExpts
 using ACASXProblem, MCTS2_Logs
 using DerivTreeVis, MCTSTreeView, Configure
+import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-configure(configs::AbstractString...) = _configure(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_MCTS2}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                      logfileroot::AbstractString="acasx_mcts2_log",
