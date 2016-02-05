@@ -32,49 +32,46 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module Sweeper
+module FilterRecords
 
-export configure, sweeper
+export filter_by_bool!, all_occurrences
 
-using GrammarExpts, Configure
-using RLESUtils: ParamSweeps, Observers, Loggers, Vectorizer
-using CPUTime
-import Configure.configure
+using DataFrameSets
+using DataFramesMeta
 
-const RESULTDIR = joinpath(dirname(@__FILE__), "../../results")
-const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
+function filter_by_bool!(f::Function, Ds::DFSet; kwargs...)
+  for D in records(Ds)
+    filter_by_bool!(f, D; kwargs...)
+  end
+end
 
-configure(::Type{Val{:Sweeper}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+#bool=f(r::DataFrameRow)
+function filter_by_bool!(f::Function, D::DataFrame;
+                        n_before::Int64=0, #safe to use typemax for all previous
+                        n_after::Int64=0) #safe to use typemax for all after
+  @assert n_before >= 0 && n_after >= 0
 
-function sweeper(f::Function, result_type::Type, baseconfig::Dict{Symbol,Any}=Dict{Symbol,Any}();
-                  outdir::AbstractString=RESULTDIR,
-                  logfileroot::AbstractString="sweeper_log",
-                  kwargs::Iterable...
-                  )
-  mkpath(outdir)
-  script = KWParamSweep(f; kwargs...)
-
-  keynames = collect(keys(script))
-  valtypes = map(x -> eltype(collect(x)), values(script))
-  valtypes = convert(Vector{Type}, valtypes)
-
-  observer = Observer()
-  logs = TaggedDFLogger()
-  add_folder!(logs, "result", vcat(valtypes, vectypes(result_type)), vcat(keynames, vecnames(result_type)))
-  add_observer(observer, "result", push!_f(logs, "result"))
-
-  results = map(script) do kvs
-    result = f(; kvs...)
-
-    vs = map(x -> x[2], kvs)
-    @notify_observer(observer, "result", vcat(vs, vectorize(result)))
-
-    return result
+  remrows = IntSet()
+  rows = all_occurrences(f, D)
+  for r in rows
+    istart = max(r - n_before, 1)
+    n_after = min(n_after, nrow(D)) #workaround for typemax(Int64) case
+    iend = min(r + n_after, nrow(D))
+    push!(remrows, istart:iend...)
   end
 
-  save_log(joinpath(outdir, logfileroot) * ".txt", logs)
+  if !isempty(remrows)
+    deleterows!(D, [remrows...])
+  end
+end
 
-  return results
+#returns row of first occurrence
+function all_occurrences(f::Function, D::DataFrame)
+  rows = IntSet()
+  for (i, r) in enumerate(eachrow(D))
+    f(r) && push!(rows, i)
+  end
+  return rows
 end
 
 end #module

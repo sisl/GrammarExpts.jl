@@ -170,13 +170,13 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["always"] = (cmd, args) -> "G($(args[1]))"
   fmt["eventually"] = (cmd, args) -> "F($(args[1]))"
 
-  bin_infix(cmd, args, insym) = "($(args[1])) $insym ($(args[2]))"
+  bin_infix(cmd, args, insym) = "($(args[1]) $insym $(args[2]))"
   fmt["and"] = (cmd, args) -> bin_infix(cmd, args, "&")
   fmt["or"] = (cmd, args) -> bin_infix(cmd, args, "|")
   fmt["not"] = (cmd, args) -> "!($(args[1]))"
   fmt["implies"] = (cmd, args) -> "$(args[1]) => $(args[2])"
 
-  count_op(cmd, args, op) = "count($(args[1])) $op $(args[2])"
+  count_op(cmd, args, op) = "(count($(args[1])) $op $(args[2]))"
   fmt["count.1.1.1.1"] = (cmd, args) -> count_op(cmd, args, "<")
   fmt["count.1.1.1.2"] = (cmd, args) -> count_op(cmd, args, "<=")
   fmt["count.1.1.2"] = (cmd, args) -> count_op(cmd, args, ">")
@@ -240,7 +240,7 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["alt_lte.2"] = bin_infix_lte
   fmt["abs_altdiff_lte"] = bin_infix_lte
 
-  abs_bin_infix_op(cmd, args, op) = "abs($(args[1])) $op $(args[2])"
+  abs_bin_infix_op(cmd, args, op) = "(abs($(args[1])) $op $(args[2]))"
   abs_bin_infix_eq(cmd, args) = abs_bin_infix_op(cmd, args, ".==")
   abs_bin_infix_lt(cmd, args) = abs_bin_infix_op(cmd, args, ".<")
   abs_bin_infix_lte(cmd, args) = abs_bin_infix_op(cmd, args, ".<=")
@@ -295,7 +295,7 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["alt_abslte.1"] = abs_bin_infix_lte
   fmt["alt_abslte.2"] = abs_bin_infix_lte
 
-  diff_infix_op(cmd, args, op) = "($(args[1]) - $(args[2])) $op $(args[3])"
+  diff_infix_op(cmd, args, op) = "($(args[1]) - $(args[2]) $op $(args[3]))"
   diff_infix_eq(cmd, args) = diff_infix_op(cmd, args, ".==")
   diff_infix_lt(cmd, args) = diff_infix_op(cmd, args, ".<")
   diff_infix_lte(cmd, args) = diff_infix_op(cmd, args, ".<=")
@@ -321,7 +321,7 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["psid_diff_lte"] = diff_infix_lte
   fmt["v_diff_lte"] = diff_infix_lte
 
-  abs_diff_infix_op(cmd, args, op) = "abs($(args[1]) - $(args[2])) $op $(args[3])"
+  abs_diff_infix_op(cmd, args, op) = "(abs($(args[1]) - $(args[2])) $op $(args[3]))"
   abs_diff_infix_eq(cmd, args) = abs_diff_infix_op(cmd, args, ".==")
   abs_diff_infix_lt(cmd, args) = abs_diff_infix_op(cmd, args, ".<")
   abs_diff_infix_lte(cmd, args) = abs_diff_infix_op(cmd, args, ".<=")
@@ -376,7 +376,7 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["alt_val"] = (cmd, args) -> valunit(cmd, args, "ft")
   fmt["timestep"] = (cmd, args) -> valunit(cmd, args, "s")
 
-  bin_sign(cmd, args) = "sign($(args[1])) .== sign($(args[2]))"
+  bin_sign(cmd, args) = "(sign($(args[1])) .== sign($(args[2])))"
   fmt["vrate_sign"] = bin_sign
   fmt["chi_angle_sign"] = bin_sign
   fmt["psid_sign"] = bin_sign

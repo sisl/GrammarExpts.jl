@@ -32,49 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module Sweeper
+#nmacs vs nonnmacs
+[
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "dascfilt"),
+  (:data_meta, "dasc_meta"),
+  (:manuals, ""),
+  (:clusterdataname, "")
+]
 
-export configure, sweeper
 
-using GrammarExpts, Configure
-using RLESUtils: ParamSweeps, Observers, Loggers, Vectorizer
-using CPUTime
-import Configure.configure
-
-const RESULTDIR = joinpath(dirname(@__FILE__), "../../results")
-const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
-
-configure(::Type{Val{:Sweeper}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
-
-function sweeper(f::Function, result_type::Type, baseconfig::Dict{Symbol,Any}=Dict{Symbol,Any}();
-                  outdir::AbstractString=RESULTDIR,
-                  logfileroot::AbstractString="sweeper_log",
-                  kwargs::Iterable...
-                  )
-  mkpath(outdir)
-  script = KWParamSweep(f; kwargs...)
-
-  keynames = collect(keys(script))
-  valtypes = map(x -> eltype(collect(x)), values(script))
-  valtypes = convert(Vector{Type}, valtypes)
-
-  observer = Observer()
-  logs = TaggedDFLogger()
-  add_folder!(logs, "result", vcat(valtypes, vectypes(result_type)), vcat(keynames, vecnames(result_type)))
-  add_observer(observer, "result", push!_f(logs, "result"))
-
-  results = map(script) do kvs
-    result = f(; kvs...)
-
-    vs = map(x -> x[2], kvs)
-    @notify_observer(observer, "result", vcat(vs, vectorize(result)))
-
-    return result
-  end
-
-  save_log(joinpath(outdir, logfileroot) * ".txt", logs)
-
-  return results
-end
-
-end #module

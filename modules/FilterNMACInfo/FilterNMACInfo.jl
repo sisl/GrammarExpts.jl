@@ -32,49 +32,79 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module Sweeper
+#script
+#read from one
+module FilterNMACInfo
 
-export configure, sweeper
+export dasc_script, libcas098small_script
+export remove_cpa, find_cpa
 
-using GrammarExpts, Configure
-using RLESUtils: ParamSweeps, Observers, Loggers, Vectorizer
-using CPUTime
-import Configure.configure
+using FilterRecords
+using DataFrameSets
+using DataFrames
+using Datasets
 
-const RESULTDIR = joinpath(dirname(@__FILE__), "../../results")
-const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
+const DASC_FILTERED = Pkg.dir("Datasets/data/dascfilt")
+const LIBCAS098SMALL_FILTERED = Pkg.dir("Datasets/data/libcas098smallfilt")
 
-configure(::Type{Val{:Sweeper}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
-
-function sweeper(f::Function, result_type::Type, baseconfig::Dict{Symbol,Any}=Dict{Symbol,Any}();
-                  outdir::AbstractString=RESULTDIR,
-                  logfileroot::AbstractString="sweeper_log",
-                  kwargs::Iterable...
-                  )
-  mkpath(outdir)
-  script = KWParamSweep(f; kwargs...)
-
-  keynames = collect(keys(script))
-  valtypes = map(x -> eltype(collect(x)), values(script))
-  valtypes = convert(Vector{Type}, valtypes)
-
-  observer = Observer()
-  logs = TaggedDFLogger()
-  add_folder!(logs, "result", vcat(valtypes, vectypes(result_type)), vcat(keynames, vecnames(result_type)))
-  add_observer(observer, "result", push!_f(logs, "result"))
-
-  results = map(script) do kvs
-    result = f(; kvs...)
-
-    vs = map(x -> x[2], kvs)
-    @notify_observer(observer, "result", vcat(vs, vectorize(result)))
-
-    return result
-  end
-
-  save_log(joinpath(outdir, logfileroot) * ".txt", logs)
-
-  return results
+function cpa_metric(r::DataFrameRow)
+  return r[:abs_alt_diff] + r[:horizontal_range] / 5
 end
+
+#returns row of cpa
+function find_cpa(D::DataFrame)
+  minval = realmax(Float64)
+  minrow = 0
+  for (i, r) in enumerate(eachrow(D))
+    val = cpa_metric(r)
+    if val < minval
+      minval = val
+      minrow = i
+    end
+  end
+  return minrow
+end
+
+function remove_cpa(dataname::AbstractString, outdir::AbstractString; kwargs...)
+  Ds = dataset(dataname)
+  remove_cpa!(Ds; kwargs...)
+  save_csvs(outdir, Ds)
+end
+
+function remove_cpa!(Ds::DFSet; kwargs...)
+  for D in records(Ds)
+    remove_cpa!(D; kwargs...)
+  end
+end
+
+function remove_cpa!(D::DataFrame; t_min::Int64=35, n_before::Int64=5)
+  i_cpa = find_cpa(D)
+
+  #not in acceptable range, select randomly
+  if !(t_min <= i_cpa <= nrow(D))
+    i_cpa = rand(t_min:nrow(D))
+  end
+  deleterows!(D, (i_cpa - n_before):nrow(D))
+end
+
+dasc_script() = remove_cpa("dasc", DASC_FILTERED; t_min=35, n_before=5)
+libcas098small_script() = remove_cpa("libcas098small", LIBCAS098SMALL_FILTERED; t_min=35, n_before=5)
+
+############
+#deprecated
+function isnmac(row::DataFrameRow)
+  return row[:horizontal_range] <= 500.0 && row[:abs_alt_diff] <= 100.0
+end
+
+function filter_nmac_info(f::Function, dataname::AbstractString, outdir::AbstractString)
+  Ds = dataset(dataname)
+  filter_by_bool!(f, Ds, n_before=5, n_after=typemax(Int64))
+
+  save_csvs(outdir, Ds)
+end
+
+#dasc_script() = filter_nmac_info(isnmac, "dasc", DASC_FILTERED)
+#libcas098small_script() = filter_nmac_info(isnmac, "libcas098small", LIBCAS098SMALL_FILTERED)
+############
 
 end #module
