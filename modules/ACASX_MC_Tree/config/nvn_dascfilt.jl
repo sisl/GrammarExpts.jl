@@ -32,20 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using Devectorize
+#nmacs vs nonnmacs
+[
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "dascfilt"),
+  (:data_meta, "dasc_meta"),
+  (:manuals, ""),
+  (:clusterdataname, "")
+]
 
-function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
-  true_ids = find(predicts)
-  false_ids = find(!predicts)
-  ent_pre = truth |> proportions |> entropy
-  ent_true = !isempty(true_ids) ?
-    truth[true_ids] |> proportions |> entropy : 0.0
-  ent_false = !isempty(false_ids) ?
-    truth[false_ids] |> proportions |> entropy : 0.0
-  w1 = length(true_ids) / length(truth)
-  w2 = length(false_ids) / length(truth)
-  ent_post = w1 .* ent_true + w2 .* ent_false #miminize entropy after split
-  info_gain = ent_pre - ent_post
-  return (info_gain, ent_pre, ent_post) #entropy pre/post split
-end
 

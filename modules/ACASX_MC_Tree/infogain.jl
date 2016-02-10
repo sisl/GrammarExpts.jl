@@ -32,8 +32,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using Devectorize
-
 function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
   true_ids = find(predicts)
   false_ids = find(!predicts)
@@ -44,7 +42,7 @@ function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
     truth[false_ids] |> proportions |> entropy : 0.0
   w1 = length(true_ids) / length(truth)
   w2 = length(false_ids) / length(truth)
-  ent_post = w1 .* ent_true + w2 .* ent_false #miminize entropy after split
+  ent_post = w1 * ent_true + w2 * ent_false #miminize entropy after split
   info_gain = ent_pre - ent_post
   return (info_gain, ent_pre, ent_post) #entropy pre/post split
 end

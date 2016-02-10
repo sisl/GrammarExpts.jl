@@ -32,20 +32,46 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using Devectorize
+using DecisionTrees
+using RLESUtils: Observers, Loggers
+import DecisionTreeVis: get_tree, get_metric
 
-function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
-  true_ids = find(predicts)
-  false_ids = find(!predicts)
-  ent_pre = truth |> proportions |> entropy
-  ent_true = !isempty(true_ids) ?
-    truth[true_ids] |> proportions |> entropy : 0.0
-  ent_false = !isempty(false_ids) ?
-    truth[false_ids] |> proportions |> entropy : 0.0
-  w1 = length(true_ids) / length(truth)
-  w2 = length(false_ids) / length(truth)
-  ent_post = w1 .* ent_true + w2 .* ent_false #miminize entropy after split
-  info_gain = ent_pre - ent_post
-  return (info_gain, ent_pre, ent_post) #entropy pre/post split
+include("infogain.jl")
+
+function DecisionTrees.get_truth{T}(members::Vector{Int64},
+                                 Dl::DFSetLabeled{T}, otherargs...) #userargs...
+  return labels(Dl, members)
 end
+
+function classify(problem::ACASXClustering, result::MCESResult, Ds::Vector{DataFrame})
+  f = to_function(problem, result.expr)
+  return map(f, Ds)
+end
+
+function DecisionTrees.get_splitter{T}(members::Vector{Int64},
+                                       Dl::DFSetLabeled{T}, problem::ACASXClustering,
+                                       pmc_params::PMCESParams, logs::TaggedDFLogger, loginterval::Int64) #userargs...
+  set_observers!(pmc_params.mc_params.observer, logs, loginterval)
+
+  problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
+  result = exprsearch(pmc_params, problem)
+
+  @notify_observer(pmc_params.mc_params.observer, "expression",
+                   [string(result.expr),
+                    pretty_string(result.tree, FMT_PRETTY),
+                    pretty_string(result.tree, FMT_NATURAL, true)])
+
+  predicts = classify(problem, result, records(Dl_sub))
+  info_gain, _, _ = get_metrics(predicts, labels(Dl_sub))
+
+  return info_gain > 0 ? result : nothing
+end
+
+function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},
+                                     Dl::DFSetLabeled{T}, problem::ACASXClustering, otherargs...) #userargs...
+  return classify(problem, result, records(Dl, members))
+end
+
+DecisionTreeVis.get_tree(result::MCESResult) = result.tree
+DecisionTreeVis.get_metric(result::MCESResult) = result.fitness
 

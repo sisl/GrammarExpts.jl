@@ -214,6 +214,7 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["tds_lt.1"] = bin_infix_lt
   fmt["tds_lt.2"] = bin_infix_lt
   fmt["timer_lt.1"] = bin_infix_lt
+  fmt["timer_lt.2"] = bin_infix_lt
   fmt["psid_lt.1"] = bin_infix_lt
   fmt["psid_lt.2"] = bin_infix_lt
   fmt["v_lt.1"] = bin_infix_lt
@@ -271,6 +272,7 @@ function get_format_pretty{T<:AbstractString}(colnames::Vector{T})
   fmt["tds_abslt.1"] = abs_bin_infix_lt
   fmt["tds_abslt.2"] = abs_bin_infix_lt
   fmt["timer_abslt.1"] = abs_bin_infix_lt
+  fmt["timer_abslt.2"] = abs_bin_infix_lt
   fmt["psid_abslt.1"] = abs_bin_infix_lt
   fmt["psid_abslt.2"] = abs_bin_infix_lt
   fmt["v_abslt.1"] = abs_bin_infix_lt
@@ -434,6 +436,7 @@ function get_format_natural{T<:AbstractString}(colnames::Vector{T})
   fmt["tds_lt.1"] = bin_infix_lt
   fmt["tds_lt.2"] = bin_infix_lt
   fmt["timer_lt.1"] = bin_infix_lt
+  fmt["timer_lt.2"] = bin_infix_lt
   fmt["psid_lt.1"] = bin_infix_lt
   fmt["psid_lt.2"] = bin_infix_lt
   fmt["v_lt.1"] = bin_infix_lt
@@ -491,6 +494,7 @@ function get_format_natural{T<:AbstractString}(colnames::Vector{T})
   fmt["tds_abslt.1"] = abs_bin_infix_lt
   fmt["tds_abslt.2"] = abs_bin_infix_lt
   fmt["timer_abslt.1"] = abs_bin_infix_lt
+  fmt["timer_abslt.2"] = abs_bin_infix_lt
   fmt["psid_abslt.1"] = abs_bin_infix_lt
   fmt["psid_abslt.2"] = abs_bin_infix_lt
   fmt["v_abslt.1"] = abs_bin_infix_lt

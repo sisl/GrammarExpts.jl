@@ -32,20 +32,58 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using Devectorize
+module MC_Tree_Logs
 
-function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
-  true_ids = find(predicts)
-  false_ids = find(!predicts)
-  ent_pre = truth |> proportions |> entropy
-  ent_true = !isempty(true_ids) ?
-    truth[true_ids] |> proportions |> entropy : 0.0
-  ent_false = !isempty(false_ids) ?
-    truth[false_ids] |> proportions |> entropy : 0.0
-  w1 = length(true_ids) / length(truth)
-  w2 = length(false_ids) / length(truth)
-  ent_post = w1 .* ent_true + w2 .* ent_false #miminize entropy after split
-  info_gain = ent_pre - ent_post
-  return (info_gain, ent_pre, ent_post) #entropy pre/post split
+export default_logs, set_observers!
+
+using DataFrames
+using DerivationTrees
+using Reexport
+@reexport using RLESUtils: Observers, Loggers
+
+function default_logs()
+  logs = TaggedDFLogger()
+  #=
+  add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
+  add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
+  add_folder!(logs, "cputime", [Int64, Float64, Int64], ["step", "cputime_s", "decision_id"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals", "decision_id"])
+  add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString, Int64], ["iteration", "reward", "state", "expr", "decision_id"])
+=#
+  return logs
 end
 
+function set_observers!(observer::Observer, logs::TaggedDFLogger, loginterval::Int64)
+  empty!(observer)
+  ####################
+  #print out observers
+  add_observer(observer, "current_best", x -> begin
+                 if rem(x[1], loginterval) == 0
+                   println("i=$(x[1]), fitness=$(x[2]), expr=$(x[3])")
+                 end
+               end)
+
+
+  ###################
+  #log observers
+  #=
+  decision_id = nrow(logs["result"]) > 0 ?
+    maximum(logs["result"][:decision_id]) + 1 : 1
+  add_observer(observer, "parameters", append_push!_f(logs, "parameters", decision_id))
+  add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
+  add_observer(observer, "cputime", append_push!_f(logs, "cputime", decision_id))
+  add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
+  add_observer(observer, "expression", append_push!_f(logs, "expression", decision_id))
+  add_observer(observer, "current_best", x -> begin
+                 i, reward, state = x
+                 if rem(i, loginterval) == 0
+                   push!(logs, "current_best", [i, reward, string(state.past_actions), string(get_expr(state)), decision_id])
+                 end
+               end)
+  =#
+
+  return logs
+end
+
+end #module

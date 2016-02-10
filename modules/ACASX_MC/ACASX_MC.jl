@@ -32,91 +32,56 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module ACASX_SA_Tree
+module ACASX_MC
 
-export configure, acasx_sa_tree
+export configure, acasx_mc
 
-using DecisionTrees
-using ExprSearch.SA
-using Datasets
-using RLESUtils.Obj2Dict
+using ExprSearch.MC
 using Reexport
 
 using GrammarExpts
-using Configure, ACASXProblem, SA_Tree_Logs
-using DerivTreeVis, DecisionTreeVis
+using ACASXProblem, DerivTreeVis, Configure
 import Configure.configure
-
-include("dtree_callbacks.jl")
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-configure(::Type{Val{:ACASX_SA_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_MC}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function train_dtree{T}(psa_params::PSAESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
-                        loginterval::Int64, maxdepth::Int64)
+function acasx_mc(outdir::AbstractString="./"; seed=1,
+                  logfileroot::AbstractString="acasx_mc_log",
 
-  logs = default_logs()
-  num_data = length(Dl)
-  T1 = Bool #predict_type
-  T2 = Int64 #label_type
+                  runtype::Symbol=:nmacs_vs_nonnmacs,
+                  data::AbstractString="dasc",
+                  data_meta::AbstractString="dasc_meta",
+                  manuals::AbstractString="dasc_manual",
+                  clusterdataname::AbstractString="josh1",
 
-  p = DTParams(num_data, maxdepth, T1, T2)
+                  maxsteps::Int64=20,
+                  n_samples::Int64=50,
+                  n_threads::Int64=1,
 
-  dtree = build_tree(p,
-                     Dl, problem, psa_params, logs, loginterval) #userargs...
+                  loginterval::Int64=100,
+                  vis::Bool=true,
+                  observer::Observer=Observer())
 
-  return dtree, logs
-end
-
-function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
-                       logfileroot::AbstractString="acasx_sa_tree_log",
-
-                       runtype::Symbol=:nmacs_vs_nonnmacs,
-                       data::AbstractString="dasc",
-                       data_meta::AbstractString="dasc_meta",
-                       manuals::AbstractString="dasc_manual",
-                       clusterdataname::AbstractString="josh1",
-
-                       maxsteps::Int64=20,
-                       T1::Float64=12.184,
-                       alpha::Float64=0.99976,
-                       n_epochs::Int64=50,
-                       n_starts::Int64=1,
-                       n_batches::Int64=1,
-                       maxdepth::Int64=1,
-
-                       loginterval::Int64=100,
-                       vis::Bool=true,
-                       limit_members::Int64=10)
+  srand(seed)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
-  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, Observer())
-  psa_params = PSAESParams(n_batches, sa_params)
+  add_observer(observer, "current_best", x -> begin
+                 if rem(x[1], loginterval) == 0
+                   println("i=$(x[1]), fitness=$(x[2]), expr=$(x[3])")
+                 end
+               end)
+  #logs = default_logs(observer)
+  #default_console!(observer)
 
-  Dl = problem.Dl
-  dtree, logs = train_dtree(psa_params, problem, Dl, loginterval, maxdepth)
+  mc_params = MCESParams(maxsteps, n_samples, observer)
+  pmc_params = PMCESParams(n_threads, mc_params)
 
-  #add to log
-  #push!(logs, "parameters", ["seed", seed, 0])
-  #push!(logs, "parameters", ["runtype", runtype, 0])
-  #push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
+  result = exprsearch(mc_params, problem)
 
-  #outfile = joinpath(outdir, "$(logfileroot).json")
-  #Obj2Dict.save_obj(outfile, dtree)
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
-
-  #visualize
-  if vis
-    decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"), limit_members,
-                    FMT_PRETTY, FMT_NATURAL)
-    #logvis(logs, joinpath(outdir, "$(logfileroot)_logs"))
-  end
-
-  return dtree, logs
+  return result
 end
 
 end #module
-

@@ -39,6 +39,7 @@ export FMT_PRETTY, FMT_NATURAL
 
 using Datasets
 using ExprSearch
+using Devectorize
 import ExprSearch: ExprProblem, create_grammar, get_fitness
 
 include("labeleddata.jl")
@@ -327,33 +328,33 @@ function ExprSearch.create_grammar(problem::ACASXClustering)
   return grammar
 end
 
-abs_eq(v::RealVec, b::Real) = abs(v) .== b
-abs_lte(v::RealVec, b::Real) = abs(v) .<= b
-abs_lt(v::RealVec, b::Real) = abs(v) .< b
+abs_eq(v::RealVec, b::Real) = @devec r = abs(v) .== b
+abs_lte(v::RealVec, b::Real) = @devec r = abs(v) .<= b
+abs_lt(v::RealVec, b::Real) = @devec r = abs(v) .< b
 
-abs_eq(v1::RealVec, v2::RealVec) = abs(v1) .== abs(v2)
-abs_lte(v1::RealVec, v2::RealVec) = abs(v1) .<= abs(v2)
-abs_lt(v1::RealVec, v2::RealVec) = abs(v1) .< abs(v2)
+abs_eq(v1::RealVec, v2::RealVec) = @devec r = abs(v1) .== abs(v2)
+abs_lte(v1::RealVec, v2::RealVec) = @devec r = abs(v1) .<= abs(v2)
+abs_lt(v1::RealVec, v2::RealVec) = @devec r = abs(v1) .< abs(v2)
 
-diff_eq(v1::RealVec, v2::RealVec, b::Real) = (v1 - v2) .== b
-diff_lte(v1::RealVec, v2::RealVec, b::Real) = (v1 - v2) .<= b
-diff_lt(v1::RealVec, v2::RealVec, b::Real) = (v1 - v2) .< b
+diff_eq(v1::RealVec, v2::RealVec, b::Real) = @devec r = (v1 - v2) .== b
+diff_lte(v1::RealVec, v2::RealVec, b::Real) = @devec r = (v1 - v2) .<= b
+diff_lt(v1::RealVec, v2::RealVec, b::Real) = @devec r = (v1 - v2) .< b
 
-abs_diff_eq(v1::RealVec, v2::RealVec, b::Real) = abs(v1 - v2) .== b
-abs_diff_lte(v1::RealVec, v2::RealVec, b::Real) = abs(v1 - v2) .<= b
-abs_diff_lt(v1::RealVec, v2::RealVec, b::Real) = abs(v1 - v2) .< b
+abs_diff_eq(v1::RealVec, v2::RealVec, b::Real) = @devec r = abs(v1 - v2) .== b
+abs_diff_lte(v1::RealVec, v2::RealVec, b::Real) = @devec r = abs(v1 - v2) .<= b
+abs_diff_lt(v1::RealVec, v2::RealVec, b::Real) = @devec r = abs(v1 - v2) .< b
 
 eventually(v::AbstractVector{Bool}) = any(v)
 globally(v::AbstractVector{Bool}) = all(v)
 implies(v1::AbstractVector{Bool}, v2::AbstractVector{Bool}) = all(!v1 | v2)
 
-sign_(v1::RealVec, v2::RealVec) = (sign(v1) .* sign(v2)) .>= 0.0 #same sign, 0 matches any sign
+sign_(v1::RealVec, v2::RealVec) = @devec r = (sign(v1) .* sign(v2)) .>= 0.0 #same sign, 0 matches any sign
 
-count_eq(v::AbstractVector{Bool}, b::Real) = count(identity, v) .== b
-count_lt(v::AbstractVector{Bool}, b::Real) = count(identity, v) .< b
-count_lte(v::AbstractVector{Bool}, b::Real) = count(identity, v) .<= b
-count_gt(v::AbstractVector{Bool}, b::Real) = count(identity, v) .> b
-count_gte(v::AbstractVector{Bool}, b::Real) = count(identity, v) .>= b
+count_eq(v::AbstractVector{Bool}, b::Real) = count(identity, v) == b
+count_lt(v::AbstractVector{Bool}, b::Real) = count(identity, v) < b
+count_lte(v::AbstractVector{Bool}, b::Real) = count(identity, v) <= b
+count_gt(v::AbstractVector{Bool}, b::Real) = count(identity, v) > b
+count_gte(v::AbstractVector{Bool}, b::Real) = count(identity, v) >= b
 
 #shorthands used in grammar to reduce impact on code length
 abeq = abs_eq
@@ -386,7 +387,34 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
   codelen = length(string(expr))
 
   f = to_function(problem, expr)
-  predicts = map(f, Dl.records)
+  predicts = Array(Bool, length(Dl.records))
+  for i = 1:length(Dl.records)
+    predicts[i] = f(Dl.records[i])
+  end
+  _, _, ent_post = get_metrics(predicts, Dl.labels)
+  return problem.w_ent * ent_post + problem.w_len * codelen
+end
+
+function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
+                                   thresh::Float64, default::Float64)
+  Dl = problem.Dl
+  codelen = length(string(expr))
+  f = to_function(problem, expr)
+
+  maxent = (thresh - problem.w_len * codelen) / problem.w_len
+
+  predicts = Array(Bool, length(Dl.records))
+  for i = 1:length(Dl.records)
+    predicts[i] = f(Dl.records[i])
+
+    #early exit
+    ent = computebound()
+    if ent > maxent
+      return default
+    end
+  end
+
+  #do full calc
   _, _, ent_post = get_metrics(predicts, Dl.labels)
   return problem.w_ent * ent_post + problem.w_len * codelen
 end

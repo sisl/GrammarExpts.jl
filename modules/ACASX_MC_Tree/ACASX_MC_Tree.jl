@@ -32,28 +32,28 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module ACASX_SA_Tree
+module ACASX_MC_Tree
 
-export configure, acasx_sa_tree
+export configure, acasx_mc_tree
 
 using DecisionTrees
-using ExprSearch.SA
+using ExprSearch.MC
 using Datasets
 using RLESUtils.Obj2Dict
 using Reexport
 
 using GrammarExpts
-using Configure, ACASXProblem, SA_Tree_Logs
-using DerivTreeVis, DecisionTreeVis
+using Configure, ACASXProblem
+using DerivTreeVis, DecisionTreeVis, MC_Tree_Logs
 import Configure.configure
 
 include("dtree_callbacks.jl")
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 
-configure(::Type{Val{:ACASX_SA_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_MC_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function train_dtree{T}(psa_params::PSAESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
+function train_dtree{T}(pmc_params::PMCESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
                         loginterval::Int64, maxdepth::Int64)
 
   logs = default_logs()
@@ -64,13 +64,13 @@ function train_dtree{T}(psa_params::PSAESParams, problem::ACASXClustering, Dl::D
   p = DTParams(num_data, maxdepth, T1, T2)
 
   dtree = build_tree(p,
-                     Dl, problem, psa_params, logs, loginterval) #userargs...
+                     Dl, problem, pmc_params, logs, loginterval) #userargs...
 
   return dtree, logs
 end
 
-function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
-                       logfileroot::AbstractString="acasx_sa_tree_log",
+function acasx_mc_tree(outdir::AbstractString="./"; seed=1,
+                       logfileroot::AbstractString="acasx_mc_tree_log",
 
                        runtype::Symbol=:nmacs_vs_nonnmacs,
                        data::AbstractString="dasc",
@@ -79,11 +79,8 @@ function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
                        clusterdataname::AbstractString="josh1",
 
                        maxsteps::Int64=20,
-                       T1::Float64=12.184,
-                       alpha::Float64=0.99976,
-                       n_epochs::Int64=50,
-                       n_starts::Int64=1,
-                       n_batches::Int64=1,
+                       n_samples::Int64=50,
+                       n_threads::Int64=1,
                        maxdepth::Int64=1,
 
                        loginterval::Int64=100,
@@ -92,11 +89,11 @@ function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
-  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, Observer())
-  psa_params = PSAESParams(n_batches, sa_params)
+  mc_params = MCESParams(maxsteps, n_samples, Observer())
+  pmc_params = PMCESParams(n_threads, mc_params)
 
   Dl = problem.Dl
-  dtree, logs = train_dtree(psa_params, problem, Dl, loginterval, maxdepth)
+  dtree, logs = train_dtree(pmc_params, problem, Dl, loginterval, maxdepth)
 
   #add to log
   #push!(logs, "parameters", ["seed", seed, 0])
