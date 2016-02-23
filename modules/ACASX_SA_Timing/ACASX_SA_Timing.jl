@@ -38,12 +38,12 @@ export acasx_sa_timing
 
 using ExprSearch.SA
 using DerivationTrees
-using RLESUtils: Rentals, SwapBuffers, Observers, Loggers, StringUtils
+using RLESUtils: SwapBuffers, Observers, Loggers, StringUtils
 
 using GrammarExpts
 using ACASXProblem
 
-function acasx_sa_timing(outdir::AbstractString="./"; seed=1,
+function acasx_sa_timing(problem=nothing, outdir::AbstractString="./"; seed=1,
                   logfileroot::AbstractString="acasx_sa_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
@@ -63,7 +63,9 @@ function acasx_sa_timing(outdir::AbstractString="./"; seed=1,
                   vis::Bool=true,
                   observer::Observer=Observer())
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  if problem == nothing
+    problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  end
   p = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
 
   grammar = create_grammar(problem)
@@ -86,21 +88,19 @@ function acasx_sa_timing(outdir::AbstractString="./"; seed=1,
   @printeval @time SA.accept(s, sp, T)
   @printeval @time swap!(s_buffer)
 
-  @printeval @time rand!(s.tree, typemax(Int64))
-  @printeval @time s.expr = get_expr(s.tree)
-  @show s.expr
-  @printeval @time s.fitness = get_fitness(problem, s.expr)
-
   @printeval @time SA.initialize!(s, problem) #initialize randomly
   @printeval @time SA.update!(result, s)
 
   @printeval @time copy!(sp, s)
   @printeval @time SA.perturb!(sp.tree)
 
+  @printeval @time rand!(s.tree, typemax(Int64))
+  @printeval @time s.expr = get_expr(s.tree)
   @show s.expr
+  @printeval @time s.fitness = get_fitness(problem, s.expr)
   @printeval @time f = to_function(problem, s.expr)
   @printeval @time predicts = map(f, problem.Dl.records)
-  @printeval @time _, _, ent_post = ACASXProblem.get_metrics(predicts, problem.Dl.labels)
+  @printeval @time _, _, ent_post = ACASXProblem.entropy_metrics(predicts, problem.Dl.labels)
 
   @printeval @time predicts = Array(Bool, length(problem.Dl.records))
   @printeval @time begin
@@ -109,6 +109,7 @@ function acasx_sa_timing(outdir::AbstractString="./"; seed=1,
       predicts[i] = f(records[i])
     end
   end
+  @printeval @time predicts[1] = f(records[1])
 
   v1 = rand(50)
   v2 = rand(50)
@@ -116,8 +117,9 @@ function acasx_sa_timing(outdir::AbstractString="./"; seed=1,
   @printeval @time ACASXProblem.sign_(v1,v2);
 
   members = rand(1:100, 30)
-  @printeval @time problem.Dl = Dl_sub = problem.Dl[members]
+  @printeval @time Dl_sub = problem.Dl[members]
 
+  problem
 end
 
 end #module

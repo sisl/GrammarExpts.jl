@@ -20,7 +20,7 @@
 # of this software and associated documentation files (the "Software"), to
 # deal in the Software without restriction, including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, , and to permit persons to whom the Software is
+# sell copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED
@@ -32,14 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+#nmacs vs nonnmacs
 [
-  #tree
-  (:maxsteps, 20),
-
-  #MC
-  (:n_samples, 125000),
-  (:n_threads, 4),
-
-  #decision tree
-  (:maxdepth, 3)
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "libcas098smallfilt"),
+  (:data_meta, "libcas098small_meta"),
+  (:manuals, ""),
+  (:clusterdataname, "")
 ]
+
+

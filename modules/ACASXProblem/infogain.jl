@@ -32,20 +32,31 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using Devectorize
+using Distributions
+using RLESUtils.MathUtils
 
-function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
-  true_ids = find(predicts)
-  false_ids = find(!predicts)
-  ent_pre = truth |> proportions |> entropy
-  ent_true = !isempty(true_ids) ?
-    truth[true_ids] |> proportions |> entropy : 0.0
-  ent_false = !isempty(false_ids) ?
-    truth[false_ids] |> proportions |> entropy : 0.0
-  w1 = length(true_ids) / length(truth)
-  w2 = length(false_ids) / length(truth)
-  ent_post = w1 .* ent_true + w2 .* ent_false #miminize entropy after split
+function entropy_metrics{T}(predicts::Vector{Bool}, truth::Vector{T}, entbase::Float64=2.0)
+  ntrues = count(identity, predicts)
+  nfalses = count(!, predicts)
+  ent_pre = entropy(proportions(truth), entbase)
+  ent_true = ntrues != 0 ?
+    entropy(proportions(truth[predicts]), entbase) : 0.0 #truth[predicts] is expensive...
+  ent_false = nfalses != 0 ?
+    entropy(proportions(truth[!predicts]), entbase) : 0.0
+  w1 = ntrues / length(truth)
+  w2 = nfalses / length(truth)
+  ent_post = w1 .* ent_true + w2 .* ent_false #entropy after split
   info_gain = ent_pre - ent_post
   return (info_gain, ent_pre, ent_post) #entropy pre/post split
 end
 
+function gini_metric{T}(predicts::Vector{Bool}, truth::Vector{T})
+  ntrues = count(identity, predicts)
+  nfalses = count(!, predicts)
+  gini_true = gini_impurity(truth[predicts]) #truth[predicts] is expensive...
+  gini_false = gini_impurity(truth[!predicts])
+  w1 = ntrues / length(truth)
+  w2 = nfalses / length(truth)
+  gini_post = w1 .* gini_true + w2 .* gini_false
+  gini_post
+end

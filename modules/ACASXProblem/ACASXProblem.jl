@@ -40,6 +40,7 @@ export FMT_PRETTY, FMT_NATURAL
 using Datasets
 using ExprSearch
 using Devectorize
+using RLESUtils: LogicUtils, MathUtils
 import ExprSearch: ExprProblem, create_grammar, get_fitness
 
 include("labeleddata.jl")
@@ -56,6 +57,7 @@ type ACASXClustering{T} <: ExprProblem
   Dl::DFSetLabeled{T}
   w_ent::Float64
   w_len::Float64
+  labelset::Vector{T}
 end
 
 function ACASXClustering(runtype::Symbol, dataname::AbstractString, meta_name::AbstractString,
@@ -82,7 +84,8 @@ function ACASXClustering(dataname::AbstractString,
   data_meta = dataset(meta_name, "encounter_meta")
 
   Dl = nmacs_vs_nonnmacs(data, data_meta)
-  return ACASXClustering(Dl, w_ent, w_len)
+  labelset = unique(labels(Dl))
+  return ACASXClustering(Dl, w_ent, w_len, labelset)
 end
 
 #clusterings only
@@ -95,7 +98,8 @@ function ACASXClustering(dataname::AbstractString,
   clustering = dataset(manuals, clustername)
 
   Dl =  nmac_clusters(clustering, data)
-  return ACASXClustering(Dl, w_ent, w_len)
+  labelset = unique(labels(Dl))
+  return ACASXClustering(Dl, w_ent, w_len, labelset)
 end
 
 #clusterings with nonnmacs as extra cluster
@@ -110,7 +114,8 @@ function ACASXClustering(dataname::AbstractString,
   clustering = dataset(manuals, clustername)
 
   Dl =  nonnmacs_extra_cluster(clustering, data, data_meta)
-  return ACASXClustering(Dl, w_ent, w_len)
+  labelset = unique(labels(Dl))
+  return ACASXClustering(Dl, w_ent, w_len, labelset)
 end
 
 function ExprSearch.create_grammar(problem::ACASXClustering)
@@ -125,23 +130,23 @@ function ExprSearch.create_grammar(problem::ACASXClustering)
 
     #produces a bin_vec
     bin_vec = bin_feat | and | or | not  | eq | lt | lte | abseq | abslt | abslte | diff_eq | diff_lt | diff_lte | sign | absdiff_eq | absdiff_lt | absdiff_lte
-    and = Expr(:call, :&, bin_vec, bin_vec)
-    or = Expr(:call, :|, bin_vec, bin_vec)
-    not = Expr(:call, :!, bin_vec)
+    and = Expr(:call, :and!, bin_vec, bin_vec)
+    or = Expr(:call, :or!, bin_vec, bin_vec)
+    not = Expr(:call, :not!, bin_vec)
 
     #equal
     eq = vrate_eq | altdiff_eq | chi_angle_eq | psi_angle_eq | sr_eq | tds_eq | timer_eq | psid_eq | v_eq | alt_eq | abs_altdiff_eq
-    vrate_eq = Expr(:comparison, vrate_feat, :.==, vrate_val) | Expr(:comparison, vrate_feat, :.==, vrate_feat)
-    altdiff_eq = Expr(:comparison, altdiff_feat, :.==, altdiff_val)
-    chi_angle_eq = Expr(:comparison, chi_angle_feat, :.==, angle_val) | Expr(:comparison, chi_angle_feat, :.==, chi_angle_feat)
-    psi_angle_eq = Expr(:comparison, psi_angle_feat, :.==, psi_angle_feat)
-    sr_eq = Expr(:comparison, sr_feat, :.==, sr_val)
-    tds_eq = Expr(:comparison, tds_feat, :.==, tds_val) | Expr(:comparison, tds_feat, :.==, tds_feat)
-    timer_eq = Expr(:comparison, timer_feat, :.==, timer_val) | Expr(:comparison, timer_feat, :.==, timer_feat)
-    psid_eq = Expr(:comparison, psid_feat, :.==, psid_val) | Expr(:comparison, psid_feat, :.==, psid_feat)
-    v_eq = Expr(:comparison, v_feat, :.==, v_val) | Expr(:comparison, v_feat, :.==, v_feat)
-    alt_eq = Expr(:comparison, alt_feat, :.==, alt_val) | Expr(:comparison, alt_feat, :.==, alt_feat)
-    abs_altdiff_eq = Expr(:comparison, abs_altdiff_feat, :.==, abs_altdiff_val)
+    vrate_eq = Expr(:call, :eq, vrate_feat, vrate_val) | Expr(:call, :eq, vrate_feat, vrate_feat)
+    altdiff_eq = Expr(:call, :eq, altdiff_feat, altdiff_val)
+    chi_angle_eq = Expr(:call, :eq, chi_angle_feat, angle_val) | Expr(:call, :eq, chi_angle_feat, chi_angle_feat)
+    psi_angle_eq = Expr(:call, :eq, psi_angle_feat, psi_angle_feat)
+    sr_eq = Expr(:call, :eq, sr_feat, sr_val)
+    tds_eq = Expr(:call, :eq, tds_feat, tds_val) | Expr(:call, :eq, tds_feat, tds_feat)
+    timer_eq = Expr(:call, :eq, timer_feat, timer_val) | Expr(:call, :eq, timer_feat, timer_feat)
+    psid_eq = Expr(:call, :eq, psid_feat, psid_val) | Expr(:call, :eq, psid_feat, psid_feat)
+    v_eq = Expr(:call, :eq, v_feat, v_val) | Expr(:call, :eq, v_feat, v_feat)
+    alt_eq = Expr(:call, :eq, alt_feat, alt_val) | Expr(:call, :eq, alt_feat, alt_feat)
+    abs_altdiff_eq = Expr(:call, :eq, abs_altdiff_feat, abs_altdiff_val)
 
     #absolute equals
     abseq = vrate_abseq | altdiff_abseq | chi_angle_abseq | psi_angle_abseq | sr_abseq | tds_abseq | timer_abseq | psid_abseq | v_abseq | alt_abseq
@@ -158,17 +163,17 @@ function ExprSearch.create_grammar(problem::ACASXClustering)
 
     #less than
     lt = vrate_lt | altdiff_lt  | chi_angle_lt | psi_angle_lt | sr_lt | tds_lt | timer_lt | psid_lt | v_lt | alt_lt | abs_altdiff_lt
-    vrate_lt = Expr(:comparison, vrate_feat, :.<, vrate_val) | Expr(:comparison, vrate_feat, :.<, vrate_feat)
-    altdiff_lt = Expr(:comparison, altdiff_feat, :.<, altdiff_val)
-    chi_angle_lt = Expr(:comparison, chi_angle_feat, :.<, angle_val) | Expr(:comparison, chi_angle_feat, :.<, chi_angle_feat)
-    psi_angle_lt = Expr(:comparison, psi_angle_feat, :.<, psi_angle_feat)
-    sr_lt = Expr(:comparison, sr_feat, :.<, sr_val)
-    tds_lt = Expr(:comparison, tds_feat, :.<, tds_val) | Expr(:comparison, tds_feat, :.<, tds_feat)
-    timer_lt = Expr(:comparison, timer_feat, :.<, timer_val) | Expr(:comparison, timer_feat, :.<, timer_feat)
-    psid_lt = Expr(:comparison, psid_feat, :.<, psid_val) | Expr(:comparison, psid_feat, :.<, psid_feat)
-    v_lt = Expr(:comparison, v_feat, :.<, v_val) | Expr(:comparison, v_feat, :.<, v_feat)
-    alt_lt = Expr(:comparison, alt_feat, :.<, alt_val) | Expr(:comparison, alt_feat, :.<, alt_feat)
-    abs_altdiff_lt = Expr(:comparison, abs_altdiff_feat, :.<, abs_altdiff_val)
+    vrate_lt = Expr(:call, :lt, vrate_feat, vrate_val) | Expr(:call, :lt, vrate_feat, vrate_feat)
+    altdiff_lt = Expr(:call, :lt, altdiff_feat, altdiff_val)
+    chi_angle_lt = Expr(:call, :lt, chi_angle_feat, angle_val) | Expr(:call, :lt, chi_angle_feat, chi_angle_feat)
+    psi_angle_lt = Expr(:call, :lt, psi_angle_feat, psi_angle_feat)
+    sr_lt = Expr(:call, :lt, sr_feat, sr_val)
+    tds_lt = Expr(:call, :lt, tds_feat, tds_val) | Expr(:call, :lt, tds_feat, tds_feat)
+    timer_lt = Expr(:call, :lt, timer_feat, timer_val) | Expr(:call, :lt, timer_feat, timer_feat)
+    psid_lt = Expr(:call, :lt, psid_feat, psid_val) | Expr(:call, :lt, psid_feat, psid_feat)
+    v_lt = Expr(:call, :lt, v_feat, v_val) | Expr(:call, :lt, v_feat, v_feat)
+    alt_lt = Expr(:call, :lt, alt_feat, alt_val) | Expr(:call, :lt, alt_feat, alt_feat)
+    abs_altdiff_lt = Expr(:call, :lt, abs_altdiff_feat, abs_altdiff_val)
 
     #absolute less than
     abslt = vrate_abslt | altdiff_abslt  | chi_angle_abslt | psi_angle_abslt | sr_abslt | tds_abslt | timer_abslt | psid_abslt | v_abslt | alt_abslt
@@ -185,17 +190,17 @@ function ExprSearch.create_grammar(problem::ACASXClustering)
 
     #less then or equal
     lte = vrate_lte | altdiff_lte | chi_angle_lte | psi_angle_lte | sr_lte | tds_lte | timer_lte | psid_lte | v_lte | alt_lte | abs_altdiff_lte
-    vrate_lte = Expr(:comparison, vrate_feat, :.<=, vrate_val) | Expr(:comparison, vrate_feat, :.<=, vrate_feat)
-    altdiff_lte = Expr(:comparison, altdiff_feat, :.<=, altdiff_val)
-    chi_angle_lte = Expr(:comparison, chi_angle_feat, :.<=, angle_val) | Expr(:comparison, chi_angle_feat, :.<=, chi_angle_feat)
-    psi_angle_lte = Expr(:comparison, psi_angle_feat, :.<=, psi_angle_feat)
-    sr_lte = Expr(:comparison, sr_feat, :.<=, sr_val)
-    tds_lte = Expr(:comparison, tds_feat, :.<=, tds_val) | Expr(:comparison, tds_feat, :.<=, tds_feat)
-    timer_lte = Expr(:comparison, timer_feat, :.<=, timer_val) | Expr(:comparison, timer_feat, :.<=, timer_feat)
-    psid_lte = Expr(:comparison, psid_feat, :.<=, psid_val) | Expr(:comparison, psid_feat, :.<=, psid_feat)
-    v_lte = Expr(:comparison, v_feat, :.<=, v_val) | Expr(:comparison, v_feat, :.<=, v_feat)
-    alt_lte = Expr(:comparison, alt_feat, :.<=, alt_val) | Expr(:comparison, alt_feat, :.<=, alt_feat)
-    abs_altdiff_lte = Expr(:comparison, abs_altdiff_feat, :.<=, abs_altdiff_val)
+    vrate_lte = Expr(:call, :lte, vrate_feat, vrate_val) | Expr(:call, :lte, vrate_feat, vrate_feat)
+    altdiff_lte = Expr(:call, :lte, altdiff_feat, altdiff_val)
+    chi_angle_lte = Expr(:call, :lte, chi_angle_feat, angle_val) | Expr(:call, :lte, chi_angle_feat, chi_angle_feat)
+    psi_angle_lte = Expr(:call, :lte, psi_angle_feat, psi_angle_feat)
+    sr_lte = Expr(:call, :lte, sr_feat, sr_val)
+    tds_lte = Expr(:call, :lte, tds_feat, tds_val) | Expr(:call, :lte, tds_feat, tds_feat)
+    timer_lte = Expr(:call, :lte, timer_feat, timer_val) | Expr(:call, :lte, timer_feat, timer_feat)
+    psid_lte = Expr(:call, :lte, psid_feat, psid_val) | Expr(:call, :lte, psid_feat, psid_feat)
+    v_lte = Expr(:call, :lte, v_feat, v_val) | Expr(:call, :lte, v_feat, v_feat)
+    alt_lte = Expr(:call, :lte, alt_feat, alt_val) | Expr(:call, :lte, alt_feat, alt_feat)
+    abs_altdiff_lte = Expr(:call, :lte, abs_altdiff_feat, abs_altdiff_val)
 
     #abs less then or equal
     abslte = vrate_abslte | altdiff_abslte | chi_angle_abslte | psi_angle_abslte | sr_abslte | tds_abslte | timer_abslte | psid_abslte | v_abslte | alt_abslte
@@ -328,33 +333,215 @@ function ExprSearch.create_grammar(problem::ACASXClustering)
   return grammar
 end
 
-abs_eq(v::RealVec, b::Real) = @devec r = abs(v) .== b
-abs_lte(v::RealVec, b::Real) = @devec r = abs(v) .<= b
-abs_lt(v::RealVec, b::Real) = @devec r = abs(v) .< b
+function eq(v1::RealVec, v2::RealVec)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = v1[i] == v2[i]
+  end
+  r
+end
+function eq(v1::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = v1[i] == b
+  end
+  r
+end
+function lt(v1::RealVec, v2::RealVec)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = v1[i] < v2[i]
+  end
+  r
+end
+function lt(v1::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = v1[i] < b
+  end
+  r
+end
+function lte(v1::RealVec, v2::RealVec)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = v1[i] <= v2[i]
+  end
+  r
+end
 
-abs_eq(v1::RealVec, v2::RealVec) = @devec r = abs(v1) .== abs(v2)
-abs_lte(v1::RealVec, v2::RealVec) = @devec r = abs(v1) .<= abs(v2)
-abs_lt(v1::RealVec, v2::RealVec) = @devec r = abs(v1) .< abs(v2)
+function lte(v1::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = v1[i] <= b
+  end
+  r
+end
 
-diff_eq(v1::RealVec, v2::RealVec, b::Real) = @devec r = (v1 - v2) .== b
-diff_lte(v1::RealVec, v2::RealVec, b::Real) = @devec r = (v1 - v2) .<= b
-diff_lt(v1::RealVec, v2::RealVec, b::Real) = @devec r = (v1 - v2) .< b
+function abs_eq(v::RealVec, b::Real)
+  v = convert(Array, v)
+  r = Array(Bool, length(v))
+  @inbounds for i = 1:length(v)
+    r[i] = abs(v[i]) == b
+  end
+  r
+end
+function abs_lte(v::RealVec, b::Real)
+  v = convert(Array, v)
+  r = Array(Bool, length(v))
+  @inbounds for i = 1:length(v)
+    r[i] = abs(v[i]) <= b
+  end
+  r
+end
+function abs_lt(v::RealVec, b::Real)
+  v = convert(Array, v)
+  r = Array(Bool, length(v))
+  @inbounds for i = 1:length(v)
+    r[i] = abs(v[i]) < b
+  end
+  r
+end
 
-abs_diff_eq(v1::RealVec, v2::RealVec, b::Real) = @devec r = abs(v1 - v2) .== b
-abs_diff_lte(v1::RealVec, v2::RealVec, b::Real) = @devec r = abs(v1 - v2) .<= b
-abs_diff_lt(v1::RealVec, v2::RealVec, b::Real) = @devec r = abs(v1 - v2) .< b
+function abs_eq(v1::RealVec, v2::RealVec)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = abs(v1[i]) == abs(v2[i])
+  end
+  r
+end
+function abs_lte(v1::RealVec, v2::RealVec)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = abs(v1[i]) <= abs(v2[i])
+  end
+  r
+end
+function abs_lt(v1::RealVec, v2::RealVec)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = abs(v1[i]) < abs(v2[i])
+  end
+  r
+end
 
-eventually(v::AbstractVector{Bool}) = any(v)
-globally(v::AbstractVector{Bool}) = all(v)
-implies(v1::AbstractVector{Bool}, v2::AbstractVector{Bool}) = all(!v1 | v2)
+function diff_eq(v1::RealVec, v2::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = (v1[i] - v2[i]) == b
+  end
+  r
+end
+function diff_lte(v1::RealVec, v2::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = (v1[i] - v2[i]) <= b
+  end
+  r
+end
+function diff_lt(v1::RealVec, v2::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = (v1[i] - v2[i]) < b
+  end
+  r
+end
 
-sign_(v1::RealVec, v2::RealVec) = @devec r = (sign(v1) .* sign(v2)) .>= 0.0 #same sign, 0 matches any sign
+function abs_diff_eq(v1::RealVec, v2::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = abs(v1[i] - v2[i]) == b
+  end
+  r
+end
+function abs_diff_lte(v1::RealVec, v2::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = abs(v1[i] - v2[i]) <= b
+  end
+  r
+end
+function abs_diff_lt(v1::RealVec, v2::RealVec, b::Real)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = abs(v1[i] - v2[i]) < b
+  end
+  r
+end
 
-count_eq(v::AbstractVector{Bool}, b::Real) = count(identity, v) == b
-count_lt(v::AbstractVector{Bool}, b::Real) = count(identity, v) < b
-count_lte(v::AbstractVector{Bool}, b::Real) = count(identity, v) <= b
-count_gt(v::AbstractVector{Bool}, b::Real) = count(identity, v) > b
-count_gte(v::AbstractVector{Bool}, b::Real) = count(identity, v) >= b
+function eventually(v::AbstractVector{Bool})
+  v = convert(Array, v)
+  any(v)
+end
+function globally(v::AbstractVector{Bool})
+  v = convert(Array, v)
+  all(v)
+end
+function implies(v1::AbstractVector{Bool}, v2::AbstractVector{Bool})
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  @inbounds for i = 1:length(v1)
+    v1[i] = v2[i] || !v1[i]
+  end
+  all(v1)
+end
+
+function sign_(v1::RealVec, v2::RealVec)
+  v1 = convert(Array, v1)
+  v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
+  @inbounds for i = 1:length(v1)
+    r[i] = v1[i] * v2[i] >= 0.0
+  end
+  r
+end
+
+function count_eq(v::AbstractVector{Bool}, b::Real)
+  v = convert(Array, v)
+  count(identity, v) == b
+end
+function count_lt(v::AbstractVector{Bool}, b::Real)
+  v = convert(Array, v)
+  count(identity, v) < b
+end
+function count_lte(v::AbstractVector{Bool}, b::Real)
+  v = convert(Array, v)
+  count(identity, v) <= b
+end
+function count_gt(v::AbstractVector{Bool}, b::Real)
+  v = convert(Array, v)
+  count(identity, v) > b
+end
+function count_gte(v::AbstractVector{Bool}, b::Real)
+  v = convert(Array, v)
+  count(identity, v) >= b
+end
 
 #shorthands used in grammar to reduce impact on code length
 abeq = abs_eq
@@ -391,8 +578,27 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
   for i = 1:length(Dl.records)
     predicts[i] = f(Dl.records[i])
   end
-  _, _, ent_post = get_metrics(predicts, Dl.labels)
-  return problem.w_ent * ent_post + problem.w_len * codelen
+  #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
+  metric = gini_metric(predicts, Dl.labels)
+  return problem.w_ent * metric + problem.w_len * codelen
+end
+
+type CountTracker{T}
+  c_true::Dict{T,Int64}
+  c_false::Dict{T,Int64}
+  N_true::Int64
+  N_false::Int64
+end
+
+function CountTracker{T}(problem::ACASXClustering{T})
+  c_true = Dict{T,Int64}() #count for each label
+  c_false = Dict{T,Int64}()
+  N_true = N_false = 0 #total count
+  for l in problem.labelset
+    c_true[l] = 0
+    c_false[l] = 0
+  end
+  return CountTracker(c_true, c_false, 0, 0)
 end
 
 function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
@@ -401,22 +607,56 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
   codelen = length(string(expr))
   f = to_function(problem, expr)
 
-  maxent = (thresh - problem.w_len * codelen) / problem.w_len
+  metric_thresh = (thresh - problem.w_len * codelen) / problem.w_ent #translate thresh to bound on metric
+  c_tracker = CountTracker(problem)
 
   predicts = Array(Bool, length(Dl.records))
   for i = 1:length(Dl.records)
     predicts[i] = f(Dl.records[i])
 
+    update!(c_tracker, Val{predicts[i]}, Dl.labels[i])
+
     #early exit
-    ent = computebound()
-    if ent > maxent
+    optim = gini_optimistic(c_tracker, length(Dl.records) - i)
+    if optim > metric_thresh #if most optimistic case still doesn't meet thresh, early exit
+      #@show metric_thresh
+      #@show optim
+      #@show i
       return default
     end
   end
 
   #do full calc
-  _, _, ent_post = get_metrics(predicts, Dl.labels)
-  return problem.w_ent * ent_post + problem.w_len * codelen
+  metric = gini_metric(predicts, Dl.labels)
+  return problem.w_ent * metric + problem.w_len * codelen
+end
+
+function update!{T}(tracker::CountTracker{T}, ::Type{Val{true}}, label::T)
+  tracker.c_true[label] += 1
+  tracker.N_true += 1
+end
+
+function update!{T}(tracker::CountTracker{T}, ::Type{Val{false}}, label::T)
+  tracker.c_false[label] += 1
+  tracker.N_false += 1
+end
+
+function gini_optimistic{T}(tracker::CountTracker{T}, N_remaining::Int64)
+  c_true = collect(values(tracker.c_true))
+  c_false = collect(values(tracker.c_false))
+
+  #add to true
+  i = indmax(c_true)
+  c_true[i] += N_remaining
+  g_true = gini_from_counts(c_true, c_false)
+
+  #add to false
+  c_true = collect(values(tracker.c_true))
+  i = indmax(c_false)
+  c_false[i] += N_remaining
+  g_false = gini_from_counts(c_true, c_false)
+
+  return min(g_true, g_false)
 end
 
 end #module
