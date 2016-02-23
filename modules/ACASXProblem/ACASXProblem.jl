@@ -48,27 +48,27 @@ include("infogain.jl")
 include("format.jl")
 
 #fitness
-const W_ENT = 100.0 #entropy
+const W_METRIC = 100.0 #entropy
 const W_LEN = 0.05 #
 
 typealias RealVec Union{DataArray{Float64,1}, Vector{Float64}}
 
 type ACASXClustering{T} <: ExprProblem
   Dl::DFSetLabeled{T}
-  w_ent::Float64
+  w_metric::Float64
   w_len::Float64
   labelset::Vector{T}
 end
 
 function ACASXClustering(runtype::Symbol, dataname::AbstractString, meta_name::AbstractString,
                          manuals::AbstractString, clustername::AbstractString,
-                         w_ent::Float64=W_ENT, w_len::Float64=W_LEN)
+                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
   out = if runtype == :nmacs_vs_nonnmacs
-    ACASXClustering(dataname, meta_name, w_ent, w_len)
+    ACASXClustering(dataname, meta_name, w_metric, w_len)
   elseif runtype == :nmac_clusters
-    ACASXClustering(dataname, manuals, clustername, w_ent, w_len)
+    ACASXClustering(dataname, manuals, clustername, w_metric, w_len)
   elseif runtype == :nonnmacs_extra_cluster
-    ACASXClustering(dataname, meta_name, manuals, clustername, w_ent, w_len)
+    ACASXClustering(dataname, meta_name, manuals, clustername, w_metric, w_len)
   else
     error("Runtype not defined ($runtype)")
   end
@@ -78,28 +78,28 @@ end
 #nmacs vs non-nmacs
 function ACASXClustering(dataname::AbstractString,
                          meta_name::AbstractString,
-                         w_ent::Float64=W_ENT, w_len::Float64=W_LEN)
+                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
 
   data = dataset(dataname)
   data_meta = dataset(meta_name, "encounter_meta")
 
   Dl = nmacs_vs_nonnmacs(data, data_meta)
   labelset = unique(labels(Dl))
-  return ACASXClustering(Dl, w_ent, w_len, labelset)
+  return ACASXClustering(Dl, w_metric, w_len, labelset)
 end
 
 #clusterings only
 function ACASXClustering(dataname::AbstractString,
                          manuals::AbstractString,
                          clustername::AbstractString,
-                         w_ent::Float64=W_ENT, w_len::Float64=W_LEN)
+                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
 
   data = dataset(dataname)
   clustering = dataset(manuals, clustername)
 
   Dl =  nmac_clusters(clustering, data)
   labelset = unique(labels(Dl))
-  return ACASXClustering(Dl, w_ent, w_len, labelset)
+  return ACASXClustering(Dl, w_metric, w_len, labelset)
 end
 
 #clusterings with nonnmacs as extra cluster
@@ -107,7 +107,7 @@ function ACASXClustering(dataname::AbstractString,
                          meta_name::AbstractString,
                          manuals::AbstractString,
                          clustername::AbstractString,
-                         w_ent::Float64=W_ENT, w_len::Float64=W_LEN)
+                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
 
   data = dataset(dataname)
   data_meta = dataset(meta_name, "encounter_meta")
@@ -115,7 +115,7 @@ function ACASXClustering(dataname::AbstractString,
 
   Dl =  nonnmacs_extra_cluster(clustering, data, data_meta)
   labelset = unique(labels(Dl))
-  return ACASXClustering(Dl, w_ent, w_len, labelset)
+  return ACASXClustering(Dl, w_metric, w_len, labelset)
 end
 
 function ExprSearch.create_grammar(problem::ACASXClustering)
@@ -580,7 +580,7 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
   end
   #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
   metric = gini_metric(predicts, Dl.labels)
-  return problem.w_ent * metric + problem.w_len * codelen
+  return problem.w_metric * metric + problem.w_len * codelen
 end
 
 type CountTracker{T}
@@ -607,14 +607,14 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
   codelen = length(string(expr))
   f = to_function(problem, expr)
 
-  metric_thresh = (thresh - problem.w_len * codelen) / problem.w_ent #translate thresh to bound on metric
+  metric_thresh = (thresh - problem.w_len * codelen) / problem.w_metric #translate thresh to bound on metric
   c_tracker = CountTracker(problem)
 
   predicts = Array(Bool, length(Dl.records))
   for i = 1:length(Dl.records)
     predicts[i] = f(Dl.records[i])
 
-    update!(c_tracker, Val{predicts[i]}, Dl.labels[i])
+    increment!(c_tracker, Val{predicts[i]}, Dl.labels[i])
 
     #early exit
     optim = gini_optimistic(c_tracker, length(Dl.records) - i)
@@ -628,15 +628,15 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
 
   #do full calc
   metric = gini_metric(predicts, Dl.labels)
-  return problem.w_ent * metric + problem.w_len * codelen
+  return problem.w_metric * metric + problem.w_len * codelen
 end
 
-function update!{T}(tracker::CountTracker{T}, ::Type{Val{true}}, label::T)
+function increment!{T}(tracker::CountTracker{T}, ::Type{Val{true}}, label::T)
   tracker.c_true[label] += 1
   tracker.N_true += 1
 end
 
-function update!{T}(tracker::CountTracker{T}, ::Type{Val{false}}, label::T)
+function increment!{T}(tracker::CountTracker{T}, ::Type{Val{false}}, label::T)
   tracker.c_false[label] += 1
   tracker.N_false += 1
 end
@@ -651,8 +651,8 @@ function gini_optimistic{T}(tracker::CountTracker{T}, N_remaining::Int64)
   g_true = gini_from_counts(c_true, c_false)
 
   #add to false
-  c_true = collect(values(tracker.c_true))
-  i = indmax(c_false)
+  c_true = collect(values(tracker.c_true)) #restore
+  i = indmax(c_false) #mode
   c_false[i] += N_remaining
   g_false = gini_from_counts(c_true, c_false)
 

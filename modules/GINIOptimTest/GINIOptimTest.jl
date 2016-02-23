@@ -39,6 +39,7 @@ export gini_optim_test, gini_optim_loop
 using Distributions #mode
 using Reexport
 @reexport using DataFrames
+using RLESUtils: MathUtils
 
 function gini_optim_loop(ntrials=100)
   fs = [:evenly, :shortest, :longest, :lowest, :highest,
@@ -183,35 +184,6 @@ function fill2nmaxp(v1, v2, N)
     v = vcat(v2, fill(mode(v2), N))
     return v1, v
   end
-end
-
-function gini_impurity{T}(v::AbstractVector{T})
-  cnts = counts(v)
-  gini = gini_from_counts(cnts)
-  gini
-end
-
-function gini_impurity{T}(v1::AbstractVector{T}, v2::AbstractVector{T})
-  cnts1 = counts(v1)
-  cnts2 = counts(v2)
-  gini = gini_from_counts(cnts1, cnts2)
-  gini
-end
-
-function gini_from_counts(cnts::AbstractVector{Int64})
-  N = sum(cnts)
-  gini = 1.0 - sumabs2(cnts / N)
-  gini
-end
-
-function gini_from_counts(cnts1::AbstractVector{Int64}, cnts2::AbstractVector{Int64})
-  g1 = gini_from_counts(cnts1)
-  g2 = gini_from_counts(cnts2)
-  n1 = sum(cnts1)
-  n2 = sum(cnts2)
-  N = n1 + n2
-  gini = (n1 * g1 + n2 * g2) / N
-  gini
 end
 
 end #module

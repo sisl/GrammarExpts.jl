@@ -51,12 +51,5 @@ function entropy_metrics{T}(predicts::Vector{Bool}, truth::Vector{T}, entbase::F
 end
 
 function gini_metric{T}(predicts::Vector{Bool}, truth::Vector{T})
-  ntrues = count(identity, predicts)
-  nfalses = count(!, predicts)
-  gini_true = gini_impurity(truth[predicts]) #truth[predicts] is expensive...
-  gini_false = gini_impurity(truth[!predicts])
-  w1 = ntrues / length(truth)
-  w2 = nfalses / length(truth)
-  gini_post = w1 .* gini_true + w2 .* gini_false
-  gini_post
+  gini_impurity(truth[predicts], truth[!predicts]) #truth[predicts] is expensive...
 end
