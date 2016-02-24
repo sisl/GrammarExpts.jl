@@ -35,8 +35,6 @@
 using DecisionTrees
 import DecisionTreeVis: get_tree, get_metric
 
-include("infogain.jl")
-
 function DecisionTrees.get_truth{T}(members::Vector{Int64},
                                  Dl::DFSetLabeled{T}, otherargs...) #userargs...
   return labels(Dl, members)
@@ -61,7 +59,7 @@ function DecisionTrees.get_splitter{T}(members::Vector{Int64},
                     pretty_string(result.tree, FMT_NATURAL, true)])
 
   predicts = classify(problem, result, records(Dl_sub))
-  info_gain, _, _ = get_metrics(predicts, labels(Dl_sub))
+  info_gain, _, _ = gini_metrics(predicts, labels(Dl_sub))
 
   return info_gain > 0 ? result : nothing
 end

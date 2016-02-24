@@ -43,52 +43,39 @@ using Reexport
 
 function default_logs()
   logs = TaggedDFLogger()
-  #=
+
   add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
-  add_folder!(logs, "cputime", [Int64, Float64, Int64], ["step", "cputime_s", "decision_id"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals", "decision_id"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "total_evals", "decision_id"])
   add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
-  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString, Int64], ["iteration", "reward", "state", "expr", "decision_id"])
-=#
+
   return logs
 end
 
-function set_observers!(observer::Observer, logs::TaggedDFLogger, loginterval::Int64)
+function set_observers!(par_observer::Observer, observer::Observer, logs::TaggedDFLogger, loginterval::Int64)
+  empty!(par_observer)
   empty!(observer)
   ####################
   #print out observers
-  add_observer(observer, "temperature", x -> begin
-                 if rem(x[2], loginterval) == 0
-                   println("start=$(x[1]), i=$(x[2]), T=$(x[3])")
-                 end
-               end)
-  add_observer(observer, "current_best", x -> begin
-                 if rem(x[2], loginterval) == 0
-                   println("start=$(x[1]), i=$(x[2]), fitness=$(x[3]), expr=$(x[4])")
-                 end
-               end)
 
+  add_observer(observer, "verbose1", x -> println(x...))
+  add_observer(observer, "current_best", x -> begin
+                 starti, iter, fitness, expr = x
+                 if rem(iter, loginterval) == 0
+                   println("start=$starti, i=$iter, fitness=$fitness, expr=$expr")
+                 end
+               end)
 
   ###################
   #log observers
-  #=
   decision_id = nrow(logs["result"]) > 0 ?
     maximum(logs["result"][:decision_id]) + 1 : 1
-  add_observer(observer, "parameters", append_push!_f(logs, "parameters", decision_id))
-  add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
-  add_observer(observer, "cputime", append_push!_f(logs, "cputime", decision_id))
-  add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
-  add_observer(observer, "expression", append_push!_f(logs, "expression", decision_id))
-  add_observer(observer, "current_best", x -> begin
-                 i, reward, state = x
-                 if rem(i, loginterval) == 0
-                   push!(logs, "current_best", [i, reward, string(state.past_actions), string(get_expr(state)), decision_id])
-                 end
-               end)
-  =#
-
-  return logs
+  add_observer(par_observer, "parameters", append_push!_f(logs, "parameters", decision_id))
+  add_observer(par_observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
+  add_observer(par_observer, "result", append_push!_f(logs, "result", decision_id))
+  add_observer(par_observer, "expression", append_push!_f(logs, "expression", decision_id))
 end
+
+
 
 end #module

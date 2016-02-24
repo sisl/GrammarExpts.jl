@@ -54,7 +54,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 configure(::Type{Val{:ACASX_MCTS2_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function train_dtree{T}(mcts2_params::MCTS2ESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
-                        loginterval::Int64, maxdepth::Int64)
+                        maxdepth::Int64, loginterval::Int64)
 
   logs = default_logs()
   num_data = length(Dl)
@@ -97,15 +97,13 @@ function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
                              explorationconst, q0, seed, Observer(), Observer())
 
   Dl = problem.Dl
-  dtree, logs = train_dtree(mcts2_params, problem, Dl, loginterval, maxdepth)
+  dtree, logs = train_dtree(mcts2_params, problem, Dl, maxdepth, loginterval)
 
   #add to log
   push!(logs, "parameters", ["seed", seed, 0])
   push!(logs, "parameters", ["runtype", runtype, 0])
   push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
 
-  outfile = joinpath(outdir, "$(logfileroot).json")
-  Obj2Dict.save_obj(outfile, dtree)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 

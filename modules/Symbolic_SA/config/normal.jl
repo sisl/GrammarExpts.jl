@@ -41,7 +41,7 @@
   (:alpha, 0.99956),
   (:n_epochs, 5000),
   (:n_starts, 5),
-  (:n_batches, 15),
+  (:n_threads, 15),
 
   #log
   (:gt_file, "gt_easy.jl")

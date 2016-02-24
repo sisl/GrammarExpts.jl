@@ -54,7 +54,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 configure(::Type{Val{:ACASX_SA_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function train_dtree{T}(psa_params::PSAESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
-                        loginterval::Int64, maxdepth::Int64)
+                        maxdepth::Int64, loginterval::Int64)
 
   logs = default_logs()
   num_data = length(Dl)
@@ -63,8 +63,7 @@ function train_dtree{T}(psa_params::PSAESParams, problem::ACASXClustering, Dl::D
 
   p = DTParams(num_data, maxdepth, T1, T2)
 
-  dtree = build_tree(p,
-                     Dl, problem, psa_params, logs, loginterval) #userargs...
+  dtree = build_tree(p, Dl, problem, psa_params, logs, loginterval) #userargs...
 
   return dtree, logs
 end
@@ -83,7 +82,7 @@ function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
                        alpha::Float64=0.99976,
                        n_epochs::Int64=50,
                        n_starts::Int64=1,
-                       n_batches::Int64=1,
+                       n_threads::Int64=1,
                        maxdepth::Int64=1,
 
                        loginterval::Int64=100,
@@ -92,19 +91,20 @@ function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
-  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, Observer())
-  psa_params = PSAESParams(n_batches, sa_params)
+  observer = Observer()
+  par_observer = Observer()
+
+  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
+  psa_params = PSAESParams(n_threads, sa_params, par_observer)
 
   Dl = problem.Dl
-  dtree, logs = train_dtree(psa_params, problem, Dl, loginterval, maxdepth)
+  dtree, logs = train_dtree(psa_params, problem, Dl, maxdepth, loginterval)
 
   #add to log
-  #push!(logs, "parameters", ["seed", seed, 0])
-  #push!(logs, "parameters", ["runtype", runtype, 0])
-  #push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
+  push!(logs, "parameters", ["seed", seed, 0])
+  push!(logs, "parameters", ["runtype", runtype, 0])
+  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
 
-  #outfile = joinpath(outdir, "$(logfileroot).json")
-  #Obj2Dict.save_obj(outfile, dtree)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -112,11 +112,9 @@ function acasx_sa_tree(outdir::AbstractString="./"; seed=1,
   if vis
     decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"), limit_members,
                     FMT_PRETTY, FMT_NATURAL)
-    #logvis(logs, joinpath(outdir, "$(logfileroot)_logs"))
   end
 
   return dtree, logs
 end
 
 end #module
-

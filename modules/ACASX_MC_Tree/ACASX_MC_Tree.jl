@@ -54,7 +54,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
 configure(::Type{Val{:ACASX_MC_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function train_dtree{T}(pmc_params::PMCESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
-                        loginterval::Int64, maxdepth::Int64)
+                        maxdepth::Int64, loginterval::Int64)
 
   logs = default_logs()
   num_data = length(Dl)
@@ -87,21 +87,24 @@ function acasx_mc_tree(outdir::AbstractString="./"; seed=1,
                        vis::Bool=true,
                        limit_members::Int64=10)
 
+  srand(seed)
+
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
-  mc_params = MCESParams(maxsteps, n_samples, Observer())
-  pmc_params = PMCESParams(n_threads, mc_params)
+  observer = Observer()
+  par_observer = Observer()
+
+  mc_params = MCESParams(maxsteps, n_samples, observer)
+  pmc_params = PMCESParams(n_threads, mc_params, par_observer)
 
   Dl = problem.Dl
-  dtree, logs = train_dtree(pmc_params, problem, Dl, loginterval, maxdepth)
+  dtree, logs = train_dtree(pmc_params, problem, Dl, maxdepth, loginterval)
 
   #add to log
-  #push!(logs, "parameters", ["seed", seed, 0])
-  #push!(logs, "parameters", ["runtype", runtype, 0])
-  #push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
+  push!(logs, "parameters", ["seed", seed, 0])
+  push!(logs, "parameters", ["runtype", runtype, 0])
+  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
 
-  #outfile = joinpath(outdir, "$(logfileroot).json")
-  #Obj2Dict.save_obj(outfile, dtree)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -109,11 +112,9 @@ function acasx_mc_tree(outdir::AbstractString="./"; seed=1,
   if vis
     decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"), limit_members,
                     FMT_PRETTY, FMT_NATURAL)
-    #logvis(logs, joinpath(outdir, "$(logfileroot)_logs"))
   end
 
   return dtree, logs
 end
 
 end #module
-

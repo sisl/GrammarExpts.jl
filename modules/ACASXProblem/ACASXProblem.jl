@@ -36,6 +36,7 @@ module ACASXProblem
 
 export ACASXClustering, create_grammar, get_fitness, to_function
 export FMT_PRETTY, FMT_NATURAL
+export entropy_metrics, gini_metrics
 
 using Datasets
 using ExprSearch
@@ -579,7 +580,7 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
     predicts[i] = f(Dl.records[i])
   end
   #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
-  metric = gini_metric(predicts, Dl.labels)
+  _, _, metric = gini_metrics(predicts, Dl.labels)
   return problem.w_metric * metric + problem.w_len * codelen
 end
 
@@ -627,7 +628,7 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
   end
 
   #do full calc
-  metric = gini_metric(predicts, Dl.labels)
+  _, _, metric = gini_metrics(predicts, Dl.labels)
   return problem.w_metric * metric + problem.w_len * codelen
 end
 

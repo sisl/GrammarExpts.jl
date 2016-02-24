@@ -40,7 +40,7 @@ using ExprSearch.MC
 using Reexport
 
 using GrammarExpts
-using ACASXProblem, DerivTreeVis, Configure
+using ACASXProblem, DerivTreeVis, Configure, MC_Logs
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
@@ -61,25 +61,25 @@ function acasx_mc(outdir::AbstractString="./"; seed=1,
                   n_threads::Int64=1,
 
                   loginterval::Int64=100,
-                  vis::Bool=true,
-                  observer::Observer=Observer())
+                  vis::Bool=true)
 
   srand(seed)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
-  add_observer(observer, "current_best", x -> begin
-                 if rem(x[1], loginterval) == 0
-                   println("i=$(x[1]), fitness=$(x[2]), expr=$(x[3])")
-                 end
-               end)
-  #logs = default_logs(observer)
-  #default_console!(observer)
+  observer = Observer()
+  par_observer = Observer()
+
+  logs = default_logs(par_observer)
+  default_console!(observer, loginterval)
 
   mc_params = MCESParams(maxsteps, n_samples, observer)
-  pmc_params = PMCESParams(n_threads, mc_params)
+  pmc_params = PMCESParams(n_threads, mc_params, par_observer)
 
-  result = exprsearch(mc_params, problem)
+  result = exprsearch(pmc_params, problem)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
 
   return result
 end

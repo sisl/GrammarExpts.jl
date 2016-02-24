@@ -50,6 +50,9 @@ function entropy_metrics{T}(predicts::Vector{Bool}, truth::Vector{T}, entbase::F
   return (info_gain, ent_pre, ent_post) #entropy pre/post split
 end
 
-function gini_metric{T}(predicts::Vector{Bool}, truth::Vector{T})
-  gini_impurity(truth[predicts], truth[!predicts]) #truth[predicts] is expensive...
+function gini_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
+  imp_pre = gini_impurity(truth)
+  imp_post = gini_impurity(truth[predicts], truth[!predicts]) #truth[predicts] is expensive...
+  imp_gain = imp_pre - imp_post #reduction in impurity, higher is better
+  return (imp_gain, imp_pre, imp_post) #impurity pre/post split
 end

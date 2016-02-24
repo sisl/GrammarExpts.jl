@@ -32,18 +32,40 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-function get_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
-  true_ids = find(predicts)
-  false_ids = find(!predicts)
-  ent_pre = truth |> proportions |> entropy
-  ent_true = !isempty(true_ids) ?
-    truth[true_ids] |> proportions |> entropy : 0.0
-  ent_false = !isempty(false_ids) ?
-    truth[false_ids] |> proportions |> entropy : 0.0
-  w1 = length(true_ids) / length(truth)
-  w2 = length(false_ids) / length(truth)
-  ent_post = w1 * ent_true + w2 * ent_false #miminize entropy after split
-  info_gain = ent_pre - ent_post
-  return (info_gain, ent_pre, ent_post) #entropy pre/post split
+module SA_Logs
+
+export default_logs, default_console!
+
+using Reexport
+@reexport using RLESUtils: Observers, Loggers
+
+function default_logs(par_observer::Observer)
+  logs = TaggedDFLogger()
+  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64], ["fitness", "expr", "total_evals"])
+
+  add_observer(par_observer, "parameters", push!_f(logs, "parameters"))
+  add_observer(par_observer, "computeinfo", push!_f(logs, "computeinfo"))
+  add_observer(par_observer, "result", push!_f(logs, "result"))
+
+  return logs
 end
 
+function default_console!(observer::Observer, loginterval::Int64)
+  add_observer(observer, "verbose1", x -> println(x...))
+  add_observer(observer, "current_best", x -> begin
+                 starti, iter, fitness, expr = x
+                 if rem(iter, loginterval) == 0
+                   println("start=$starti, i=$iter, fitness=$fitness, expr=$expr")
+                 end
+               end)
+  add_observer(observer, "temperature", x -> begin
+                 starti, iter, T = x
+                 if rem(iter, loginterval) == 0
+                   println("start=$starti, i=$iter, T=$T")
+                 end
+               end)
+end
+
+end #module

@@ -57,7 +57,6 @@ function acasx_sa_timing(problem=nothing, outdir::AbstractString="./"; seed=1,
                   alpha::Float64=0.99976,
                   n_epochs::Int64=50,
                   n_starts::Int64=1,
-                  n_batches::Int64=1,
 
                   loginterval::Int64=100,
                   vis::Bool=true,

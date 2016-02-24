@@ -56,7 +56,7 @@ function symbolic_sa(outdir::AbstractString="./"; seed=1,
                      alpha::Float64=0.8,
                      n_epochs::Int64=100,
                      n_starts::Int64=1,
-                     n_batches::Int64=1,
+                     n_threads::Int64=1,
 
                      loginterval::Int64=100,
                      observer::Observer=Observer())
@@ -77,7 +77,7 @@ function symbolic_sa(outdir::AbstractString="./"; seed=1,
                end)
 
   sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
-  psa_params = PSAESParams(n_batches, sa_params)
+  psa_params = PSAESParams(n_threads, sa_params)
 
   result = exprsearch(psa_params, problem)
 

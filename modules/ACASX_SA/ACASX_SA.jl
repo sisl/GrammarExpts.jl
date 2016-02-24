@@ -40,7 +40,7 @@ using ExprSearch.SA
 using Reexport
 
 using GrammarExpts
-using ACASXProblem, DerivTreeVis, Configure
+using ACASXProblem, DerivTreeVis, Configure, SA_Logs
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "config")
@@ -61,33 +61,28 @@ function acasx_sa(outdir::AbstractString="./"; seed=1,
                   alpha::Float64=0.99976,
                   n_epochs::Int64=50,
                   n_starts::Int64=1,
-                  n_batches::Int64=1,
+                  n_threads::Int64=1,
 
                   loginterval::Int64=100,
-                  vis::Bool=true,
-                  observer::Observer=Observer())
+                  vis::Bool=true)
 
   srand(seed)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
-  add_observer(observer, "temperature", x -> begin
-                 if rem(x[2], loginterval) == 0
-                   println("start=$(x[1]), i=$(x[2]), T=$(x[3])")
-                 end
-               end)
-  add_observer(observer, "current_best", x -> begin
-                 if rem(x[2], loginterval) == 0
-                   println("start=$(x[1]), i=$(x[2]), fitness=$(x[3]), expr=$(x[4])")
-                 end
-               end)
-  #logs = default_logs(observer)
-  #default_console!(observer)
+  observer = Observer()
+  par_observer = Observer()
+
+  logs = default_logs(par_observer)
+  default_console!(observer, loginterval)
 
   sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
-  psa_params = PSAESParams(n_batches, sa_params)
+  psa_params = PSAESParams(n_threads, sa_params, par_observer)
 
   result = exprsearch(psa_params, problem)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
 
   return result
 end
