@@ -32,23 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+using GrammarExpts
+using Symbolic_MCTS2
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "Symbolic_MCTS2")
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, joinpath(subdir, "src"))
-  end
-end
+mkpath(TESTDIR)
+symbolic_mcts2(TESTDIR)
 
-load_to_path()
 
-function test(pkgs::AbstractString...; coverage::Bool=false)
-  cd(() -> Pkg.Entry.test(AbstractString[pkgs...]; coverage=coverage), MODULEDIR)
-end
-
-end # module

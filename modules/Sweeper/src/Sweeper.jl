@@ -32,23 +32,56 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module Sweeper
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+export configure, sweeper
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, joinpath(subdir, "src"))
+using GrammarExpts
+using RLESUtils: ParamSweeps, Observers, Loggers, Vectorizer, FileUtils
+using CPUTime
+using RLESUtils.Configure
+import RLESUtils.Configure.configure
+
+const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
+const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+
+configure(::Type{Val{:Sweeper}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+
+function sweeper(f::Function, result_type::Type, baseconfig::Dict{Symbol,Any}=Dict{Symbol,Any}();
+                  outdir::AbstractString=RESULTDIR,
+                  logfileroot::AbstractString="sweeper_log",
+                  kwargs::Iterable...
+                  )
+  mkpath(outdir)
+  script = KWParamSweep(f; kwargs...)
+
+  #names and types of input parameters
+  keynames = collect(keys(script))
+  valtypes = map(x -> eltype(collect(x)), values(script))
+  valtypes = convert(Vector{Type}, valtypes)
+
+  observer = Observer()
+  logs = TaggedDFLogger()
+  add_folder!(logs, "result", vcat(valtypes, vectypes(result_type), Float64), vcat(keynames, vecnames(result_type), "cputime_s"))
+  add_observer(observer, "result", push!_f(logs, "result"))
+
+  results = map(script) do kvs
+    dir = joinpath(outdir, filenamefriendly(string(kvs)))
+    mkpath(dir)
+    cd(dir)
+    CPUtic()
+    result = f(; baseconfig..., kvs...)
+    cputime = CPUtoq()
+
+    vs = map(x -> x[2], kvs) #input parameter values
+    @notify_observer(observer, "result", vcat(vs, vectorize(result), cputime))
+
+    return result
   end
+
+  save_log(joinpath(outdir, logfileroot) * ".txt", logs)
+
+  return results
 end
 
-load_to_path()
-
-function test(pkgs::AbstractString...; coverage::Bool=false)
-  cd(() -> Pkg.Entry.test(AbstractString[pkgs...]; coverage=coverage), MODULEDIR)
-end
-
-end # module
+end #module

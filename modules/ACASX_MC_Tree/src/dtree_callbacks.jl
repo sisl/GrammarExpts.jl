@@ -32,23 +32,46 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+#TODO: can all the dtree_callbacks be unified?
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+using DecisionTrees
+using RLESUtils: Observers, Loggers
+import DecisionTreeVis: get_tree, get_metric
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, joinpath(subdir, "src"))
-  end
+function DecisionTrees.get_truth{T}(members::Vector{Int64},
+                                 Dl::DFSetLabeled{T}, otherargs...) #userargs...
+  return labels(Dl, members)
 end
 
-load_to_path()
-
-function test(pkgs::AbstractString...; coverage::Bool=false)
-  cd(() -> Pkg.Entry.test(AbstractString[pkgs...]; coverage=coverage), MODULEDIR)
+function classify(problem::ACASXClustering, result::MCESResult, Ds::Vector{DataFrame})
+  f = to_function(problem, result.expr)
+  return map(f, Ds)
 end
 
-end # module
+function DecisionTrees.get_splitter{T}(members::Vector{Int64},
+                                       Dl::DFSetLabeled{T}, problem::ACASXClustering,
+                                       pmc_params::PMCESParams, logs::TaggedDFLogger, loginterval::Int64) #userargs...
+  set_observers!(pmc_params.observer, pmc_params.mc_params.observer, logs, loginterval)
+
+  problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
+  result = exprsearch(pmc_params, problem)
+
+  @notify_observer(pmc_params.observer, "expression",
+                   [string(result.expr),
+                    pretty_string(result.tree, FMT_PRETTY),
+                    pretty_string(result.tree, FMT_NATURAL, true)])
+
+  predicts = classify(problem, result, records(Dl_sub))
+  info_gain, _, _ = gini_metrics(predicts, labels(Dl_sub)) #TODO: try to get rid of this, it's being used separately in get_fitness
+
+  return info_gain > 0 ? result : nothing
+end
+
+function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},
+                                     Dl::DFSetLabeled{T}, problem::ACASXClustering, otherargs...) #userargs...
+  return classify(problem, result, records(Dl, members))
+end
+
+DecisionTreeVis.get_tree(result::MCESResult) = result.tree
+DecisionTreeVis.get_metric(result::MCESResult) = result.fitness
+

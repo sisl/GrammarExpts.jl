@@ -32,23 +32,62 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module ACASX_MC
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+export configure, acasx_mc
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, joinpath(subdir, "src"))
+using ExprSearch.MC
+using Reexport
+
+using GrammarExpts
+using ACASXProblem, DerivTreeVis, MC_Logs
+using RLESUtils.Configure
+import RLESUtils.Configure.configure
+
+const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+
+configure(::Type{Val{:ACASX_MC}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+
+function acasx_mc(outdir::AbstractString="./"; seed=1,
+                  logfileroot::AbstractString="acasx_mc_log",
+
+                  runtype::Symbol=:nmacs_vs_nonnmacs,
+                  data::AbstractString="dasc",
+                  data_meta::AbstractString="dasc_meta",
+                  manuals::AbstractString="dasc_manual",
+                  clusterdataname::AbstractString="josh1",
+
+                  maxsteps::Int64=20,
+                  n_samples::Int64=50,
+                  n_threads::Int64=1,
+                  earlystop::Bool=true,
+
+                  loginterval::Int64=100,
+                  vis::Bool=true)
+
+  srand(seed)
+
+  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+
+  observer = Observer()
+  par_observer = Observer()
+
+  logs = default_logs(par_observer)
+  default_console!(observer, loginterval)
+
+  mc_params = MCESParams(maxsteps, n_samples, earlystop, observer)
+  pmc_params = PMCESParams(n_threads, mc_params, par_observer)
+
+  result = exprsearch(pmc_params, problem)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
+
+  if vis
+    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
+
+  return result
 end
 
-load_to_path()
-
-function test(pkgs::AbstractString...; coverage::Bool=false)
-  cd(() -> Pkg.Entry.test(AbstractString[pkgs...]; coverage=coverage), MODULEDIR)
-end
-
-end # module
+end #module

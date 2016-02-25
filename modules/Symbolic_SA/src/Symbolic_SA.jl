@@ -32,23 +32,76 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module GrammarExpts
+module Symbolic_SA
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+export configure, symbolic_sa, symbolic_temp_params
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, joinpath(subdir, "src"))
+using ExprSearch.SA
+using Reexport
+
+using GrammarExpts
+using SymbolicProblem, DerivTreeVis, SA_Logs
+using RLESUtils.Configure
+import RLESUtils.Configure.configure
+
+const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+
+configure(::Type{Val{:Symbolic_SA}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+
+function symbolic_sa(outdir::AbstractString="./"; seed=1,
+                     logfileroot::AbstractString="symbolic_sa_log",
+
+                     gt_file::AbstractString="gt_easy.jl",
+                     maxsteps::Int64=25,
+                     T1::Float64=50.0,
+                     alpha::Float64=0.8,
+                     n_epochs::Int64=100,
+                     n_starts::Int64=1,
+                     n_threads::Int64=1,
+
+                     loginterval::Int64=100,
+                     vis::Bool=true)
+
+  srand(seed)
+
+  problem = Symbolic(gt_file)
+
+  observer = Observer()
+  par_observer = Observer()
+
+  logs = default_logs(par_observer)
+  default_console!(observer, loginterval)
+
+  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
+  psa_params = PSAESParams(n_threads, sa_params, par_observer)
+
+  result = exprsearch(psa_params, problem)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
+
+  if vis
+    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
+
+  return result
 end
 
-load_to_path()
 
-function test(pkgs::AbstractString...; coverage::Bool=false)
-  cd(() -> Pkg.Entry.test(AbstractString[pkgs...]; coverage=coverage), MODULEDIR)
+function symbolic_temp_params(P1::Float64=0.8; seed=1,
+                     gt_file::AbstractString=GT_FILE,
+                     n_epochs::Int64=N_EPOCHS,
+                     Tfinal::Float64=0.1,
+                     maxsteps::Int64=MAXSTEPS,
+                     N::Int64=500,
+                     ntrials::Int64=10)
+
+  srand(seed)
+
+  problem = Symbolic(gt_file)
+  T1, alpha, n_epochs = estimate_temp_params(problem, P1, n_epochs, Tfinal, maxsteps, N, ntrials)
+
+  return T1, alpha, n_epochs
 end
 
-end # module
+end #module
