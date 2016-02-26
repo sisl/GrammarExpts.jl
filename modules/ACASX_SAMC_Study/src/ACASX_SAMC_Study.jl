@@ -57,7 +57,7 @@ const MCEARLYSTOP_NAME = "ACASX_MC_earlystop"
 
 function run_sa()
   baseconfig = configure(ACASX_SA, "singlethread", CONFIG)
-  baseconfig[:n_starts] = 10 #for now...
+  baseconfig[:n_starts] = 20 #for now...
   config = configure(Sweeper, "sa_acasx_samc")
   config[:outdir] = joinpath(RESULTDIR, STUDYNAME, SA_NAME)
   config[:seed] = 1:5
@@ -68,7 +68,7 @@ end
 function run_mc_full()
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
   baseconfig[:earlystop] = false
-  baseconfig[:n_samples] = 50000 #for now...
+  baseconfig[:n_samples] = 100000 #for now...
   config = configure(Sweeper, "mc_acasx_samc")
   config[:outdir] = joinpath(RESULTDIR, STUDYNAME, MCFULL_NAME)
   config[:seed] = 1:5
@@ -79,7 +79,7 @@ end
 function run_mc_earlystop()
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
   baseconfig[:earlystop] = true
-  baseconfig[:n_samples] = 50000 #for now...
+  baseconfig[:n_samples] = 100000 #for now...
   config = configure(Sweeper, "mc_acasx_samc")
   config[:outdir] = joinpath(RESULTDIR, STUDYNAME, MCEARLYSTOP_NAME)
   config[:seed] = 1:5
@@ -141,6 +141,8 @@ function master_plot(; subsample::Int64=5000)
   #aggregate over seed
   D = aggregate(D[[:nevals, :elapsed_cpu_s, :fitness, :algorithm]], [:nevals, :algorithm], [mean, std, length, SEM_ymin, SEM_ymax])
   D = D[rem(D[:nevals], subsample) .== 0, :]
+
+  writetable(joinpath(RESULTDIR, STUDYNAME, "plotlog.csv.gz"), D)
 
   p = plot(D, x=:nevals, y=:fitness_mean, ymin=:fitness_SEM_ymin, ymax=:fitness_SEM_ymax, color=:algorithm,
            Guide.title(CONFIG), Geom.line, Geom.errorbar);

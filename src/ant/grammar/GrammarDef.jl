@@ -32,6 +32,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+#TODO: Convert to new Problem format and move to /modules/AntProblem
+
 module GrammarDef
 
 export create_grammar, to_function

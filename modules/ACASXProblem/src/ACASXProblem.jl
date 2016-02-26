@@ -41,7 +41,7 @@ export entropy_metrics, gini_metrics
 using Datasets
 using ExprSearch
 using Devectorize
-using RLESUtils: LogicUtils, MathUtils
+using RLESUtils: LogicUtils
 import ExprSearch: ExprProblem, create_grammar, get_fitness
 
 include("labeleddata.jl")
@@ -131,9 +131,9 @@ function ExprSearch.create_grammar(problem::ACASXClustering)
 
     #produces a bin_vec
     bin_vec = bin_feat | and | or | not  | eq | lt | lte | abseq | abslt | abslte | diff_eq | diff_lt | diff_lte | sign | absdiff_eq | absdiff_lt | absdiff_lte
-    and = Expr(:call, :and!, bin_vec, bin_vec)
-    or = Expr(:call, :or!, bin_vec, bin_vec)
-    not = Expr(:call, :not!, bin_vec)
+    and = Expr(:call, :&, bin_vec, bin_vec)
+    or = Expr(:call, :|, bin_vec, bin_vec)
+    not = Expr(:call, :!, bin_vec)
 
     #equal
     eq = vrate_eq | altdiff_eq | chi_angle_eq | psi_angle_eq | sr_eq | tds_eq | timer_eq | psid_eq | v_eq | alt_eq | abs_altdiff_eq
@@ -507,10 +507,11 @@ end
 function implies(v1::AbstractVector{Bool}, v2::AbstractVector{Bool})
   v1 = convert(Array, v1)
   v2 = convert(Array, v2)
+  r = Array(Bool, length(v1))
   @inbounds for i = 1:length(v1)
-    v1[i] = v2[i] || !v1[i]
+    r[i] = v2[i] || !v1[i]
   end
-  all(v1)
+  all(r)
 end
 
 function sign_(v1::RealVec, v2::RealVec)

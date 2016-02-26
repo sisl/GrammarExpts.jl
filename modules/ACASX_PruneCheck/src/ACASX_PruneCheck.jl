@@ -32,59 +32,59 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-export script_base, script_dasc, script_libcas098small, script_exampledata
+module ACASX_PruneCheck
 
-const DATADIR = joinpath(dirname(@__FILE__), "..", "..", "..", "data")
+export setup, runtest, acasx_prunecheck
 
-const DASC_JSON = joinpath(DATADIR, "dasc/json")
-const DASC_CSV = joinpath(DATADIR, "dasc/csv")
-const DASC_OUT = Pkg.dir("Datasets/data/dasc") #requires Datasets to be installed
-const DASC_META = Pkg.dir("Datasets/data/dasc_meta")
+using ACASXProblem, DerivationTrees
 
-const LIBCAS098SMALL_JSON = joinpath(DATADIR, "libcas098small/json")
-const LIBCAS098SMALL_CSV = joinpath(DATADIR, "libcas098small/csv")
-const LIBCAS098SMALL_OUT = Pkg.dir("Datasets/data/libcas098small")
-const LIBCAS098SMALL_META = Pkg.dir("Datasets/data/libcas098small_meta")
+function setup(;data::AbstractString="libcas098small",
+               data_meta::AbstractString="libcas098small_meta",
+               maxsteps::Int64=20)
 
-const EXAMPLEDATA_JSON = joinpath(DATADIR, "exampledata/json")
-const EXAMPLEDATA_CSV = joinpath(DATADIR, "exampledata/csv")
-const EXAMPLEDATA_OUT = Pkg.dir("Datasets/data/exampledata") #requires Datasets to be installed
-const EXAMPLEDATA_META = Pkg.dir("Datasets/data/exampledata_meta")
+  problem = ACASXClustering(data, data_meta)
+  grammar = create_grammar(problem)
+  tree_params = DerivTreeParams(grammar, maxsteps)
+  tree = DerivationTree(tree_params)
 
-#dasc set
-function script_dasc(fromjson::Bool=true)
-  script_base(DASC_JSON, DASC_CSV, DASC_OUT, DASC_META;
-                 fromjson=fromjson, correct_coc=true)
+  return problem, tree
 end
 
-#from APL 20151230, libcas0.9.8, MCTS iterations=500, testbatch
-function script_libcas098small(fromjson::Bool=true)
-  script_base(LIBCAS098SMALL_JSON, LIBCAS098SMALL_CSV, LIBCAS098SMALL_OUT, LIBCAS098SMALL_META;
-                 fromjson=fromjson, correct_coc=true)
-end
+"""
+Draw random samples and compare get_fitness() on full and pruned.  Produce counterexample if they differ.
+"""
+function runtest{T}(problem::ACASXClustering{T}, tree::DerivationTree,
+                    n_samples::Int64=50000, earlystop_div::Int64=10)
+  bestfit = realmax(Float64)
+  for i = 1:n_samples
+    rand!(tree)
+    expr = get_expr(tree)
 
-function script_exampledata(fromjson::Bool=true)
-  script_base(EXAMPLEDATA_JSON, EXAMPLEDATA_CSV, EXAMPLEDATA_OUT, EXAMPLEDATA_META;
-                 fromjson=fromjson, correct_coc=true)
-end
+    #side-by-side comparison
+    fullfit = get_fitness(problem, expr)
+    prunefit = get_fitness(problem, expr, bestfit, realmax(Float64), earlystop_div)
 
-function script_base(jsondir::AbstractString, csvdir::AbstractString,
-                        datadir::AbstractString, metadir::AbstractString;
-                        fromjson::Bool=true, correct_coc::Bool=true)
-  if fromjson
-    mkpath(csvdir)
-    convert2csvs(jsondir, csvdir)
+    println("iter=$i of $(n_samples), bestfit=$(signif(bestfit, 4)), fullfit=$(signif(fullfit, 4)), prunefit=$(signif(prunefit, 4)), expr=$(string(expr))")
+    if fullfit < bestfit
+      bestfit = fullfit
+
+      #on updates, these should be the same. If not, return counterexample
+      if prunefit != fullfit
+        return tree, expr, fullfit, prunefit
+      end
+    end
   end
-  tmpdir = mktempdir()
-  csvs2dataframes(csvdir, tmpdir)
-  if correct_coc
-    correct_coc_stays!(tmpdir)
-  end
-
-  mkpath(datadir)
-  mv_files(tmpdir, datadir, name_from_id)
-  add_encounter_info!(datadir)
-
-  mkpath(metadir)
-  encounter_meta(jsondir, metadir)
+  return tree, nothing, -1.0, -1.0
 end
+
+function acasx_prunecheck(; seed=1)
+  srand(seed)
+  problem, tree = setup()
+  tree, expr, fullfit, prunefit = runtest(problem, tree, 50000, 10)
+  @show fullfit
+  @show prunefit
+  @show expr
+  return tree, expr, fullfit, prunefit
+end
+
+end #module
