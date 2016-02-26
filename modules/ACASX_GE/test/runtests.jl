@@ -38,4 +38,4 @@ using ACASX_GE
 const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_GE")
 
 mkpath(TESTDIR)
-acasx_ge(TESTDIR)
+acasx_ge(outdir=TESTDIR)

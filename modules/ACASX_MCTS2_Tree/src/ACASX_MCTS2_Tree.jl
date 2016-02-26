@@ -70,7 +70,8 @@ function train_dtree{T}(mcts2_params::MCTS2ESParams, problem::ACASXClustering, D
   return dtree, logs
 end
 
-function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
+function acasx_mcts2_tree(;outdir::AbstractString="./",
+                          seed=1,
                           logfileroot::AbstractString="acasx_mcts2_tree_log",
 
                           runtype::Symbol=:nmacs_vs_nonnmacs,
@@ -91,6 +92,7 @@ function acasx_mcts2_tree(outdir::AbstractString="./"; seed=1,
                           loginterval::Int64=100,
                           vis::Bool=true,
                           limit_members::Int64=10)
+  mkpath(outdir)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 

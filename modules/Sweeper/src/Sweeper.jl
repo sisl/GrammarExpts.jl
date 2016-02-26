@@ -47,12 +47,18 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:Sweeper}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
+"""
+Calls function 'f' resulting in type 'result_type' for each combination of the iterables in 'kwargs'.
+The key/values in 'kwargs' become the keyword arguments to 'f'.  'baseconfig' provides the default keyword
+arguments to 'f' (overwritten by those in 'kwargs')
+"""
 function sweeper(f::Function, result_type::Type, baseconfig::Dict{Symbol,Any}=Dict{Symbol,Any}();
                   outdir::AbstractString=RESULTDIR,
                   logfileroot::AbstractString="sweeper_log",
                   kwargs::Iterable...
                   )
   mkpath(outdir)
+  cwd = pwd()
   script = KWParamSweep(f; kwargs...)
 
   #names and types of input parameters
@@ -62,7 +68,7 @@ function sweeper(f::Function, result_type::Type, baseconfig::Dict{Symbol,Any}=Di
 
   observer = Observer()
   logs = TaggedDFLogger()
-  add_folder!(logs, "result", vcat(valtypes, vectypes(result_type), Float64), vcat(keynames, vecnames(result_type), "cputime_s"))
+  add_folder!(logs, "result", vcat(valtypes, vectypes(result_type), Float64), vcat(keynames, vecnames(result_type), :cputime_s))
   add_observer(observer, "result", push!_f(logs, "result"))
 
   results = map(script) do kvs
@@ -78,8 +84,9 @@ function sweeper(f::Function, result_type::Type, baseconfig::Dict{Symbol,Any}=Di
 
     return result
   end
-
   save_log(joinpath(outdir, logfileroot) * ".txt", logs)
+
+  cd(cwd) #restore original dir
 
   return results
 end

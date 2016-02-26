@@ -34,7 +34,7 @@
 
 module ACASX_SA
 
-export configure, acasx_sa, acasx_temp_params
+export configure, acasx_sa, acasx_sa1, acasx_temp_params
 
 using ExprSearch.SA
 using Reexport
@@ -48,7 +48,8 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:ACASX_SA}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_sa(outdir::AbstractString="./"; seed=1,
+function acasx_sa(;outdir::AbstractString="./",
+                  seed=1,
                   logfileroot::AbstractString="acasx_sa_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
@@ -68,6 +69,7 @@ function acasx_sa(outdir::AbstractString="./"; seed=1,
                   vis::Bool=true)
 
   srand(seed)
+  mkpath(outdir)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
@@ -81,6 +83,48 @@ function acasx_sa(outdir::AbstractString="./"; seed=1,
   psa_params = PSAESParams(n_threads, sa_params, par_observer)
 
   result = exprsearch(psa_params, problem)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
+
+  if vis
+    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
+  end
+
+  return result
+end
+
+function acasx_sa1(;outdir::AbstractString="./",
+                  seed=1,
+                  logfileroot::AbstractString="acasx_sa_log",
+
+                  runtype::Symbol=:nmacs_vs_nonnmacs,
+                  data::AbstractString="dasc",
+                  data_meta::AbstractString="dasc_meta",
+                  manuals::AbstractString="dasc_manual",
+                  clusterdataname::AbstractString="josh1",
+
+                  maxsteps::Int64=20,
+                  T1::Float64=12.184,
+                  alpha::Float64=0.99976,
+                  n_epochs::Int64=50,
+                  n_starts::Int64=1,
+
+                  loginterval::Int64=100,
+                  vis::Bool=true)
+
+  srand(seed)
+  mkpath(outdir)
+
+  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+
+  observer = Observer()
+
+  logs = default_logs1(observer, loginterval)
+  default_console!(observer, loginterval)
+
+  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
+  result = exprsearch(sa_params, problem)
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)

@@ -32,72 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-module Symbolic_GE
+[
+  #tree
+  (:maxsteps, 20),
 
-export configure, symbolic_ge
-
-using ExprSearch.GE
-using RLESUtils.ArrayUtils
-using Reexport
-
-using GrammarExpts
-using SymbolicProblem, GE_Logs, DerivTreeVis
-using RLESUtils.Configure
-import RLESUtils.Configure.configure
-
-const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
-
-configure(::Type{Val{:Symbolic_GE}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
-
-function symbolic_ge(;outdir::AbstractString="./",
-                     seed=1,
-                     logfileroot::AbstractString="symbolic_ge_log",
-
-                     genome_size::Int64=20,
-                     pop_size::Int64=50,
-                     maxwraps::Int64=0,
-                     top_percent::Float64=0.5,
-                     prob_mutation::Float64=0.2,
-                     mutation_rate::Float64=0.2,
-                     defaultcode::Any=0.0,
-                     maxiterations::Int64=3,
-                     maxvalue::Int64=1000,
-
-                     gt_file::AbstractString="gt_easy.jl",
-                     maxsteps::Int64=25,
-
-                     hist_nbins::Int64=40,
-                     hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
-                     hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
-                     loginterval::Int64=100,
-
-                     vis::Bool=true,
-                     observer::Observer=Observer())
-  srand(seed)
-  mkpath(outdir)
-
-  problem = Symbolic(gt_file)
-
-  logs = default_logs(observer, hist_edges, hist_mids)
-  default_console!(observer)
-  @notify_observer(observer, "parameters", ["seed", seed])
-
-  ge_observer = Observer()
-
-  ge_params = GEESParams(genome_size, pop_size, maxwraps,
-                         top_percent, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, ge_observer, observer)
-
-  result = exprsearch(ge_params, problem)
-
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
-
-  if vis
-    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
-  end
-
-  return result
-end
-
-end #module
+  #SA
+  (:T1, 12.184),
+  (:alpha, 0.99976),
+  (:n_epochs, 50),
+  (:n_starts, 1)
+]

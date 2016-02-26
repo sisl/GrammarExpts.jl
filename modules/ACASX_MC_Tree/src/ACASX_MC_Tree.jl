@@ -70,7 +70,8 @@ function train_dtree{T}(pmc_params::PMCESParams, problem::ACASXClustering, Dl::D
   return dtree, logs
 end
 
-function acasx_mc_tree(outdir::AbstractString="./"; seed=1,
+function acasx_mc_tree(;outdir::AbstractString="./",
+                       seed=1,
                        logfileroot::AbstractString="acasx_mc_tree_log",
 
                        runtype::Symbol=:nmacs_vs_nonnmacs,
@@ -89,6 +90,7 @@ function acasx_mc_tree(outdir::AbstractString="./"; seed=1,
                        limit_members::Int64=10)
 
   srand(seed)
+  mkpath(outdir)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 

@@ -38,4 +38,4 @@ using ACASX_MCTS2
 const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_MCTS2")
 
 mkpath(TESTDIR)
-acasx_mcts2(TESTDIR)
+acasx_mcts2(outdir=TESTDIR)

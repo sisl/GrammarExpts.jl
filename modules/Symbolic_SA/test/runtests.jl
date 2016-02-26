@@ -38,6 +38,6 @@ using Symbolic_SA
 const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "Symbolic_SA")
 
 mkpath(TESTDIR)
-symbolic_sa(TESTDIR)
+symbolic_sa(outdir=TESTDIR)
 
 

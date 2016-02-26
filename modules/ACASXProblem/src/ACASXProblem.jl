@@ -602,7 +602,8 @@ function CountTracker{T}(problem::ACASXClustering{T})
 end
 
 function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
-                                   thresh::Float64, default::Float64)
+                                   thresh::Float64, default::Float64,
+                                   earlystop_div::Int64)
   Dl = problem.Dl
   codelen = length(string(expr))
   f = to_function(problem, expr)
@@ -610,19 +611,23 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
   metric_thresh = (thresh - problem.w_len * codelen) / problem.w_metric #translate thresh to bound on metric
   c_tracker = CountTracker(problem)
 
+  earlystop_int = round(Int64, length(Dl.records) / earlystop_div)
+
   predicts = Array(Bool, length(Dl.records))
   for i = 1:length(Dl.records)
     predicts[i] = f(Dl.records[i])
 
     increment!(c_tracker, Val{predicts[i]}, Dl.labels[i])
 
-    #early exit
-    optim = gini_optimistic(c_tracker, length(Dl.records) - i)
-    if optim > metric_thresh #if most optimistic case still doesn't meet thresh, early exit
-      #@show metric_thresh
-      #@show optim
-      #@show i
-      return default
+    #evaluate early exit
+    if rem(i, earlystop_int) == 0 #on interval
+      optim = gini_optimistic(c_tracker, length(Dl.records) - i)
+      if optim > metric_thresh #if most optimistic case still doesn't meet thresh, early exit
+        #@show metric_thresh
+        #@show optim
+        #@show i
+        return default
+      end
     end
   end
 

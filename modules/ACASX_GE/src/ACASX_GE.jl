@@ -51,7 +51,8 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 configure(::Type{Val{:ACASX_GE}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 #nmacs vs nonnmacs
-function acasx_ge(outdir::AbstractString="./"; seed=1,
+function acasx_ge(;outdir::AbstractString="./",
+                  seed=1,
                   logfileroot::AbstractString="acasx_ge_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
@@ -74,13 +75,13 @@ function acasx_ge(outdir::AbstractString="./"; seed=1,
                   hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
                   hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
                   loginterval::Int64=100,
-                  vis::Bool=true,
-
-                  observer::Observer=Observer())
+                  vis::Bool=true)
   srand(seed)
+  mkpath(outdir)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
+  observer = Observer()
   logs = default_logs(observer, hist_edges, hist_mids)
   default_console!(observer)
 

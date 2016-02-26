@@ -38,5 +38,5 @@ using Symbolic_GE
 const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "Symbolic_GE")
 
 mkpath(TESTDIR)
-symbolic_ge(TESTDIR)
+symbolic_ge(outdir=TESTDIR)
 

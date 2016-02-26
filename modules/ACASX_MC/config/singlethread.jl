@@ -37,6 +37,5 @@
   (:maxsteps, 20),
 
   #MC
-  (:n_samples, 500000),
-  (:n_threads, 1)
+  (:n_samples, 500000)
 ]

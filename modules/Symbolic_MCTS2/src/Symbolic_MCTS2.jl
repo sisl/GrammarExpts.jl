@@ -51,7 +51,8 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:Symbolic_MCTS2}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function symbolic_mcts2(outdir::AbstractString="./"; seed=1,
+function symbolic_mcts2(;outdir::AbstractString="./",
+                        seed=1,
                         logfileroot::AbstractString="symbolic_mcts2_log",
 
                         gt_file::AbstractString="gt_easy.jl",
@@ -69,6 +70,7 @@ function symbolic_mcts2(outdir::AbstractString="./"; seed=1,
                         mctstreevis::Bool=false,
                         treevis_interval::Int64=50,
                         observer::Observer=Observer())
+  mkpath(outdir)
 
   problem = Symbolic(gt_file)
 

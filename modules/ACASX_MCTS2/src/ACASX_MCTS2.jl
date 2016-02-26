@@ -52,7 +52,8 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:ACASX_MCTS2}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_mcts2(outdir::AbstractString="./"; seed=1,
+function acasx_mcts2(;outdir::AbstractString="./",
+                     seed=1,
                      logfileroot::AbstractString="acasx_mcts2_log",
 
                      runtype::Symbol=:nmacs_vs_nonnmacs,
@@ -74,6 +75,7 @@ function acasx_mcts2(outdir::AbstractString="./"; seed=1,
                      mctstreevis::Bool=false,
                      treevis_interval::Int64=50,
                      observer::Observer=Observer())
+  mkpath(outdir)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 

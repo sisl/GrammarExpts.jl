@@ -34,7 +34,7 @@
 
 module ACASX_MC
 
-export configure, acasx_mc
+export configure, acasx_mc, acasx_mc1
 
 using ExprSearch.MC
 using Reexport
@@ -48,7 +48,8 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:ACASX_MC}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_mc(outdir::AbstractString="./"; seed=1,
+function acasx_mc(; outdir::AbstractString="./",
+                  seed=1,
                   logfileroot::AbstractString="acasx_mc_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
@@ -61,11 +62,13 @@ function acasx_mc(outdir::AbstractString="./"; seed=1,
                   n_samples::Int64=50,
                   n_threads::Int64=1,
                   earlystop::Bool=true,
+                  earlystop_div::Int64=10,
 
                   loginterval::Int64=100,
                   vis::Bool=true)
 
   srand(seed)
+  mkpath(outdir)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
@@ -75,10 +78,52 @@ function acasx_mc(outdir::AbstractString="./"; seed=1,
   logs = default_logs(par_observer)
   default_console!(observer, loginterval)
 
-  mc_params = MCESParams(maxsteps, n_samples, earlystop, observer)
+  mc_params = MCESParams(maxsteps, n_samples, earlystop, earlystop_div, observer)
   pmc_params = PMCESParams(n_threads, mc_params, par_observer)
 
   result = exprsearch(pmc_params, problem)
+
+  outfile = joinpath(outdir, "$(logfileroot).txt")
+  save_log(outfile, logs)
+
+  if vis
+    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
+  end
+
+  return result
+end
+
+"single-thread version of acasx_mc"
+function acasx_mc1(; outdir::AbstractString="./",
+                   seed=1,
+                   logfileroot::AbstractString="acasx_mc_log",
+
+                   runtype::Symbol=:nmacs_vs_nonnmacs,
+                   data::AbstractString="dasc",
+                   data_meta::AbstractString="dasc_meta",
+                   manuals::AbstractString="dasc_manual",
+                   clusterdataname::AbstractString="josh1",
+
+                   maxsteps::Int64=20,
+                   n_samples::Int64=50,
+                   earlystop::Bool=true,
+                   earlystop_div::Int64=10,
+
+                   loginterval::Int64=100,
+                   vis::Bool=true)
+
+  srand(seed)
+  mkpath(outdir)
+
+  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+
+  observer = Observer()
+
+  logs = default_logs1(observer, loginterval)
+  default_console!(observer, loginterval)
+
+  mc_params = MCESParams(maxsteps, n_samples, earlystop, earlystop_div, observer)
+  result = exprsearch(mc_params, problem)
 
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)

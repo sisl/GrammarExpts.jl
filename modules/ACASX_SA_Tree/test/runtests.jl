@@ -38,4 +38,4 @@ using ACASX_SA_Tree
 const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_SA_Tree")
 
 mkpath(TESTDIR)
-acasx_sa_tree(TESTDIR)
+acasx_sa_tree(outdir=TESTDIR)

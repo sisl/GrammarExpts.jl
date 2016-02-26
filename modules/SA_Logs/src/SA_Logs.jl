@@ -34,7 +34,7 @@
 
 module SA_Logs
 
-export default_logs, default_console!
+export default_logs, default_console!, default_logs1
 
 using Reexport
 @reexport using RLESUtils: Observers, Loggers
@@ -68,4 +68,32 @@ function default_console!(observer::Observer, loginterval::Int64)
                end)
 end
 
+function default_logs1(observer::Observer, loginterval::Int64)
+  logs = TaggedDFLogger()
+  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals"])
+  add_folder!(logs, "current_best", [Int64, Int64, Float64, ASCIIString], ["start", "iter", "fitness", "expr"])
+  add_folder!(logs, "elapsed_cpu_s", [Int64, Int64, Float64], ["start", "iter", "elapsed_cpu_s"])
+
+  add_observer(observer, "parameters", push!_f(logs, "parameters"))
+  add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
+  add_observer(observer, "result", push!_f(logs, "result"))
+  add_observer(observer, "current_best", x -> begin
+                 iter = x[2]
+                 if rem(iter, loginterval) == 0
+                   push!(logs, "current_best", x)
+                 end
+               end)
+  add_observer(observer, "elapsed_cpu_s", x -> begin
+                 iter = x[2]
+                 if rem(iter, loginterval) == 0
+                   push!(logs, "elapsed_cpu_s", x)
+                 end
+               end)
+
+  return logs
+end
+
 end #module
+
