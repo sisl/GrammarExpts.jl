@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Visualizer for the (generic) DecisionTrees.jl
+Produces a TikzQTrees
+"""
 module DecisionTreeVis
 
 export decisiontreevis, get_tree, get_metric

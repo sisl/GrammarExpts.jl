@@ -36,16 +36,9 @@ module GrammarExpts
 
 const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
 
-function load_to_path()
-  subdirs = readdir(MODULEDIR)
-  map!(x -> abspath(joinpath(MODULEDIR, x)), subdirs)
-  filter!(isdir, subdirs)
-  for subdir in subdirs
-    push!(LOAD_PATH, joinpath(subdir, "src"))
-  end
-end
+using RLESUtils.ModLoader
 
-load_to_path()
+load_to_path(MODULEDIR)
 
 function test(pkgs::AbstractString...; coverage::Bool=false)
   cd(() -> Pkg.Entry.test(AbstractString[pkgs...]; coverage=coverage), MODULEDIR)

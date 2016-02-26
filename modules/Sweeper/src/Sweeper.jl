@@ -32,6 +32,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Generic parameter study. Load a basconfig for the basic function 'f', and a config for the param study
+varying parameters. f should take only keyword arguments. result_type is the type that returned by f.
+and will be serialized/vectorized for logging to a DataFrame.
+"""
 module Sweeper
 
 export configure, sweeper

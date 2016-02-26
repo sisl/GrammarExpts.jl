@@ -32,6 +32,15 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+ACASX grammar problem. Three runtypes are currently supported.\n
+'nvn' or :nmacs_vs_nonnmacs (1 is nmac, 2 is non-nmac).\n
+'nc' or :nmac_clusters (cluster labels provided as input, i.e., by manuals)\n
+'nec' or :nonnmacs_extra_cluster.  same as 'nc' except nonnmacs are added as an
+extra cluster to the end.  Default: 'nvn'
+Two versions of the fitness function are provided, one with pruning (early stop) and one without
+(always evaluates over entire dataset)
+"""
 module ACASXProblem
 
 export ACASXClustering, create_grammar, get_fitness, to_function

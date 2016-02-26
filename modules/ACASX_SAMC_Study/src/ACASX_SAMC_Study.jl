@@ -32,6 +32,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+ACASX Study comparing performance of SA, MC with full evaluations, and MC with early stop.
+Single-threaded versions are used for more stable comparison.
+Main entry: study_main()
+"""
 module ACASX_SAMC_Study
 
 export study_main

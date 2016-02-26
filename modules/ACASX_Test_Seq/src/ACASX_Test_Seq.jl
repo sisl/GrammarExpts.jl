@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Test a given sequence of actions (for example, NMAC rule sequence).
+Returns fitness score as well as the expr.
+"""
 module ACASX_Test_Seq
 
 export setup, playsequence, nmacrule

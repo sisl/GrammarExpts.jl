@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Convert JSONs from RLESCAS into DataFrames compatible with ExprSearch
+"""
 module CASJson2DataFrame
 
 include("process_jsons.jl")

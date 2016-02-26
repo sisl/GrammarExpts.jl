@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Simulated Annealing for the ACASX problem.
+Example usage: config=configure(ACASX_SA,"normal","nvn_dasc"); acasx_sa(;config...)
+"""
 module ACASX_SA
 
 export configure, acasx_sa, acasx_sa1, acasx_temp_params

@@ -32,6 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Goes into each sub-directory of 'logdir', loads the 'logfile', extracts each log named 'logname',
+stacks them all together into a single DataFrame, loads them into a TaggedDFLogger,
+and saves the log to 'outfileroot'.txt.
+Main entry: logjoin()
+"""
 module LogJoiner
 
 export logjoin
@@ -39,11 +45,6 @@ export logjoin
 using RLESUtils: Loggers, FileUtils
 using DataFrames
 
-"""
-Goes into each sub-directory of 'logdir', loads the 'logfile', extracts each log named 'logname',
-stacks them all together into a single DataFrame, loads them into a TaggedDFLogger,
-and saves the log to 'outfileroot'.txt
-"""
 function logjoin{T<:AbstractString}(logdir::AbstractString, logfile::AbstractString, lognames::Vector{T},
                  outfileroot::AbstractString="joined", logtype::Type=TaggedDFLogger)
   lognames = map(x -> convert(ASCIIString, x), lognames)

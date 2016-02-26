@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Grammatical Evolution for the ACASX problem.
+Example usage: config=configure(ACASX_GE,"normal","nvn_dasc"); acasx_ge(;config...)
+"""
 module ACASX_GE
 
 export configure, acasx_ge

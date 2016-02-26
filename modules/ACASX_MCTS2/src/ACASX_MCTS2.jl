@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Monte Carlo tree search for the ACASX problem.
+Example usage: config=configure(ACASX_MCTS2,"normal","nvn_dasc"); acasx_mcts2(;config...)
+"""
 module ACASX_MCTS2
 
 export configure, acasx_mcts2

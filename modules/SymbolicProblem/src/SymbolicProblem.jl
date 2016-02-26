@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Symbolic regression grammar problem.
+"""
 module SymbolicProblem
 
 export Symbolic, create_grammar, get_fitness, to_function

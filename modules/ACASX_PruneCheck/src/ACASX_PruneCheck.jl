@@ -32,6 +32,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Draw random samples and compare get_fitness() on full and pruned versions.
+Every update to bestfit should be simultaneous. Produce counterexample if they differ.
+Main entry: acasx_prunecheck()
+"""
 module ACASX_PruneCheck
 
 export setup, runtest, acasx_prunecheck
@@ -50,9 +55,6 @@ function setup(;data::AbstractString="libcas098small",
   return problem, tree
 end
 
-"""
-Draw random samples and compare get_fitness() on full and pruned.  Produce counterexample if they differ.
-"""
 function runtest{T}(problem::ACASXClustering{T}, tree::DerivationTree,
                     n_samples::Int64=50000, earlystop_div::Int64=10)
   bestfit = realmax(Float64)

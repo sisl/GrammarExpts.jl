@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Default logs for ExprSearch.MCTS2
+"""
 module MCTS2_Logs
 
 export default_logs, default_console!

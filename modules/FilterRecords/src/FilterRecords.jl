@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Filter records in a DataFrame with ability to clear number of rows before and after some occurrence
+"""
 module FilterRecords
 
 export filter_by_bool!, all_occurrences
@@ -39,13 +42,21 @@ export filter_by_bool!, all_occurrences
 using DataFrameSets
 using DataFramesMeta
 
+"""
+Same as filter_by_bool! over a single dataframe D, but applies it over all records in a DFSet
+"""
 function filter_by_bool!(f::Function, Ds::DFSet; kwargs...)
   for D in records(Ds)
     filter_by_bool!(f, D; kwargs...)
   end
 end
 
-#bool=f(r::DataFrameRow)
+"""
+Filter rows of dataframe D according to callback f.  Rows with f returning true are filtered,
+along with n_before rows before occurrence, and n_after rows after occurrence.
+Safe to use typemax for n_before and n_after.
+f is a callback of the form bool=f(row::DataFrameRow).
+"""
 function filter_by_bool!(f::Function, D::DataFrame;
                         n_before::Int64=0, #safe to use typemax for all previous
                         n_after::Int64=0) #safe to use typemax for all after
@@ -65,7 +76,10 @@ function filter_by_bool!(f::Function, D::DataFrame;
   end
 end
 
-#returns row of first occurrence
+"""
+Returns indices of all rows in dataframe 'D' where f returns true.
+f is a callback of the form bool=f(row::DataFrameRow).
+"""
 function all_occurrences(f::Function, D::DataFrame)
   rows = IntSet()
   for (i, r) in enumerate(eachrow(D))

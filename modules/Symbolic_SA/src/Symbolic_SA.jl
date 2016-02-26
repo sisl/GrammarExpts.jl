@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Simulated Annealing for the Symbolic regression problem.
+Example usage: config=configure(Symbolic_SA,"normal","nvn_dasc"); symbolic_sa(;config...)
+"""
 module Symbolic_SA
 
 export configure, symbolic_sa, symbolic_temp_params

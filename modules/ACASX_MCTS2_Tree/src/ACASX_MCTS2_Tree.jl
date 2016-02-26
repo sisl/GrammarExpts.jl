@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Use a decision tree to recursively split encounters in the ACASX Problem. MCTS2 algorithm.
+Example usage: config=configure(ACASX_MCTS2_Tree,"normal","nvn_dasc"); acasx_mcts2_tree(;config...)
+"""
 module ACASX_MCTS2_Tree
 
 export configure, acasx_mcts2_tree

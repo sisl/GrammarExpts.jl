@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Grammatical Evolution for the Symbolic regression problem.
+Example usage: config=configure(Symbolic_GE,"normal","nvn_dasc"); symbolic_ge(;config...)
+"""
 module Symbolic_GE
 
 export configure, symbolic_ge

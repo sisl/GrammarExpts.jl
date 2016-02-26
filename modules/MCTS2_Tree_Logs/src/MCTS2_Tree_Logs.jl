@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Default logs for MCTS2_Tree
+"""
 module MCTS2_Tree_Logs
 
 export default_logs, set_observers!

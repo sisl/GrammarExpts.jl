@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Test various optimistic bounds for GINI impurity, esp on split groups.
+"""
 module GINIOptimTest
 
 export gini_optim_test, gini_optim_loop

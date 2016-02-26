@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Support module for logging and viewing the MCTS tree
+"""
 module MCTSTreeView
 
 using POMDPs.State

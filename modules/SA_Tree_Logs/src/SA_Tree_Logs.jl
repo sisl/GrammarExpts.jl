@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Default logs for SA_Tree
+"""
 module SA_Tree_Logs
 
 export default_logs, set_observers!

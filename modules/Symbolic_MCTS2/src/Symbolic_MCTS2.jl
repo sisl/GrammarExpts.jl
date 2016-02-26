@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+MCTS2 for the Symbolic regression problem.
+Example usage: config=configure(Symbolic_MCTS2,"normal","nvn_dasc"); symbolic_mcts2(;config...)
+"""
 module Symbolic_MCTS2
 
 export configure, symbolic_mcts2

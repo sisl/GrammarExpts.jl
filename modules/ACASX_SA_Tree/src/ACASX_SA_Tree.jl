@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Create a decision tree to recursively split encounters in the ACASX Problem. SA algorithm.
+Example usage: config=configure(ACASX_SA_Tree,"normal","nvn_dasc"); acasx_sa_tree(;config...)
+"""
 module ACASX_SA_Tree
 
 export configure, acasx_sa_tree

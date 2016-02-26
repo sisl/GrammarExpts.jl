@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Deprecated.
+Converts CAS csvs to a single dataframe.
+"""
 module CSVFeatures
 
 export feature_frame, csv_to_dataframe

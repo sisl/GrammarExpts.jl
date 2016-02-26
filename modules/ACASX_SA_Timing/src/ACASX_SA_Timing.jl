@@ -32,6 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Profiling time and memory for some of the functions in ACASXProblem and SA.
+"""
 module ACASX_SA_Timing
 
 export acasx_sa_timing

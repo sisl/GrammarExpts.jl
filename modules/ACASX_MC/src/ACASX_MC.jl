@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Monte Carlo for the ACASX problem.
+Example usage: config=configure(ACASX_MC,"normal","nvn_dasc"); acasx_mc(;config...)
+"""
 module ACASX_MC
 
 export configure, acasx_mc, acasx_mc1

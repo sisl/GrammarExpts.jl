@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Deprecated.
+Manipulation tools for DataFrame object.  Consider using built-ins and DataFramesMeta instead.
+"""
 module DataFrameFeatures
 
 export add_features!, transform, transform!

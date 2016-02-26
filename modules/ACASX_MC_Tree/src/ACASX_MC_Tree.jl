@@ -32,6 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+Create a decision tree to recursively split encounters in the ACASX Problem. MC algorithm.
+Example usage: config=configure(ACASX_MC_Tree,"normal","nvn_dasc"); acasx_mc_tree(;config...)
+"""
 module ACASX_MC_Tree
 
 export configure, acasx_mc_tree

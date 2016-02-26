@@ -32,7 +32,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#Generic decision tree based on callbacks
+"""
+Generic decision tree based on callbacks
+"""
 module DecisionTrees
 
 export DTParams, DecisionTree, DTNode, build_tree, classify, isleaf, get_max_depth
