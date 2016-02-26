@@ -32,7 +32,41 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-Pkg.clone("https://github.com/sisl/RLESCAS.jl.git", "RLESCAS") #json2csv converter
-Pkg.clone("https://github.com/sisl/RLESUtils.jl.git", "RLESUtils")
-Pkg.clone("https://github.com/rcnlee/Datasets.jl.git", "Datasets")
-Pkg.clone("https://github.com/sisl/ExprSearch.jl.git", "ExprSearch")
+const DATADIR = joinpath(dirname(@__FILE__), "..", "..", "..", "data")
+const DASC_JSON = joinpath(DATADIR, "dasc/json")
+const DASC_CSV = joinpath(DATADIR, "dasc/csv")
+const DASC_OUT = Pkg.dir("Datasets/data/dasc") #requires Datasets to be installed
+const DASC_META = Pkg.dir("Datasets/data/dasc_meta")
+
+const LIBCAS098SMALL_JSON = joinpath(DATADIR, "libcas098small/json")
+const LIBCAS098SMALL_CSV = joinpath(DATADIR, "libcas098small/csv")
+const LIBCAS098SMALL_OUT = Pkg.dir("Datasets/data/libcas098small")
+const LIBCAS098SMALL_META = Pkg.dir("Datasets/data/libcas098small_meta")
+
+#dasc set
+function script_dasc(fromjson::Bool=true)
+  script_base(DASC_JSON, DASC_CSV, DASC_OUT, DASC_META;
+                 fromjson=fromjson, correct_coc=true)
+end
+
+#from APL 20151230, libcas0.9.8, MCTS iterations=500, testbatch
+function script_libcas098small(fromjson::Bool=true)
+  script_base(LIBCAS098SMALL_JSON, LIBCAS098SMALL_CSV, LIBCAS098SMALL_OUT, LIBCAS098SMALL_META;
+                 fromjson=fromjson, correct_coc=true)
+end
+
+function script_base(jsondir::AbstractString, csvdir::AbstractString,
+                        datadir::AbstractString, metadir::AbstractString;
+                        fromjson::Bool=true, correct_coc::Bool=true)
+  if fromjson
+    convert2csvs(jsondir, csvdir)
+  end
+  tmpdir = mktempdir()
+  csvs2dataframes(csvdir, tmpdir)
+  if correct_coc
+    correct_coc_stays!(tmpdir)
+  end
+  mv_files(tmpdir, datadir, name_from_id)
+  add_encounter_info!(datadir)
+  encounter_meta(jsondir, metadir)
+end

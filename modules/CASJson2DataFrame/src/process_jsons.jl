@@ -30,9 +30,45 @@
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
 # ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-# *****************************************************************************
+# ***********************************************i******************************
 
-Pkg.clone("https://github.com/sisl/RLESCAS.jl.git", "RLESCAS") #json2csv converter
-Pkg.clone("https://github.com/sisl/RLESUtils.jl.git", "RLESUtils")
-Pkg.clone("https://github.com/rcnlee/Datasets.jl.git", "Datasets")
-Pkg.clone("https://github.com/sisl/ExprSearch.jl.git", "ExprSearch")
+#requires RLESCAS to be installed
+include(Pkg.dir("RLESCAS/src/converters/json_to_csv.jl"))
+
+using RLESUtils.FileUtils
+
+#read a directory of jsons and output csvs
+function convert2csvs(in_dir::AbstractString, out_dir::AbstractString)
+  if !isdir(out_dir) #create output dir if it doesn't exist
+    mkpath(out_dir)
+  end
+
+  files = readdirGZs(in_dir)
+  for f in files
+    println("file = ", f)
+    json_to_csv(f)
+  end
+  csvfiles = readdir_ext(".csv", in_dir) #readdir only gives basenames
+  for src in csvfiles
+    dst = joinpath(out_dir, basename(src))
+    mv(src, dst, remove_destination=true)
+  end
+end
+
+function encounter_meta(in_dir::AbstractString, out_dir::AbstractString)
+  if !isdir(out_dir) #create output dir if it doesn't exist
+    mkpath(out_dir)
+  end
+
+  files = readdirGZs(in_dir)
+  colnames = Symbol[:encounter_id, :nmac]
+  coltypes = Type[Int64, Bool]
+
+  D = DataFrame(coltypes, colnames, 0)
+  for f in files
+    id = get_id(f)
+    push!(D, [id, is_nmac(f)])
+  end
+  outfile = joinpath(out_dir, "encounter_meta.csv.gz")
+  writetable(outfile, D)
+end

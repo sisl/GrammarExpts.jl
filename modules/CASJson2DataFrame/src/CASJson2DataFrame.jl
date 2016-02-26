@@ -32,7 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-Pkg.clone("https://github.com/sisl/RLESCAS.jl.git", "RLESCAS") #json2csv converter
-Pkg.clone("https://github.com/sisl/RLESUtils.jl.git", "RLESUtils")
-Pkg.clone("https://github.com/rcnlee/Datasets.jl.git", "Datasets")
-Pkg.clone("https://github.com/sisl/ExprSearch.jl.git", "ExprSearch")
+module CASJson2DataFrame
+
+export script_dasc, script_libcas098small, script_base
+
+include("process_jsons.jl")
+include("time_series_features1.jl")
+include("tsfeats1_scripts.jl")
+
+end #module
