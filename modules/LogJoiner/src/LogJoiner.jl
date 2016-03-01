@@ -42,7 +42,7 @@ module LogJoiner
 
 export logjoin
 
-using RLESUtils: Loggers, FileUtils
+using RLESUtils, Loggers, FileUtils
 using DataFrames
 
 function logjoin{T<:AbstractString}(logdir::AbstractString, logfile::AbstractString, lognames::Vector{T},

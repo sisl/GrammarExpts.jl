@@ -35,4 +35,7 @@
 Pkg.clone("https://github.com/sisl/RLESCAS.jl.git", "RLESCAS") #json2csv converter
 Pkg.clone("https://github.com/sisl/RLESUtils.jl.git", "RLESUtils")
 Pkg.clone("https://github.com/rcnlee/Datasets.jl.git", "Datasets")
+
 Pkg.clone("https://github.com/sisl/ExprSearch.jl.git", "ExprSearch")
+Pkg.build("ExprSearch")
+

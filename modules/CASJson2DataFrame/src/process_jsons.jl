@@ -35,7 +35,7 @@
 #requires RLESCAS to be installed
 include(Pkg.dir("RLESCAS/src/converters/json_to_csv.jl"))
 
-using RLESUtils.FileUtils
+using RLESUtils, FileUtils
 
 #read a directory of jsons and output csvs
 function convert2csvs(in_dir::AbstractString, out_dir::AbstractString)

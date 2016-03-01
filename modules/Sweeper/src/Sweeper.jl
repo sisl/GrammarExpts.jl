@@ -42,10 +42,9 @@ module Sweeper
 export configure, sweeper
 
 using GrammarExpts
-using RLESUtils: ParamSweeps, Observers, Loggers, Vectorizer, FileUtils
+using RLESUtils, ParamSweeps, Observers, Loggers, Vectorizer, FileUtils, Configure
 using CPUTime
-using RLESUtils.Configure
-import RLESUtils.Configure.configure
+import Configure.configure
 
 const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")

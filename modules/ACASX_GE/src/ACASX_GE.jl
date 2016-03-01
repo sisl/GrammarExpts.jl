@@ -42,13 +42,12 @@ export configure, acasx_ge
 
 using ExprSearch.GE
 using Datasets
-using RLESUtils.ArrayUtils
+using RLESUtils, ArrayUtils, Configure
 using Reexport
 
 using GrammarExpts
 using ACASXProblem, GE_Logs, DerivTreeVis
-using RLESUtils.Configure
-import RLESUtils.Configure.configure
+import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 

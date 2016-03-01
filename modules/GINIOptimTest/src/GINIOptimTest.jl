@@ -42,7 +42,7 @@ export gini_optim_test, gini_optim_loop
 using Distributions #mode
 using Reexport
 @reexport using DataFrames
-using RLESUtils: MathUtils
+using RLESUtils, MathUtils
 
 function gini_optim_loop(ntrials=100)
   fs = [:evenly, :shortest, :longest, :lowest, :highest,

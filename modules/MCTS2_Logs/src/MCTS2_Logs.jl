@@ -41,7 +41,8 @@ export default_logs, default_console!
 
 using ExprSearch, DerivationTrees
 using Reexport
-@reexport using RLESUtils: Observers, Loggers
+using RLESUtils
+@reexport using Observers, Loggers
 
 function default_logs(observer::Observer, loginterval::Int64)
   logs = TaggedDFLogger()

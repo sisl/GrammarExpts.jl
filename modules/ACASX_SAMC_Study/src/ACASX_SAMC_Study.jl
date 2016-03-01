@@ -49,7 +49,7 @@ using ExprSearch: SA, MC
 using ACASX_SA, ACASX_MC
 using LogJoiner
 
-using RLESUtils: Loggers, MathUtils
+using RLESUtils, Loggers, MathUtils
 using DataFrames
 using Gadfly
 

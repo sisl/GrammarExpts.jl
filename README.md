@@ -18,7 +18,7 @@ A problem module defines various specifics for a given grammar optimization prob
 The following problems are currently implemented:
 
 * ACAS X ("ACASXProblem") - Time-series classification task for encounter data from RLESCAS. Learn an expression for the decision boundary to separate NMACs vs. non-NMACs or discover rules to explain clusterings.
-* Symbolic regression ("SymbolicProblem") - Try to reconstruct/rediscover the symbolic form of a mathematical expression from evaluation data only.
+* Symbolic regression ("SymbolicProblem") - Reconstruct/rediscover the symbolic form of a mathematical expression from evaluation data only.
 
 ## Installation
 
@@ -40,7 +40,7 @@ Julia 0.4 is required.
 
 * PKGDIR/GrammarExpts/modules - Contains all the submodules
 * PKGDIR/GrammarExpts/data - Contains input and intermediate-processed data
-* PKGDIR/Datasets/data - Contains the input data
+* PKGDIR/Datasets/data - Contains the processed input data
 
 #### ACAS X
 
@@ -56,24 +56,22 @@ Julia 0.4 is required.
 
 In general, first call ``using GrammarExpts`` to make all the submodules globally visible.
 
-### ACAS X Usage
-
-#### Learn an Expression for ACAS X
+### Learn an Expression for ACAS X
 
 ```julia
 cd(Pkg.dir("GrammarExpts/results"))
 addprocs(4)
-using GrammarExpts, ACASX\_MC #Monte Carlo
-config = configure(ACASX\_MC, "normal", "nvn\_dasc") #load a config. Here, combine two configs
-acasx\_mc(; config...) #run. By default will output to current directory
+using GrammarExpts, ACASX_MC #Monte Carlo
+config = configure(ACASX_MC, "normal", "nvn_dasc") #load a config. Here, combine two configs
+acasx_mc(; config...) #run. By default will output to current directory
 ```
 
 ```julia
 cd(Pkg.dir("GrammarExpts/results"))
 addprocs(4)
-using GrammarExpts, ACASX\_SA #Simulated Annealing
-config = configure(ACASX\_SA, "normal", "nvn\_dasc") #load a config. Here, combine two configs
-acasx\_sa(; config...) #run. By default will output to current directory
+using GrammarExpts, ACASX_SA #Simulated Annealing
+config = configure(ACASX_SA, "normal", "nvn_dasc") #load a config. Here, combine two configs
+acasx_sa(; config...) #run. By default will output to current directory
 ```
 
 #### Learn a Decision Tree for ACAS X
@@ -81,22 +79,22 @@ acasx\_sa(; config...) #run. By default will output to current directory
 ```julia
 cd(Pkg.dir("GrammarExpts/results"))
 addprocs(4)
-using GrammarExpts, ACASX\_MC\_Tree #Monte Carlo
-config = configure(ACASX\_MC, "normal", "nvn\_dasc") #load a config. Here, combine two configs
-acasx\_mc\_tree(; config...) #run. By default will output to current directory
+using GrammarExpts, ACASX_MC_Tree #Monte Carlo
+config = configure(ACASX_MC, "normal", "nvn_dasc") #load a config. Here, combine two configs
+acasx_mc_tree(; config...) #run. By default will output to current directory
 ```
 
 ```julia
 cd(Pkg.dir("GrammarExpts/results"))
 addprocs(4)
-using GrammarExpts, ACASX\_SA\_Tree #Simulated Annealing
-config = configure(ACASX\_SA, "normal", "nvn\_dasc") #load a config. Here, combine two configs
-acasx\_sa\_tree(; config...) #run. By default will output to current directory
+using GrammarExpts, ACASX_SA_Tree #Simulated Annealing
+config = configure(ACASX_SA, "normal", "nvn_dasc") #load a config. Here, combine two configs
+acasx_sa_tree(; config...) #run. By default will output to current directory
 ```
 
 #### Data
 
-This is likely not needed for normal operation, but is good info to know.
+This is not needed in normal operation, but is good info to know (e.g., to inspect processed data).
 
 GrammarExpts uses Datasets.jl to manage its data.  The data is stored one file per encounter in subfolders of ``PKGDIR/Datasets/data``.  To load an entire dataset (collection of encounters), use
 
@@ -113,9 +111,9 @@ using Datasets
 D = dataset("dasc", "1") #load dasc dataset encounter 1 into a DataFrame
 ```
 
-#### Configuration and Configuration Files
+#### Configuration Files
 
-Many of the main entry points such as ``ACASX\_MC\_Tree`` use keyword arguments to set configuration parameters.
+Many of the main entry points such as ``ACASX_MC_Tree`` use keyword arguments to set configuration parameters.  Default parameters are typically set for a quick test run.
 
 For convenience, some modules implement a configuration feature.  Config files are stored in a subfolder in the corresponding module.  For example, ``PKGDIR/GrammarExpts/ACASX_MC_Tree/config``
 
@@ -137,7 +135,7 @@ Sometimes it is convenient to split up configurations into multiple pieces, for 
 At this point you can inspect the parameters in the config object or even overwrite it:
 ``config[:param] = newvalue``
 
-The configuration can be splatted into the keyword arguments of the function call like:
+To use the configuration, splat it into the keyword arguments of the function call:
 ``acasx_mc_tree(; config...)``
 
 Values not specified by the configuration take on the defaults specified in the function definition.
@@ -146,15 +144,15 @@ Values not specified by the configuration take on the defaults specified in the 
 
 Decision tree and visualization:
 
-"acasx\_mc\_tree\_log\_vis\_decisiontree.json" - decision tree json output
-"acasx\_mc\_tree\_log\_vis\_decisiontree.pdf" - visualization of the output decision tree. Disable creation of pdf file by setting ``plotpdf=false`` if available in the keyword arguments. The PDF can be later produced from the .json file by calling:
+* "acasx\_mc\_tree\_log\_vis\_decisiontree.json" - decision tree json output
+* "acasx\_mc\_tree\_log\_vis\_decisiontree.pdf" - visualization of the output decision tree. Disable creation of pdf file by setting ``plotpdf=false`` if available in the keyword arguments. The PDF can be later produced from the .json file by calling:
 
 ```julia
 using TikzQTrees
 plottree("acasx_mc_tree_log_vis_decisiontree.json", outfileroot="acasx_mc_tree_log_vis_decisiontree")
 ```
 
-Output logs are in TaggedDFLogger format, which is a light wrapper around DataFrames.  To load the data into a TaggedDFLogger object, call
+Output logs are in TaggedDFLogger (RLESUtils.Loggers) format, which is a light wrapper around DataFrames.  To load the data, call:
 
 ```julia
 using RLESUtils.Loggers
@@ -176,16 +174,16 @@ You may have noticed that DataFrames just stores its data in CSV format, so anot
 
 #### Process a new dataset
 
-To extract features from RLESCAS json output to DataFrames format that GrammarExpts uses, use the CASJson2DataFrames module.  In particular, take a look at ``tsfeats1_scripts.jl``.  Entries exist for "dasc" and "libcas098small" datasets, so these can be regenerated from jsons by placing the json files under ``PKGDIR/GrammarExpts/data/dasc/json`` and calling
+To extract features from RLESCAS json output to DataFrames format that GrammarExpts uses, use the CASJson2DataFrame module.  In particular, take a look at ``tsfeats1_scripts.jl``.  Entries exist for "dasc" and "libcas098small" datasets, so these can be regenerated from jsons by placing the json files under ``PKGDIR/GrammarExpts/data/dasc/json`` and calling
 
 ```julia
-using GrammarExpts, CASJson2DataFrames
+using GrammarExpts, CASJson2DataFrame
 script_dasc()
 ```
 
 If the CSVs already exist, then generating them can be skipped by calling ``script_dasc(false)`` instead.
 
-To add a new dataset, one can follow the same format as the DASC dataset by creating a folder and placing the jsons under ``PKGDIR/GrammarExpts/data/[newdataset]/json``, then creating the corresponding entries in ``tsfeats1_scripts.jl`` similar to how the DASC set is done.
+To add a new dataset, one can follow the same format as the DASC dataset by creating a folder and placing the jsons under ``PKGDIR/GrammarExpts/data/[newdataset]/json``, then creating the corresponding entries in ``tsfeats1_scripts.jl`` similar to how the DASC set is done.  Output directories are automatically generated.
 
 Alternatively, ``script_base()`` can be called supplying the paths directly without modifying ``tsfeats1_scripts.jl``.
 
@@ -200,5 +198,7 @@ using GrammarExpts, FilterNMACInfo
 script_dasc()
 ```
 The naming convention that is used is to append filt to the dataset name, e.g., "dasc" -> "dascfilt".
+
+To generate a filtered dataset, create new corresponding entries in ``FilterNMACInfo.jl`` similar to how the DASC set is done.  Output directories are automatically generated.
 
 Alternatively, ``remove_cpa()`` can be called supplying the paths directly without modifying ``FilterNMACInfo.jl``

@@ -35,7 +35,7 @@
 #TODO: can all the dtree_callbacks be unified?
 
 using DecisionTrees
-using RLESUtils: Observers, Loggers
+using RLESUtils, Observers, Loggers
 import DecisionTreeVis: get_tree, get_metric
 
 function DecisionTrees.get_truth{T}(members::Vector{Int64},

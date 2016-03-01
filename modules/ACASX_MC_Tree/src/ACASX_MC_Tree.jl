@@ -43,14 +43,13 @@ export configure, acasx_mc_tree
 using DecisionTrees
 using ExprSearch.MC
 using Datasets
-using RLESUtils.Obj2Dict
+using RLESUtils, Obj2Dict, Configure
 using Reexport
 
 using GrammarExpts
 using ACASXProblem
 using DerivTreeVis, DecisionTreeVis, MC_Tree_Logs
-using RLESUtils.Configure
-import RLESUtils.Configure.configure
+import Configure.configure
 
 include("dtree_callbacks.jl")
 

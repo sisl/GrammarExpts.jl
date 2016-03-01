@@ -50,7 +50,7 @@ export entropy_metrics, gini_metrics
 using Datasets
 using ExprSearch
 using Devectorize
-using RLESUtils: LogicUtils
+using RLESUtils, LogicUtils
 import ExprSearch: ExprProblem, create_grammar, get_fitness
 
 include("labeleddata.jl")

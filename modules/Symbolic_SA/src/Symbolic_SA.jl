@@ -45,8 +45,8 @@ using Reexport
 
 using GrammarExpts
 using SymbolicProblem, DerivTreeVis, SA_Logs
-using RLESUtils.Configure
-import RLESUtils.Configure.configure
+using RLESUtils, Configure
+import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 

@@ -34,7 +34,7 @@
 
 using CSVFeatures
 using DataFrameFeatures
-using RLESUtils: MathUtils, LookupCallbacks, FileUtils, StringUtils
+using RLESUtils, MathUtils, LookupCallbacks, FileUtils, StringUtils
 using DataFrames
 
 const FEATURE_MAP = LookupCallback[

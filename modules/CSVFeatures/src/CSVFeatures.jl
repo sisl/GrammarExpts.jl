@@ -40,8 +40,7 @@ module CSVFeatures
 
 export feature_frame, csv_to_dataframe
 
-using RLESUtils.LookupCallbacks
-using RLESUtils.FileUtils
+using RLESUtils, LookupCallbacks, FileUtils
 using DataFrames
 using Iterators
 

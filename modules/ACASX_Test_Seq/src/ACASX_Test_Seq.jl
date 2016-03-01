@@ -41,7 +41,6 @@ module ACASX_Test_Seq
 export setup, playsequence, nmacrule
 
 using ACASXProblem
-
 using DerivationTrees
 
 const NMAC_SEQUENCE = Int64[2, 2, 7, 11, 7, 7, 5, 3, 10]

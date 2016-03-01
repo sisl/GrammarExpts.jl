@@ -40,7 +40,8 @@ module GE_Logs
 export default_logs, default_console!
 
 using Reexport
-@reexport using RLESUtils: Observers, Loggers
+using RLESUtils
+@reexport using Observers, Loggers
 using Iterators
 
 function default_logs(observer::Observer, hist_edges::Range{Float64}, hist_mids::Vector{Float64})

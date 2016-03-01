@@ -43,13 +43,12 @@ export configure, symbolic_mcts2
 using ExprSearch.MCTS2
 using Reexport
 using JSON, GZip
-using RLESUtils.FileUtils
+using RLESUtils, FileUtils, Configure
 
 using GrammarExpts
 using SymbolicProblem, MCTS2_Logs
 using DerivTreeVis, MCTSTreeView
-using RLESUtils.Configure
-import RLESUtils.Configure.configure
+import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 

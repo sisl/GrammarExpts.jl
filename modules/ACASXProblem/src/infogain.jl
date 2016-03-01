@@ -33,7 +33,7 @@
 # *****************************************************************************
 
 using Distributions
-using RLESUtils.MathUtils
+using RLESUtils, MathUtils
 
 function entropy_metrics{T}(predicts::Vector{Bool}, truth::Vector{T}, entbase::Float64=2.0)
   ntrues = count(identity, predicts)

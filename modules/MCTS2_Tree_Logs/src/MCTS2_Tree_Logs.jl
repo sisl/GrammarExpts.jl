@@ -42,7 +42,8 @@ export default_logs, set_observers!
 using DataFrames #nrow
 using ExprSearch, DerivationTrees #get_expr
 using Reexport
-@reexport using RLESUtils: Observers, Loggers
+using RLESUtils
+@reexport using Observers, Loggers
 
 function default_logs()
   logs = TaggedDFLogger()

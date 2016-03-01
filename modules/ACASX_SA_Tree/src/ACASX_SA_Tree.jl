@@ -43,14 +43,13 @@ export configure, acasx_sa_tree
 using DecisionTrees
 using ExprSearch.SA
 using Datasets
-using RLESUtils.Obj2Dict
+using RLESUtils, Obj2Dict, Configure
 using Reexport
 
 using GrammarExpts
 using ACASXProblem, SA_Tree_Logs
 using DerivTreeVis, DecisionTreeVis
-using RLESUtils.Configure
-import RLESUtils.Configure.configure
+import Configure.configure
 
 include("dtree_callbacks.jl")
 

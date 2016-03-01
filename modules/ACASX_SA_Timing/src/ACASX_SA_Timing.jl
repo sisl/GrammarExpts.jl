@@ -41,7 +41,7 @@ export acasx_sa_timing
 
 using ExprSearch.SA
 using DerivationTrees
-using RLESUtils: SwapBuffers, Observers, Loggers, StringUtils
+using RLESUtils, SwapBuffers, Observers, Loggers, StringUtils
 
 using GrammarExpts
 using ACASXProblem

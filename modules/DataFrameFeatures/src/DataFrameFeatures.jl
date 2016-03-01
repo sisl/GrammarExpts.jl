@@ -42,7 +42,7 @@ export add_features!, transform, transform!
 
 using DataFrames
 using Iterators
-using RLESUtils: FileUtils, LookupCallbacks
+using RLESUtils, FileUtils, LookupCallbacks
 
 function add_features!(df_files::Vector{ASCIIString}, feature_map::Vector{LookupCallback},
                         feature_names::Vector{ASCIIString}; overwrite::Bool=false)

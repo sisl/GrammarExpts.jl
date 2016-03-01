@@ -46,7 +46,7 @@ using ExprSearch, DerivationTrees
 using DataFrameSets
 using TreeToJSON
 using TikzQTrees
-using RLESUtils.LatexUtils
+using RLESUtils, LatexUtils
 
 get_tree() = error("get_tree not defined")
 get_metric() = error("get_metric not defined")

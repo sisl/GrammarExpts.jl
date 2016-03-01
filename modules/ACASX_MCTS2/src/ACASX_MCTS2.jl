@@ -44,13 +44,12 @@ using ExprSearch.MCTS2
 using Datasets
 using Reexport
 using JSON, GZip
-using RLESUtils.FileUtils
+using RLESUtils, FileUtils, Configure
 
 using GrammarExpts
 using ACASXProblem, MCTS2_Logs
 using DerivTreeVis, MCTSTreeView
-using RLESUtils.Configure
-import RLESUtils.Configure.configure
+import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 

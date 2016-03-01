@@ -40,7 +40,8 @@ module MC_Logs
 export default_logs, default_console!, default_logs1
 
 using Reexport
-@reexport using RLESUtils: Observers, Loggers
+using RLESUtils
+@reexport using Observers, Loggers
 
 function default_logs(par_observer::Observer)
   logs = TaggedDFLogger()
