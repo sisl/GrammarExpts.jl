@@ -32,7 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-export script_base, script_dasc, script_libcas098small, script_exampledata
+export script_base, script_dasc, script_libcas098small
 
 const DATADIR = joinpath(dirname(@__FILE__), "..", "..", "..", "data")
 
@@ -46,11 +46,6 @@ const LIBCAS098SMALL_CSV = joinpath(DATADIR, "libcas098small/csv")
 const LIBCAS098SMALL_OUT = Pkg.dir("Datasets/data/libcas098small")
 const LIBCAS098SMALL_META = Pkg.dir("Datasets/data/libcas098small_meta")
 
-const EXAMPLEDATA_JSON = joinpath(DATADIR, "exampledata/json")
-const EXAMPLEDATA_CSV = joinpath(DATADIR, "exampledata/csv")
-const EXAMPLEDATA_OUT = Pkg.dir("Datasets/data/exampledata") #requires Datasets to be installed
-const EXAMPLEDATA_META = Pkg.dir("Datasets/data/exampledata_meta")
-
 #dasc set
 function script_dasc(fromjson::Bool=true)
   script_base(DASC_JSON, DASC_CSV, DASC_OUT, DASC_META;
@@ -60,11 +55,6 @@ end
 #from APL 20151230, libcas0.9.8, MCTS iterations=500, testbatch
 function script_libcas098small(fromjson::Bool=true)
   script_base(LIBCAS098SMALL_JSON, LIBCAS098SMALL_CSV, LIBCAS098SMALL_OUT, LIBCAS098SMALL_META;
-                 fromjson=fromjson, correct_coc=true)
-end
-
-function script_exampledata(fromjson::Bool=true)
-  script_base(EXAMPLEDATA_JSON, EXAMPLEDATA_CSV, EXAMPLEDATA_OUT, EXAMPLEDATA_META;
                  fromjson=fromjson, correct_coc=true)
 end
 

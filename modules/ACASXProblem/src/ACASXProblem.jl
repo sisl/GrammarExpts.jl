@@ -614,6 +614,7 @@ end
 function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
                                    thresh::Float64, default::Float64,
                                    earlystop_div::Int64)
+
   Dl = problem.Dl
   codelen = length(string(expr))
   f = to_function(problem, expr)

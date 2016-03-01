@@ -38,7 +38,7 @@ sample uniformly between 't_min' and 't_max'.
 """
 module FilterNMACInfo
 
-export dasc_script, libcas098small_script
+export script_dasc, script_libcas098small
 export remove_cpa, find_cpa
 
 using FilterRecords
@@ -49,8 +49,8 @@ using Datasets
 const DASC_FILTERED = Pkg.dir("Datasets/data/dascfilt")
 const LIBCAS098SMALL_FILTERED = Pkg.dir("Datasets/data/libcas098smallfilt")
 
-dasc_script() = remove_cpa("dasc", DASC_FILTERED; t_min=35, n_before=5)
-libcas098small_script() = remove_cpa("libcas098small", LIBCAS098SMALL_FILTERED; t_min=35, n_before=5)
+script_dasc() = remove_cpa("dasc", DASC_FILTERED; t_min=35, n_before=5)
+script_libcas098small() = remove_cpa("libcas098small", LIBCAS098SMALL_FILTERED; t_min=35, n_before=5)
 
 function cpa_metric(r::DataFrameRow)
   return r[:abs_alt_diff] + r[:horizontal_range] / 5

@@ -39,8 +39,8 @@ module MC_Tree_Logs
 
 export default_logs, set_observers!
 
-using DataFrames
-using DerivationTrees
+using DataFrames #nrow
+using ExprSearch, DerivationTrees #get_expr
 using Reexport
 @reexport using RLESUtils: Observers, Loggers
 

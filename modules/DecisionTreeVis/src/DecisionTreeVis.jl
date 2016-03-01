@@ -34,13 +34,15 @@
 
 """
 Visualizer for the (generic) DecisionTrees.jl
+However, this visualizer is not generic.
 Produces a TikzQTrees
 """
 module DecisionTreeVis
 
 export decisiontreevis, get_tree, get_metric
 
-using DecisionTrees, DerivationTrees
+using DecisionTrees
+using ExprSearch, DerivationTrees
 using DataFrameSets
 using TreeToJSON
 using TikzQTrees
@@ -50,7 +52,7 @@ get_tree() = error("get_tree not defined")
 get_metric() = error("get_metric not defined")
 
 function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::AbstractString,
-                            limit_members::Int64, fmt_pretty::Format, fmt_natural::Format)
+                            limit_members::Int64, fmt_pretty::Format, fmt_natural::Format; plotpdf::Bool=true)
   get_depth(tree::DecisionTree) = get_depth(tree.root)
   get_depth(node::DTNode) = node.depth
   get_children(tree::DecisionTree) = get_children(tree.root)
@@ -81,7 +83,9 @@ function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::
 
   viscalls = VisCalls(get_name, get_children, get_depth)
   write_json(dtree, viscalls, "$(fileroot)_decisiontree.json")
-  plottree("$(fileroot)_decisiontree.json", outfileroot="$(fileroot)_decisiontree")
+  if plotpdf
+    plottree("$(fileroot)_decisiontree.json", outfileroot="$(fileroot)_decisiontree")
+  end
 end
 
 end #module

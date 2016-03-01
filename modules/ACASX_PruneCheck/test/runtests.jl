@@ -33,4 +33,4 @@
 # *****************************************************************************
 
 using GrammarExpts
-using ACASX_PruneTest
+using ACASX_PruneCheck

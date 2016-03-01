@@ -32,52 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-"""
-Default logs for ExprSearch.MCTS2
-"""
-module MCTS2_Logs
+#nmacs vs nonnmacs
+[
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "libcas098smallfilt"),
+  (:data_meta, "libcas098small_meta"),
+  (:manuals, ""),
+  (:clusterdataname, "")
+]
 
-export default_logs, default_console!
 
-using ExprSearch, DerivationTrees
-using Reexport
-@reexport using RLESUtils: Observers, Loggers
-
-function default_logs(observer::Observer, loginterval::Int64)
-  logs = TaggedDFLogger()
-  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "cputime", [Int64, Float64], ["step", "cputime_s"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals"])
-  add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString], ["raw", "pretty", "natural"])
-  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString], ["iteration", "reward", "state", "expr"])
-
-  add_observer(observer, "parameters", push!_f(logs, "parameters"))
-  add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
-  add_observer(observer, "cputime", push!_f(logs, "cputime"))
-  add_observer(observer, "result", push!_f(logs, "result"))
-  add_observer(observer, "expression", push!_f(logs, "expression"))
-  add_observer(observer, "current_best", x -> begin
-                 i, reward, state = x
-                 if rem(i, loginterval) == 0
-                   push!(logs, "current_best", [i, reward, string(state.past_actions), string(get_expr(state))])
-                 end
-               end)
-
-  return logs
-end
-
-function default_console!(observer::Observer, printinterval::Int64=100)
-  #console out
-  add_observer(observer, "verbose1", x -> println(x[1]))
-  add_observer(observer, "action", x -> println("step=$(x[1]), action=$(x[2])"))
-  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
-  add_observer(observer, "current_best", x -> begin
-                 i, reward, state = x
-                 if rem(i, printinterval) == 0
-                   println("step $i: best_reward=$reward, best_state=$(state.past_actions)")
-                 end
-               end)
-end
-
-end #module

@@ -93,6 +93,7 @@ function acasx_sa_tree(;outdir::AbstractString="./",
 
                        loginterval::Int64=100,
                        vis::Bool=true,
+                       plotpdf::Bool=true,
                        limit_members::Int64=10)
   mkpath(outdir)
 
@@ -118,7 +119,7 @@ function acasx_sa_tree(;outdir::AbstractString="./",
   #visualize
   if vis
     decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"), limit_members,
-                    FMT_PRETTY, FMT_NATURAL)
+                    FMT_PRETTY, FMT_NATURAL; plotpdf=plotpdf)
   end
 
   return dtree, logs
