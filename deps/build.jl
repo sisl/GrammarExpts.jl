@@ -45,6 +45,6 @@ end
 Pkg.checkout("RLESUtils")
 
 #spawn a new process to work around precompilation error
-using RLESUtils, RunUtils
 script = abspath(joinpath(dirname(@__FILE__), "build_dasc.jl"))
-julia_process(script)
+julia_exe = joinpath(JULIA_HOME, Base.julia_exename())
+run(`$julia_exe $script`)
