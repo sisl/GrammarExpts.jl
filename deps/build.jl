@@ -42,3 +42,5 @@ if !haskey(pkgs, "ExprSearch")
   Pkg.build("ExprSearch")
 end
 
+using GrammarExpts, CASJson2DataFrame
+script_dasc(false)

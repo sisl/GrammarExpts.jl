@@ -107,10 +107,9 @@ function acasx_mcts2(;outdir::AbstractString="./",
                                              pretty_string(result.tree, FMT_PRETTY),
                                              pretty_string(result.tree, FMT_NATURAL, true)])
 
+  push_members!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
-
-  #save("$(logfileroot)_derivtree.jld", "tree", result.tree)
 
   if vis
     derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
@@ -127,6 +126,12 @@ function acasx_mcts2(;outdir::AbstractString="./",
            reward=result.reward, expr=string(result.expr))
 
   return result
+end
+
+function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
+  members_true, members_false = get_members(problem, expr)
+  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
 end
 
 end #module

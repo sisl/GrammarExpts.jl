@@ -26,7 +26,23 @@ Julia 0.4 is required.
 
 * Pkg.clone("https://github.com/sisl/GrammarExpts.jl.git", "GrammarExpts")
 * Pkg.build("GrammarExpts") to automatically install dependencies
-* Optional, Pkg.test("GrammarExpts") to test all the modules
+
+### Tests
+
+Basic tests can be useful in detecting install/dependency problems.
+
+* Pkg.test("RLESUtils") to test all the submodules
+* Pkg.test("ExprSearch") to test all the submodules
+* Pkg.test("GrammarExpts") to test all the submodules
+
+Optional, more in-depth test that includes data processing.
+
+```julia
+using GrammarExpts, PipelineTest
+ptest = pipelinetest() #produces data under GrammarExpts/test/PipelineTest
+#inspect dataset under Dataset/data/exampledata, exampledata_meta, and exampledatafilt
+cleanup(ptest) #remove created artifacts, except results
+```
 
 ### Main Package Dependencies
 
@@ -44,6 +60,8 @@ Julia 0.4 is required.
 
 #### ACAS X
 
+Datasets are not delivered with the Datasets.jl package and need to be handled separately.  GrammarExpts assumes the following structure for the ACAS X datasets:
+
 * PKGDIR/Datsets/data/dasc - Encounter data for DASC dataset
 * PKGDIR/Datsets/data/dascfilt - Encounter data for DASC dataset filtered starting 5 seconds before CPA
 * PKGDIR/Datasets/data/dasc\_meta - Meta info for DASC dataset. i.e., NMAC labels
@@ -51,6 +69,8 @@ Julia 0.4 is required.
 * PKGDIR/Datsets/data/libcas098small - Encounter data for Libcas 0.9.8 Small Test dataset
 * PKGDIR/Datsets/data/libcas098smallfilt - Encounter data for Libcas 0.9.8 Small Test dataset filtered starting 5 seconds before CPA
 * PKGDIR/Datasets/data/libcas098small\_meta - Meta info for libcas098small dataset. i.e., NMAC labels
+
+The DASC jsons are included under ``PKGDIR/data/dasc/jsons``, so the DASC dataframes can be generated following the "Data Processing" instructions below.  The libcas098small dataset is too large to include in the repo, so must be obtained separately.
 
 ## Usage
 

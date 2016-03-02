@@ -43,7 +43,7 @@ Two versions of the fitness function are provided, one with pruning (early stop)
 """
 module ACASXProblem
 
-export ACASXClustering, create_grammar, get_fitness, to_function
+export ACASXClustering, create_grammar, get_fitness, to_function, get_members
 export FMT_PRETTY, FMT_NATURAL
 export entropy_metrics, gini_metrics
 
@@ -591,6 +591,19 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
   #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
   _, _, metric = gini_metrics(predicts, Dl.labels)
   return problem.w_metric * metric + problem.w_len * codelen
+end
+
+function get_members{T}(problem::ACASXClustering{T}, expr)
+  Dl = problem.Dl
+  f = to_function(problem, expr)
+  predicts = Array(Bool, length(Dl.records))
+  for i = 1:length(Dl.records)
+    predicts[i] = f(Dl.records[i])
+  end
+  members_true = Dl.names[predicts]
+  members_false = Dl.names[!predicts]
+
+  members_true, members_false
 end
 
 type CountTracker{T}

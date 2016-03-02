@@ -88,6 +88,7 @@ function acasx_sa(;outdir::AbstractString="./",
 
   result = exprsearch(psa_params, problem)
 
+  push_members!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -96,6 +97,12 @@ function acasx_sa(;outdir::AbstractString="./",
   end
 
   return result
+end
+
+function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
+  members_true, members_false = get_members(problem, expr)
+  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
 end
 
 function acasx_sa1(;outdir::AbstractString="./",
@@ -130,6 +137,7 @@ function acasx_sa1(;outdir::AbstractString="./",
   sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
   result = exprsearch(sa_params, problem)
 
+  push_members!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 

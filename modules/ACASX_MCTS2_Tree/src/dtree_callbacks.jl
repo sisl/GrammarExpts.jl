@@ -53,6 +53,7 @@ function DecisionTrees.get_splitter{T}(members::Vector{Int64},
   problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
   result = exprsearch(mcts2_params, problem)
 
+  push_members!(logs, problem, result.expr)
   @notify_observer(mcts2_params.observer, "expression",
                    [string(result.expr),
                     pretty_string(result.tree, FMT_PRETTY),
@@ -62,6 +63,13 @@ function DecisionTrees.get_splitter{T}(members::Vector{Int64},
   info_gain, _, _ = gini_metrics(predicts, labels(Dl_sub))
 
   return info_gain > 0 ? result : nothing
+end
+
+function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+  decision_id = nrow(logs["members"]) > 0 ?
+    maximum(logs["members"][:decision_id]) + 1 : 1
+  members_true, members_false = get_members(problem, expr)
+  push!(logs, "members", [join(members_true, ","), join(members_false, ","), decision_id])
 end
 
 function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},

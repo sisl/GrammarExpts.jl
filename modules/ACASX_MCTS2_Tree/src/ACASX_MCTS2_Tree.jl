@@ -61,6 +61,8 @@ function train_dtree{T}(mcts2_params::MCTS2ESParams, problem::ACASXClustering, D
                         maxdepth::Int64, loginterval::Int64)
 
   logs = default_logs()
+  add_folder!(logs, "members", [ASCIIString, ASCIIString, Int64], ["members_true", "members_false", "decision_id"])
+
   num_data = length(Dl)
   T1 = Bool #predict_type
   T2 = Int64 #label_type

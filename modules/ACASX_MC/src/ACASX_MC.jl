@@ -87,6 +87,7 @@ function acasx_mc(; outdir::AbstractString="./",
 
   result = exprsearch(pmc_params, problem)
 
+  push_members!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -95,6 +96,12 @@ function acasx_mc(; outdir::AbstractString="./",
   end
 
   return result
+end
+
+function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
+  members_true, members_false = get_members(problem, expr)
+  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
 end
 
 "single-thread version of acasx_mc"
@@ -129,6 +136,7 @@ function acasx_mc1(; outdir::AbstractString="./",
   mc_params = MCESParams(maxsteps, n_samples, earlystop, earlystop_div, observer)
   result = exprsearch(mc_params, problem)
 
+  push_members!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
