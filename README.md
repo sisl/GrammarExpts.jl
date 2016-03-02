@@ -24,7 +24,7 @@ The following problems are currently implemented:
 
 Julia 0.4 is required.
 
-* Pkg.clone("https://github.com/rcnlee/GrammarExpts.jl.git", "GrammarExpts")
+* Pkg.clone("https://github.com/sisl/GrammarExpts.jl.git", "GrammarExpts")
 * Pkg.build("GrammarExpts") to automatically install dependencies
 * Optional, Pkg.test("GrammarExpts") to test all the modules
 

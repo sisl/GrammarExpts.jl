@@ -32,10 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-Pkg.clone("https://github.com/sisl/RLESCAS.jl.git", "RLESCAS") #json2csv converter
-Pkg.clone("https://github.com/sisl/RLESUtils.jl.git", "RLESUtils")
-Pkg.clone("https://github.com/rcnlee/Datasets.jl.git", "Datasets")
+pkgs = Pkg.installed()
+!haskey(pkgs, "RLESCAS") && Pkg.clone("https://github.com/sisl/RLESCAS.jl.git", "RLESCAS") #json2csv converter
+!haskey(pkgs, "RLESUtils") && Pkg.clone("https://github.com/sisl/RLESUtils.jl.git", "RLESUtils")
+!haskey(pkgs, "Datasets") && Pkg.clone("https://github.com/rcnlee/Datasets.jl.git", "Datasets")
 
-Pkg.clone("https://github.com/sisl/ExprSearch.jl.git", "ExprSearch")
-Pkg.build("ExprSearch")
+if !haskey(pkgs, "ExprSearch")
+  Pkg.clone("https://github.com/sisl/ExprSearch.jl.git", "ExprSearch")
+  Pkg.build("ExprSearch")
+end
 
