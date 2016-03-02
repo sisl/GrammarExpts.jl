@@ -44,7 +44,7 @@ end
 
 Pkg.checkout("RLESUtils")
 
-#spawn a new process to work around precompilation error
+import DataFrames #workaround stale cache issue
+
 script = abspath(joinpath(dirname(@__FILE__), "build_dasc.jl"))
-julia_exe = joinpath(JULIA_HOME, Base.julia_exename())
-run(`$julia_exe $script`)
+include(script)
