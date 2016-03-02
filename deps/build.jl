@@ -42,6 +42,8 @@ if !haskey(pkgs, "ExprSearch")
   Pkg.build("ExprSearch")
 end
 
+Pkg.checkout("RLESUtils")
+
 #spawn a new process to work around precompilation error
 using RLESUtils, RunUtils
 script = abspath(joinpath(dirname(@__FILE__), "build_dasc.jl"))
