@@ -32,17 +32,5 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-pkgs = Pkg.installed()
-!haskey(pkgs, "RLESCAS") && Pkg.clone("https://github.com/sisl/RLESCAS.jl.git", "RLESCAS") #json2csv converter
-!haskey(pkgs, "RLESUtils") && Pkg.clone("https://github.com/sisl/RLESUtils.jl.git", "RLESUtils")
-!haskey(pkgs, "Datasets") && Pkg.clone("https://github.com/rcnlee/Datasets.jl.git", "Datasets")
-
-if !haskey(pkgs, "ExprSearch")
-  Pkg.clone("https://github.com/sisl/ExprSearch.jl.git", "ExprSearch")
-  Pkg.build("ExprSearch")
-end
-
-#spawn a new process to work around precompilation error
-using RLESUtils, RunUtils
-script = abspath(joinpath(dirname(@__FILE__), "build_dasc.jl"))
-julia_process(script)
+using GrammarExpts, CASJson2DataFrame
+script_dasc(false)
