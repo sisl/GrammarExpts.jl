@@ -25,7 +25,7 @@ The following problems are currently implemented:
 Julia 0.4 is required.
 
 * Pkg.clone("https://github.com/sisl/GrammarExpts.jl.git", "GrammarExpts")
-* Pkg.build("GrammarExpts") to automatically install dependencies
+* Pkg.build("GrammarExpts") to automatically install dependencies and generate the processed dasc set
 * Recommended, perform the basic tests in the next section
 
 ### Tests
@@ -47,11 +47,12 @@ cleanup(ptest) #remove created artifacts, except results
 
 ### Main Package Dependencies
 
+These are automatically fetched by the build script:
+
 * ExprSearch.jl - Grammar-guided expression search algorithms
 * RLESUtils.jl - Misc tools and utils
 * Datasets.jl - Dataset manager
 * RLESCAS.jl - Adaptive stress testing for collision avoidance systems.  The conversion scripts are required for processing RLESCAS json files into the DataFrames format used by GrammarExpts.
-* TikzQTrees.jl - Plot trees to PDF using the TikzQTrees latex package
 
 ### Useful Locations to Know
 
@@ -71,7 +72,7 @@ Datasets are not delivered with the Datasets.jl package and need to be handled s
 * PKGDIR/Datsets/data/libcas098smallfilt - Encounter data for Libcas 0.9.8 Small Test dataset filtered starting 5 seconds before CPA
 * PKGDIR/Datasets/data/libcas098small\_meta - Meta info for libcas098small dataset. i.e., NMAC labels
 
-The DASC jsons are included under ``PKGDIR/data/dasc/jsons``, so the DASC dataframes can be generated following the "Data Processing" instructions below.  The libcas098small dataset is too large to include in the repo, so must be obtained separately.
+The DASC jsons are included under ``PKGDIR/data/dasc/jsons``, so the DASC dataframes can be generated following the "Data Processing" instructions below.  In fact, the build script includes this generation so that the installation tests work.  The libcas098small dataset is too large to include in the repo, so must be obtained separately.
 
 ## Usage
 
