@@ -22,7 +22,7 @@ The following problems are currently implemented:
 
 ## Installation
 
-Julia 0.4 is required.
+Julia v0.4 64-bit is required.
 
 * Pkg.clone("https://github.com/sisl/GrammarExpts.jl.git", "GrammarExpts")
 * Pkg.build("GrammarExpts") to automatically install dependencies and generate the processed dasc set
