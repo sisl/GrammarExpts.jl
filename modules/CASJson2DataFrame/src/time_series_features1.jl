@@ -169,6 +169,7 @@ function get_id(filename::AbstractString)
   s = split(s, '.')[1]
   s = replace(s, "trajSaveMCTS_ACASX_EvE_", "")
   s = replace(s, "trajSaveMCTS_ACASX_Multi_", "")
+  s = replace(s, "trajSaveMCTS_ACASX_GM_", "")
   s = replace(s, "_dataframe", "")
   return parse(Int64, s) #encounter number
 end

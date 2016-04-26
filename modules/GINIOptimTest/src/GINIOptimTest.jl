@@ -219,8 +219,6 @@ function fill2bound1multi(v1, v2, N)
   c2 = counts(v2)
   n1 = sum(c1)
   n2 = sum(c2)
-  n1t = maximum(c1)
-  n2t = maximum(c2)
 
   i1 = indmax(c1)
   i2 = indmax(c2)

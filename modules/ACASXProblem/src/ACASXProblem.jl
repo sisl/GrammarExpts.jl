@@ -607,16 +607,16 @@ function get_members{T}(problem::ACASXClustering{T}, expr)
 end
 
 type CountTracker{T}
-  c_true::Dict{T,Int64}
-  c_false::Dict{T,Int64}
-  N_true::Int64
-  N_false::Int64
+  c_true::Dict{T,Int64} #counts for the true cluster
+  c_false::Dict{T,Int64} #counts for the false cluster
+  N_true::Int64 #number of items in true cluster
+  N_false::Int64 #number of items in false cluster
 end
 
 function CountTracker{T}(problem::ACASXClustering{T})
-  c_true = Dict{T,Int64}() #count for each label
+  c_true = Dict{T,Int64}()
   c_false = Dict{T,Int64}()
-  N_true = N_false = 0 #total count
+  N_true = N_false = 0
   for l in problem.labelset
     c_true[l] = 0
     c_false[l] = 0

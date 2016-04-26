@@ -102,7 +102,7 @@ acasx_sa(; config...) #run. By default will output to current directory
 cd(Pkg.dir("GrammarExpts/results"))
 addprocs(4)
 using GrammarExpts, ACASX_MC_Tree #Monte Carlo
-config = configure(ACASX_MC, "normal", "nvn_dasc") #load a config. Here, combine two configs
+config = configure(ACASX_MC_Tree, "normal", "nvn_dasc") #load a config. Here, combine two configs
 acasx_mc_tree(; config...) #run. By default will output to current directory
 ```
 
@@ -110,7 +110,7 @@ acasx_mc_tree(; config...) #run. By default will output to current directory
 cd(Pkg.dir("GrammarExpts/results"))
 addprocs(4)
 using GrammarExpts, ACASX_SA_Tree #Simulated Annealing
-config = configure(ACASX_SA, "normal", "nvn_dasc") #load a config. Here, combine two configs
+config = configure(ACASX_SA_Tree, "normal", "nvn_dasc") #load a config. Here, combine two configs
 acasx_sa_tree(; config...) #run. By default will output to current directory
 ```
 
