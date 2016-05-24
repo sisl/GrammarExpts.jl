@@ -33,11 +33,6 @@
 # *****************************************************************************
 
 using GrammarExpts
-using Symbolic_MCTS2
-
-const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "Symbolic_MCTS2")
-
-mkpath(TESTDIR)
-symbolic_mcts2(outdir=TESTDIR)
+using MCTS_Logs
 
 

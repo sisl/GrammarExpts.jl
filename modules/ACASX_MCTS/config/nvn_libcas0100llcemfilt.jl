@@ -32,7 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using MCTS2_Tree_Logs
+#nmacs vs nonnmacs
+[
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "libcas0100llcemfilt"),
+  (:data_meta, "libcas0100llcemfilt_meta"),
+  (:manuals, ""),
+  (:clusterdataname, "")
+]
 
 

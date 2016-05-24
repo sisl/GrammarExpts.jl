@@ -33,21 +33,21 @@
 # *****************************************************************************
 
 """
-Use a decision tree to recursively split encounters in the ACASX Problem. MCTS2 algorithm.
-Example usage: config=configure(ACASX_MCTS2_Tree,"normal","nvn_dasc"); acasx_mcts2_tree(;config...)
+Use a decision tree to recursively split encounters in the ACASX Problem. MCTS algorithm.
+Example usage: config=configure(ACASX_MCTS_Tree,"normal","nvn_dasc"); acasx_mcts_tree(;config...)
 """
-module ACASX_MCTS2_Tree
+module ACASX_MCTS_Tree
 
-export configure, acasx_mcts2_tree
+export configure, acasx_mcts_tree
 
 using DecisionTrees
-using ExprSearch.MCTS2
+using ExprSearch.MCTS
 using Datasets
 using RLESUtils, Obj2Dict, Configure
 using Reexport
 
 using GrammarExpts
-using ACASXProblem, MCTS2_Tree_Logs
+using ACASXProblem, MCTS_Tree_Logs
 using DerivTreeVis, MCTSTreeView, DecisionTreeVis
 import Configure.configure
 
@@ -55,9 +55,9 @@ include("dtree_callbacks.jl")
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
-configure(::Type{Val{:ACASX_MCTS2_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_MCTS_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function train_dtree{T}(mcts2_params::MCTS2ESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
+function train_dtree{T}(mcts_params::MCTSESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
                         maxdepth::Int64, loginterval::Int64)
 
   logs = default_logs()
@@ -70,14 +70,14 @@ function train_dtree{T}(mcts2_params::MCTS2ESParams, problem::ACASXClustering, D
   p = DTParams(num_data, maxdepth, T1, T2)
 
   dtree = build_tree(p,
-                     Dl, problem, mcts2_params, logs, loginterval) #userargs...
+                     Dl, problem, mcts_params, logs, loginterval) #userargs...
 
   return dtree, logs
 end
 
-function acasx_mcts2_tree(;outdir::AbstractString="./",
+function acasx_mcts_tree(;outdir::AbstractString="./",
                           seed=1,
-                          logfileroot::AbstractString="acasx_mcts2_tree_log",
+                          logfileroot::AbstractString="acasx_mcts_tree_log",
 
                           runtype::Symbol=:nmacs_vs_nonnmacs,
                           data::AbstractString="dasc",
@@ -102,11 +102,11 @@ function acasx_mcts2_tree(;outdir::AbstractString="./",
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
-  mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
+  mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
                              explorationconst, q0, seed, Observer(), Observer())
 
   Dl = problem.Dl
-  dtree, logs = train_dtree(mcts2_params, problem, Dl, maxdepth, loginterval)
+  dtree, logs = train_dtree(mcts_params, problem, Dl, maxdepth, loginterval)
 
   #add to log
   push!(logs, "parameters", ["seed", seed, 0])

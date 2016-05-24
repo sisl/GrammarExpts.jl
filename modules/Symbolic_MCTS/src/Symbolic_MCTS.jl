@@ -33,30 +33,30 @@
 # *****************************************************************************
 
 """
-MCTS2 for the Symbolic regression problem.
-Example usage: config=configure(Symbolic_MCTS2,"normal","nvn_dasc"); symbolic_mcts2(;config...)
+MCTS for the Symbolic regression problem.
+Example usage: config=configure(Symbolic_MCTS,"normal","nvn_dasc"); symbolic_mcts(;config...)
 """
-module Symbolic_MCTS2
+module Symbolic_MCTS
 
-export configure, symbolic_mcts2
+export configure, symbolic_mcts
 
-using ExprSearch.MCTS2
+using ExprSearch.MCTS
 using Reexport
 using JSON, GZip
 using RLESUtils, FileUtils, Configure
 
 using GrammarExpts
-using SymbolicProblem, MCTS2_Logs
+using SymbolicProblem, MCTS_Logs
 using DerivTreeVis, MCTSTreeView
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
-configure(::Type{Val{:Symbolic_MCTS2}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:Symbolic_MCTS}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function symbolic_mcts2(;outdir::AbstractString="./",
+function symbolic_mcts(;outdir::AbstractString="./",
                         seed=1,
-                        logfileroot::AbstractString="symbolic_mcts2_log",
+                        logfileroot::AbstractString="symbolic_mcts_log",
 
                         gt_file::AbstractString="gt_easy.jl",
                         maxsteps::Int64=25,
@@ -85,14 +85,14 @@ function symbolic_mcts2(;outdir::AbstractString="./",
     add_observer(observer, "mcts_tree", viewstep)
   end
 
-  mcts2_observer = Observer()
-  #add_observer(mcts2_observer, "terminal_reward", x -> println("r=", x[1], " state=", x[2].past_actions))
+  mcts_observer = Observer()
+  #add_observer(mcts_observer, "terminal_reward", x -> println("r=", x[1], " state=", x[2].past_actions))
 
-  mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
-                             explorationconst, q0, seed, mcts2_observer,
+  mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
+                             explorationconst, q0, seed, mcts_observer,
                              observer)
 
-  result = exprsearch(mcts2_params, problem)
+  result = exprsearch(mcts_params, problem)
 
   @notify_observer(observer, "parameters", ["seed", seed])
 
@@ -106,7 +106,7 @@ function symbolic_mcts2(;outdir::AbstractString="./",
     end
   end
 
-  textfile(joinpath(outdir, "summary.txt"), "mcts2", seed=seed, n_iters=n_iters,
+  textfile(joinpath(outdir, "summary.txt"), "mcts", seed=seed, n_iters=n_iters,
            reward=result.reward, expr=string(result.expr))
 
   if vis

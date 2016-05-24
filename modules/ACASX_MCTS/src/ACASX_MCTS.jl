@@ -34,30 +34,30 @@
 
 """
 Monte Carlo tree search for the ACASX problem.
-Example usage: config=configure(ACASX_MCTS2,"normal","nvn_dasc"); acasx_mcts2(;config...)
+Example usage: config=configure(ACASX_MCTS,"normal","nvn_dasc"); acasx_mcts(;config...)
 """
-module ACASX_MCTS2
+module ACASX_MCTS
 
-export configure, acasx_mcts2
+export configure, acasx_mcts
 
-using ExprSearch.MCTS2
+using ExprSearch.MCTS
 using Datasets
 using Reexport
 using JSON, GZip
 using RLESUtils, FileUtils, Configure
 
 using GrammarExpts
-using ACASXProblem, MCTS2_Logs
+using ACASXProblem, MCTS_Logs
 using DerivTreeVis, MCTSTreeView
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
-configure(::Type{Val{:ACASX_MCTS2}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_MCTS}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_mcts2(;outdir::AbstractString="./",
+function acasx_mcts(;outdir::AbstractString="./",
                      seed=1,
-                     logfileroot::AbstractString="acasx_mcts2_log",
+                     logfileroot::AbstractString="acasx_mcts_log",
 
                      runtype::Symbol=:nmacs_vs_nonnmacs,
                      data::AbstractString="dasc",
@@ -85,18 +85,18 @@ function acasx_mcts2(;outdir::AbstractString="./",
   logs = default_logs(observer, loginterval)
   default_console!(observer)
 
-  mcts2_observer = Observer()
+  mcts_observer = Observer()
 
   if mctstreevis
     view, viewstep = viewstep_f(treevis_interval)
     add_observer(observer, "mcts_tree", viewstep)
   end
 
-  mcts2_params = MCTS2ESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
-                             explorationconst, q0, seed, mcts2_observer,
+  mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
+                             explorationconst, q0, seed, mcts_observer,
                              observer)
 
-  result = exprsearch(mcts2_params, problem)
+  result = exprsearch(mcts_params, problem)
 
   @notify_observer(observer, "parameters", ["seed", seed])
   @notify_observer(observer, "parameters", ["runtype", runtype])
@@ -122,7 +122,7 @@ function acasx_mcts2(;outdir::AbstractString="./",
     end
   end
 
-  textfile(joinpath(outdir, "summary.txt"), "mcts2", seed=seed, n_iters=n_iters,
+  textfile(joinpath(outdir, "summary.txt"), "mcts", seed=seed, n_iters=n_iters,
            reward=result.reward, expr=string(result.expr))
 
   return result
