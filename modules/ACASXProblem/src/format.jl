@@ -145,6 +145,7 @@ function get_map(num_aircraft::Int64 = 2)
     D["intr_out_vrc0_$i"] = "aircraft $i's output vrc bit 0 is set"
     D["intr_out_vrc1_$i"] = "aircraft $i's output vrc bit 1 is set"
     D["intr_out_vrc2_$i"] = "aircraft $i's output vrc bit 2 is set"
+    D["intr_out_tds_$i"] = "aircraft $i's output tds"
     D["response_none_$i"] = "pilot $i is flying intended trajectory"
     D["response_stay_$i"] = "pilot $i is responding to previous RA"
     D["response_follow_$i"] = "pilot $i is responding to current RA"
