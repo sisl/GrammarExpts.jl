@@ -37,59 +37,89 @@ ACASX Study comparing performance of SA, MC with full evaluations, and MC with e
 Single-threaded versions are used for more stable comparison.
 Main entry: study_main()
 """
-module ACASX_SAMC_Study
+module ACASX_Compare
 
 export study_main
-export run_sa, run_mc_full, run_mc_earlystop
-export combine_sweep_logs, combine_sa_logs, combine_mc_full_logs, combine_mc_earlystop_logs, master_log, master_plot
+export run_sa, run_mc_full, run_mc_earlystop, run_mcts, run_mcts_max
+export combine_sweep_logs, combine_sa_logs, combine_mc_full_logs, combine_mc_earlystop_logs, combine_mcts_logs, combine_mcts_max_logs
+export master_log, master_plot
 
 using GrammarExpts
 using Sweeper
-using ExprSearch: SA, MC
-using ACASX_SA, ACASX_MC
+using ExprSearch: SA, MC, MCTS
+using ACASX_SA, ACASX_MC, ACASX_MCTS
 using LogJoiner
 
-using RLESUtils, Loggers, MathUtils
+using RLESUtils, Loggers, MathUtils, Configure
 using DataFrames
 using Gadfly
+import Configure.configure
 
-const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
-const CONFIG = "nvn_libcas098small"
-const STUDYNAME = "ACASX_SAMC_Study"
+const CONFIG = "nvn_libcas0100llcem"
+const STUDYNAME = "ACASX_Compare"
 const SA_NAME = "ACASX_SA"
 const MCFULL_NAME = "ACASX_MC_full"
 const MCEARLYSTOP_NAME = "ACASX_MC_earlystop"
+const MCTS_NAME = "ACASX_MCTS"
+const MCTSMAX_NAME = "ACASX_MCTS_MAX"
 
-function run_sa()
-  baseconfig = configure(ACASX_SA, "singlethread", CONFIG)
-  baseconfig[:n_starts] = 20 #for now...
-  config = configure(Sweeper, "sa_acasx_samc")
+const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
+
+configure(::Type{Val{:ACASX_Compare}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+
+function run_sa(; seed=1:5, n_starts::Int64=20)
+  baseconfig = configure(ACASX_SA, "singlethread", CONFIG) #start with base config
+  baseconfig[:n_starts] = n_starts
+  config = configure(ACASX_Compare, "sa") #study config that goes over base config
   config[:outdir] = joinpath(RESULTDIR, STUDYNAME, SA_NAME)
-  config[:seed] = 1:5
+  config[:seed] = seed
   sa_results = sweeper(acasx_sa1, SAESResult, baseconfig; config...)
   sa_results
 end
 
-function run_mc_full()
+function run_mc_full(; seed=1:5, n_samples=10000)
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
   baseconfig[:earlystop] = false
-  baseconfig[:n_samples] = 100000 #for now...
-  config = configure(Sweeper, "mc_acasx_samc")
+  baseconfig[:n_samples] = n_samples
+  config = configure(ACASX_Compare, "mc")
   config[:outdir] = joinpath(RESULTDIR, STUDYNAME, MCFULL_NAME)
-  config[:seed] = 1:5
+  config[:seed] = seed
   mc_results = sweeper(acasx_mc1, MCESResult, baseconfig; config...)
   mc_results
 end
 
-function run_mc_earlystop()
+function run_mc_earlystop(; seed=1:5, n_samples=10000)
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
   baseconfig[:earlystop] = true
-  baseconfig[:n_samples] = 100000 #for now...
-  config = configure(Sweeper, "mc_acasx_samc")
+  baseconfig[:n_samples] = n_samples
+  config = configure(ACASX_Compare, "mc")
   config[:outdir] = joinpath(RESULTDIR, STUDYNAME, MCEARLYSTOP_NAME)
-  config[:seed] = 1:5
+  config[:seed] = seed
   mc_results = sweeper(acasx_mc1, MCESResult, baseconfig; config...)
   mc_results
+end
+
+function run_mcts(; seed=1:5, n_iters=10000)
+  baseconfig = configure(ACASX_MCTS, "normal", CONFIG)
+  baseconfig[:maxmod] = false
+  baseconfig[:n_iters] = n_iters
+  config = configure(ACASX_Compare, "mcts")
+  config[:outdir] = joinpath(RESULTDIR, STUDYNAME, MCTS_NAME)
+  config[:seed] = seed
+  mcts_results = sweeper(acasx_mcts, MCTSESResult, baseconfig; config...)
+  mcts_results
+end
+
+function run_mcts_max(; seed=1:5, n_iters=10000)
+  baseconfig = configure(ACASX_MCTS, "normal", CONFIG)
+  baseconfig[:maxmod] = true
+  baseconfig[:n_iters] = n_iters
+  config = configure(ACASX_Compare, "mcts")
+  config[:outdir] = joinpath(RESULTDIR, STUDYNAME, MCTSMAX_NAME)
+  config[:seed] = seed
+  mcts_results = sweeper(acasx_mcts, MCTSESResult, baseconfig; config...)
+  mcts_results
 end
 
 function combine_sa_logs()
@@ -107,6 +137,16 @@ function combine_mc_earlystop_logs()
   logjoin(dir, "acasx_mc_log.txt", ["current_best", "elapsed_cpu_s"], joinpath(dir, "subdirjoined"))
 end
 
+function combine_mcts_logs()
+  dir = joinpath(RESULTDIR, STUDYNAME, MCTS_NAME)
+  logjoin(dir, "acasx_mcts_log.txt", ["current_best", "elapsed_cpu_s"], joinpath(dir, "subdirjoined"))
+end
+
+function combine_mcts_max_logs()
+  dir = joinpath(RESULTDIR, STUDYNAME, MCTSMAX_NAME)
+  logjoin(dir, "acasx_mcts_log.txt", ["current_best", "elapsed_cpu_s"], joinpath(dir, "subdirjoined"))
+end
+
 function combine_sweep_logs()
   dir = joinpath(RESULTDIR, STUDYNAME)
   logjoin(dir, "sweeper_log.txt", ["result"], joinpath(dir, "sweepjoined"))
@@ -115,13 +155,15 @@ end
 function master_log()
   masterlog = DataFrame([Int64, Float64, Float64, UTF8String, ASCIIString, UTF8String], [:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name], 0)
 
-  dir = joinpath(RESULTDIR, STUDYNAME, SA_NAME)
-  logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-  D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:start, :iter, :name])
-  D[:algorithm] = fill("SA", nrow(D))
-  D[:nevals] = map(Int64, (D[:start] - 1) * maximum(D[:iter]) + D[:iter])
-  append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+  #SA
+  #dir = joinpath(RESULTDIR, STUDYNAME, SA_NAME)
+  #logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+  #D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:start, :iter, :name])
+  #D[:algorithm] = fill("SA", nrow(D))
+  #D[:nevals] = map(Int64, (D[:start] - 1) * maximum(D[:iter]) + D[:iter])
+  #append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
 
+  #MCFULL
   dir = joinpath(RESULTDIR, STUDYNAME, MCFULL_NAME)
   logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
   D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
@@ -129,10 +171,27 @@ function master_log()
   rename!(D, :iter, :nevals)
   append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
 
+  #MCEARLYSTOP
   dir = joinpath(RESULTDIR, STUDYNAME, MCEARLYSTOP_NAME)
   logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
   D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
   D[:algorithm] = fill("MC_EARLYSTOP", nrow(D))
+  rename!(D, :iter, :nevals)
+  append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+
+  #MCTS
+  dir = joinpath(RESULTDIR, STUDYNAME, MCTS_NAME)
+  logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+  D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
+  D[:algorithm] = fill("MCTS", nrow(D))
+  rename!(D, :iter, :nevals)
+  append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+
+  #MCTS_MAX
+  dir = joinpath(RESULTDIR, STUDYNAME, MCTSMAX_NAME)
+  logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+  D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
+  D[:algorithm] = fill("MCTS_MAX", nrow(D))
   rename!(D, :iter, :nevals)
   append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
 
@@ -146,36 +205,52 @@ function master_plot(; subsample::Int64=5000)
   #aggregate over seed
   D = aggregate(D[[:nevals, :elapsed_cpu_s, :fitness, :algorithm]], [:nevals, :algorithm], [mean, std, length, SEM_ymin, SEM_ymax])
   D = D[rem(D[:nevals], subsample) .== 0, :]
+  rename!(D, symbol("fitness_MathUtils.SEM_ymin"), :fitness_SEM_ymin) #workaround for naming in julia 0.4
+  rename!(D, symbol("fitness_MathUtils.SEM_ymax"), :fitness_SEM_ymax) #workaround for naming in julia 0.4
+  rename!(D, symbol("elapsed_cpu_s_MathUtils.SEM_ymin"), :elapsed_cpu_s_SEM_ymin) #workaround for naming in julia 0.4
+  rename!(D, symbol("elapsed_cpu_s_MathUtils.SEM_ymax"), :elapsed_cpu_s_SEM_ymax) #workaround for naming in julia 0.4
 
   writetable(joinpath(RESULTDIR, STUDYNAME, "plotlog.csv.gz"), D)
 
+  plotname = "nevals_vs_fitness"
   p = plot(D, x=:nevals, y=:fitness_mean, ymin=:fitness_SEM_ymin, ymax=:fitness_SEM_ymax, color=:algorithm,
            Guide.title(CONFIG), Geom.line, Geom.errorbar);
-  draw(PGF(joinpath(dir, "nevals_vs_fitness.tex"), 12cm, 6cm), p)
-  draw(PDF(joinpath(dir, "nevals_vs_fitness.pdf"), 12cm, 6cm), p)
+  draw(PGF(joinpath(dir, "$plotname.tex"), 12cm, 6cm), p)
+  draw(PDF(joinpath(dir, "$plotname.pdf"), 12cm, 6cm), p)
 
+  plotname = "elapsed_cpu_vs_fitness"
   p = plot(D, x=:elapsed_cpu_s_mean, y=:fitness_mean, ymin=:fitness_SEM_ymin, ymax=:fitness_SEM_ymax, color=:algorithm,
            Guide.title(CONFIG), Geom.line, Geom.errorbar);
-  draw(PGF(joinpath(dir, "cputime_vs_fitness.tex"), 12cm, 6cm), p)
-  draw(PDF(joinpath(dir, "cputime_vs_fitness.pdf"), 12cm, 6cm), p)
+  draw(PGF(joinpath(dir, "$plotname.tex"), 12cm, 6cm), p)
+  draw(PDF(joinpath(dir, "$plotname.pdf"), 12cm, 6cm), p)
 
+  plotname = "nevals_vs_elapsed_cpu"
   p = plot(D, x=:nevals, y=:elapsed_cpu_s_mean, ymin=:elapsed_cpu_s_SEM_ymin, ymax=:elapsed_cpu_s_SEM_ymax, color=:algorithm,
            Guide.title(CONFIG), Geom.line, Geom.errorbar);
-  draw(PGF(joinpath(dir, "nevals_vs_cputime.tex"), 12cm, 6cm), p)
-  draw(PDF(joinpath(dir, "nevals_vs_cputime.pdf"), 12cm, 6cm), p)
+  draw(PGF(joinpath(dir, "$plotname.tex"), 12cm, 6cm), p)
+  draw(PDF(joinpath(dir, "$plotname.pdf"), 12cm, 6cm), p)
 end
 
+#Configured for single-thread at the moment...
+#Start separate sessions manually to parallelize...
 function study_main()
-  sa = run_sa()
+  #do runs
+  #sa = run_sa()
   mc_full = run_mc_full()
   mc_earlystop = run_mc_earlystop()
+  mcts = run_mcts()
+  mcts_max = run_mcts_max()
 
-  combine_sa_logs()
+  #aggregate logs
+  #combine_sa_logs()
   combine_mc_full_logs()
   combine_mc_earlystop_logs()
+  combine_mcts_logs()
+  combine_mcts_max_logs()
   combine_sweep_logs()
-
   master_log()
+
+  #plot
   master_plot()
 end
 

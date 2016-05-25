@@ -48,20 +48,25 @@ function default_logs(observer::Observer, loginterval::Int64)
   logs = TaggedDFLogger()
   add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "cputime", [Int64, Float64], ["step", "cputime_s"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals"])
   add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString], ["raw", "pretty", "natural"])
-  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString], ["iteration", "reward", "state", "expr"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString], ["iter", "fitness", "state", "expr"])
+  add_folder!(logs, "elapsed_cpu_s", [Int64, Float64], ["iter", "elapsed_cpu_s"])
 
   add_observer(observer, "parameters", push!_f(logs, "parameters"))
   add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
-  add_observer(observer, "cputime", push!_f(logs, "cputime"))
   add_observer(observer, "result", push!_f(logs, "result"))
   add_observer(observer, "expression", push!_f(logs, "expression"))
   add_observer(observer, "current_best", x -> begin
-                 i, reward, state = x
+                 i, fitness, state = x
                  if rem(i, loginterval) == 0
-                   push!(logs, "current_best", [i, reward, string(state.past_actions), string(get_expr(state))])
+                   push!(logs, "current_best", [i, fitness, string(state.past_actions), string(get_expr(state))])
+                 end
+               end)
+  add_observer(observer, "elapsed_cpu_s", x -> begin
+                 iter = x[1]
+                 if rem(iter, loginterval) == 0
+                   push!(logs, "elapsed_cpu_s", x)
                  end
                end)
 
@@ -72,11 +77,11 @@ function default_console!(observer::Observer, printinterval::Int64=100)
   #console out
   add_observer(observer, "verbose1", x -> println(x[1]))
   add_observer(observer, "action", x -> println("step=$(x[1]), action=$(x[2])"))
-  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
+  add_observer(observer, "result", x -> println("best_fitness=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
   add_observer(observer, "current_best", x -> begin
-                 i, reward, state = x
+                 i, fitness, state = x
                  if rem(i, printinterval) == 0
-                   println("step $i: best_reward=$reward, best_state=$(state.past_actions)")
+                   println("step $i: best_fitness=$fitness, best_state=$(state.past_actions)")
                  end
                end)
 end

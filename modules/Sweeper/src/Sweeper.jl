@@ -39,17 +39,13 @@ and will be serialized/vectorized for logging to a DataFrame.
 """
 module Sweeper
 
-export configure, sweeper
+export sweeper
 
 using GrammarExpts
-using RLESUtils, ParamSweeps, Observers, Loggers, Vectorizer, FileUtils, Configure
+using RLESUtils, ParamSweeps, Observers, Loggers, Vectorizer, FileUtils
 using CPUTime
-import Configure.configure
 
 const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
-const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
-
-configure(::Type{Val{:Sweeper}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 """
 Calls function 'f' resulting in type 'result_type' for each combination of the iterables in 'kwargs'.

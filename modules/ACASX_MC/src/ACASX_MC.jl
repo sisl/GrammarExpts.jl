@@ -104,6 +104,7 @@ function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, exp
   push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
 end
 
+#TODO: combine these two versions
 "single-thread version of acasx_mc"
 function acasx_mc1(; outdir::AbstractString="./",
                    seed=1,

@@ -33,9 +33,6 @@
 # *****************************************************************************
 
 using GrammarExpts
-using ACASX_MCTS
+using GINIOptimTest2
 
-const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_MCTS")
 
-mkpath(TESTDIR)
-acasx_mcts(outdir=TESTDIR)

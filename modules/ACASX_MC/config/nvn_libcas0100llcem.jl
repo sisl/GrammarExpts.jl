@@ -32,10 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using ACASX_MCTS
+#nmacs vs nonnmacs
+[(:runtype, :nmacs_vs_nonnmacs),
+(:data, "libcas0100llcem"),
+(:data_meta, "libcas0100llcem_meta"),
+(:manuals, ""),
+(:clusterdataname, "")]
 
-const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_MCTS")
-
-mkpath(TESTDIR)
-acasx_mcts(outdir=TESTDIR)

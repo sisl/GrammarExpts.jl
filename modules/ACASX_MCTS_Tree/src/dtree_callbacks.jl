@@ -40,21 +40,21 @@ function DecisionTrees.get_truth{T}(members::Vector{Int64},
   return labels(Dl, members)
 end
 
-function classify(problem::ACASXClustering, result::MCTS2ESResult, Ds::Vector{DataFrame})
+function classify(problem::ACASXClustering, result::MCTSESResult, Ds::Vector{DataFrame})
   f = to_function(problem, result.expr)
   return map(f, Ds)
 end
 
 function DecisionTrees.get_splitter{T}(members::Vector{Int64},
                                        Dl::DFSetLabeled{T}, problem::ACASXClustering,
-                                       mcts2_params::MCTS2ESParams, logs::TaggedDFLogger, loginterval::Int64) #userargs...
-  set_observers!(mcts2_params.observer, logs, loginterval)
+                                       mcts_params::MCTSESParams, logs::TaggedDFLogger, loginterval::Int64) #userargs...
+  set_observers!(mcts_params.observer, logs, loginterval)
 
   problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
-  result = exprsearch(mcts2_params, problem)
+  result = exprsearch(mcts_params, problem)
 
   push_members!(logs, problem, result.expr)
-  @notify_observer(mcts2_params.observer, "expression",
+  @notify_observer(mcts_params.observer, "expression",
                    [string(result.expr),
                     pretty_string(result.tree, FMT_PRETTY),
                     pretty_string(result.tree, FMT_NATURAL, true)])
@@ -77,6 +77,6 @@ function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64
   return classify(problem, result, records(Dl, members))
 end
 
-DecisionTreeVis.get_tree(result::MCTS2ESResult) = result.tree
-DecisionTreeVis.get_metric(result::MCTS2ESResult) = -result.reward
+DecisionTreeVis.get_tree(result::MCTSESResult) = result.tree
+DecisionTreeVis.get_metric(result::MCTSESResult) = -result.reward
 

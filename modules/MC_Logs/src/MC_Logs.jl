@@ -47,7 +47,7 @@ function default_logs(par_observer::Observer)
   logs = TaggedDFLogger()
   add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64], ["fitness", "expr", "total_evals"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals"])
 
   add_observer(par_observer, "parameters", push!_f(logs, "parameters"))
   add_observer(par_observer, "computeinfo", push!_f(logs, "computeinfo"))

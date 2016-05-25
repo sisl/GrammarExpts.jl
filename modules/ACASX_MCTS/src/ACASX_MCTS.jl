@@ -56,36 +56,37 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 configure(::Type{Val{:ACASX_MCTS}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 function acasx_mcts(;outdir::AbstractString="./",
-                     seed=1,
-                     logfileroot::AbstractString="acasx_mcts_log",
+                    seed=1,
+                    logfileroot::AbstractString="acasx_mcts_log",
 
-                     runtype::Symbol=:nmacs_vs_nonnmacs,
-                     data::AbstractString="dasc",
-                     data_meta::AbstractString="dasc_meta",
-                     manuals::AbstractString="dasc_manual",
-                     clusterdataname::AbstractString="josh1",
+                    runtype::Symbol=:nmacs_vs_nonnmacs,
+                    data::AbstractString="dasc",
+                    data_meta::AbstractString="dasc_meta",
+                    manuals::AbstractString="dasc_manual",
+                    clusterdataname::AbstractString="josh1",
 
-                     n_iters::Int64=200,
-                     searchdepth::Int64=20,
-                     explorationconst::Float64=2000.0,
-                     q0::Float64=-1000.0,
-                     maxsteps::Int64=20,
-                     max_neg_reward::Float64=-1000.0,
-                     step_reward::Float64=0.0,
+                    n_iters::Int64=200,
+                    searchdepth::Int64=20,
+                    explorationconst::Float64=2000.0,
+                    q0::Float64=-1000.0,
+                    maxsteps::Int64=20,
+                    max_neg_reward::Float64=-1000.0,
+                    step_reward::Float64=0.0,
+                    maxmod::Bool=false, #use the max update mod
 
-                     loginterval::Int64=100,
-                     vis::Bool=true,
-                     mctstreevis::Bool=false,
-                     treevis_interval::Int64=50,
-                     observer::Observer=Observer())
+                    loginterval::Int64=100,
+                    vis::Bool=true,
+                    mctstreevis::Bool=false,
+                    treevis_interval::Int64=50)
   mkpath(outdir)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
+  observer = Observer() #TODO: remove one of these...
+  mcts_observer = Observer()
+
   logs = default_logs(observer, loginterval)
   default_console!(observer)
-
-  mcts_observer = Observer()
 
   if mctstreevis
     view, viewstep = viewstep_f(treevis_interval)
@@ -93,7 +94,7 @@ function acasx_mcts(;outdir::AbstractString="./",
   end
 
   mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
-                             explorationconst, q0, seed, mcts_observer,
+                             explorationconst, maxmod, q0, seed, mcts_observer,
                              observer)
 
   result = exprsearch(mcts_params, problem)
@@ -123,7 +124,7 @@ function acasx_mcts(;outdir::AbstractString="./",
   end
 
   textfile(joinpath(outdir, "summary.txt"), "mcts", seed=seed, n_iters=n_iters,
-           reward=result.reward, expr=string(result.expr))
+           fitness=result.fitness, expr=string(result.expr))
 
   return result
 end

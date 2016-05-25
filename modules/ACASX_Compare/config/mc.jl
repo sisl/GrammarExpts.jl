@@ -32,10 +32,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using ACASX_MCTS
-
-const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_MCTS")
-
-mkpath(TESTDIR)
-acasx_mcts(outdir=TESTDIR)
+[
+  (:seed, 1:5)
+]
