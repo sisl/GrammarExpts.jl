@@ -40,14 +40,14 @@ Main entry: study_main()
 module ACASX_Compare
 
 export study_main
-export run_sa, run_mc_full, run_mc_earlystop, run_mcts, run_mcts_max
-export combine_sweep_logs, combine_sa_logs, combine_mc_full_logs, combine_mc_earlystop_logs, combine_mcts_logs, combine_mcts_max_logs
+export run_ref, run_sa, run_mc_full, run_mc_earlystop, run_mcts, run_mcts_max
+export combine_sweep_logs, combine_ref_logs, combine_sa_logs, combine_mc_full_logs, combine_mc_earlystop_logs, combine_mcts_logs, combine_mcts_max_logs
 export master_log, master_plot
 
 using GrammarExpts
 using Sweeper
-using ExprSearch: SA, MC, MCTS
-using ACASX_SA, ACASX_MC, ACASX_MCTS
+using ExprSearch: Ref, SA, MC, MCTS
+using ACASX_Ref, ACASX_SA, ACASX_MC, ACASX_MCTS
 using LogJoiner
 
 using RLESUtils, Loggers, MathUtils, Configure
@@ -57,6 +57,7 @@ import Configure.configure
 
 const CONFIG = "nvn_libcas0100llcem"
 const STUDYNAME = "ACASX_Compare"
+const REF_NAME = "ACASX_Ref"
 const SA_NAME = "ACASX_SA"
 const MCFULL_NAME = "ACASX_MC_full"
 const MCEARLYSTOP_NAME = "ACASX_MC_earlystop"
@@ -68,8 +69,20 @@ const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 
 configure(::Type{Val{:ACASX_Compare}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
+function run_ref(; seed=1:1, n_samples::Int64=10000)
+  baseconfig = configure(ACASX_Ref, "nmac_rule", CONFIG) #start with base config
+  baseconfig[:outdir] = "./"
+  baseconfig[:n_samples] = n_samples
+  config = configure(ACASX_Compare, "ref") #study config that goes over base config
+  config[:outdir] = joinpath(RESULTDIR, STUDYNAME, REF_NAME)
+  config[:seed] = seed
+  ref_results = sweeper(acasx_ref, RefESResult, baseconfig; config...)
+  ref_results
+end
+
 function run_sa(; seed=1:5, n_starts::Int64=20)
   baseconfig = configure(ACASX_SA, "singlethread", CONFIG) #start with base config
+  baseconfig[:outdir] = "./"
   baseconfig[:n_starts] = n_starts
   config = configure(ACASX_Compare, "sa") #study config that goes over base config
   config[:outdir] = joinpath(RESULTDIR, STUDYNAME, SA_NAME)
@@ -80,6 +93,7 @@ end
 
 function run_mc_full(; seed=1:5, n_samples=10000)
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
+  baseconfig[:outdir] = "./"
   baseconfig[:earlystop] = false
   baseconfig[:n_samples] = n_samples
   config = configure(ACASX_Compare, "mc")
@@ -91,6 +105,7 @@ end
 
 function run_mc_earlystop(; seed=1:5, n_samples=10000)
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
+  baseconfig[:outdir] = "./"
   baseconfig[:earlystop] = true
   baseconfig[:n_samples] = n_samples
   config = configure(ACASX_Compare, "mc")
@@ -102,6 +117,7 @@ end
 
 function run_mcts(; seed=1:5, n_iters=10000)
   baseconfig = configure(ACASX_MCTS, "normal", CONFIG)
+  baseconfig[:outdir] = "./"
   baseconfig[:maxmod] = false
   baseconfig[:n_iters] = n_iters
   config = configure(ACASX_Compare, "mcts")
@@ -113,6 +129,7 @@ end
 
 function run_mcts_max(; seed=1:5, n_iters=10000)
   baseconfig = configure(ACASX_MCTS, "normal", CONFIG)
+  baseconfig[:outdir] = "./"
   baseconfig[:maxmod] = true
   baseconfig[:n_iters] = n_iters
   config = configure(ACASX_Compare, "mcts")
@@ -120,6 +137,11 @@ function run_mcts_max(; seed=1:5, n_iters=10000)
   config[:seed] = seed
   mcts_results = sweeper(acasx_mcts, MCTSESResult, baseconfig; config...)
   mcts_results
+end
+
+function combine_ref_logs()
+  dir = joinpath(RESULTDIR, STUDYNAME, REF_NAME)
+  logjoin(dir, "acasx_ref_log.txt", ["current_best", "elapsed_cpu_s"], joinpath(dir, "subdirjoined"))
 end
 
 function combine_sa_logs()
@@ -152,8 +174,17 @@ function combine_sweep_logs()
   logjoin(dir, "sweeper_log.txt", ["result"], joinpath(dir, "sweepjoined"))
 end
 
+#TODO: make these better...
 function master_log()
   masterlog = DataFrame([Int64, Float64, Float64, UTF8String, ASCIIString, UTF8String], [:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name], 0)
+
+  #REF
+  dir = joinpath(RESULTDIR, STUDYNAME, REF_NAME)
+  logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+  D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
+  D[:algorithm] = fill("REF", nrow(D))
+  rename!(D, :iter, :nevals)
+  append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
 
   #SA
   #dir = joinpath(RESULTDIR, STUDYNAME, SA_NAME)
@@ -235,6 +266,7 @@ end
 #Start separate sessions manually to parallelize...
 function study_main()
   #do runs
+  ref = run_ref()
   #sa = run_sa()
   mc_full = run_mc_full()
   mc_earlystop = run_mc_earlystop()
@@ -242,6 +274,7 @@ function study_main()
   mcts_max = run_mcts_max()
 
   #aggregate logs
+  combine_ref_logs()
   #combine_sa_logs()
   combine_mc_full_logs()
   combine_mc_earlystop_logs()

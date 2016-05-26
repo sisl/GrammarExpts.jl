@@ -54,7 +54,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 configure(::Type{Val{:ACASX_GE}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 #nmacs vs nonnmacs
-function acasx_ge(;outdir::AbstractString="./",
+function acasx_ge(;outdir::AbstractString="./ACASX_GE",
                   seed=1,
                   logfileroot::AbstractString="acasx_ge_log",
 

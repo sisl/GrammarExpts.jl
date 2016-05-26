@@ -75,7 +75,7 @@ function train_dtree{T}(pmc_params::PMCESParams, problem::ACASXClustering, Dl::D
   return dtree, logs
 end
 
-function acasx_mc_tree(;outdir::AbstractString="./",
+function acasx_mc_tree(;outdir::AbstractString="./ACASX_MC_Tree",
                        seed=1,
                        logfileroot::AbstractString="acasx_mc_tree_log",
 

@@ -75,7 +75,7 @@ function train_dtree{T}(mcts_params::MCTSESParams, problem::ACASXClustering, Dl:
   return dtree, logs
 end
 
-function acasx_mcts_tree(;outdir::AbstractString="./",
+function acasx_mcts_tree(;outdir::AbstractString="./ACASX_MCTS_Tree",
                           seed=1,
                           logfileroot::AbstractString="acasx_mcts_tree_log",
 

@@ -54,7 +54,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:Symbolic_MCTS}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function symbolic_mcts(;outdir::AbstractString="./",
+function symbolic_mcts(;outdir::AbstractString="./Symbolic_MCTS",
                         seed=1,
                         logfileroot::AbstractString="symbolic_mcts_log",
 

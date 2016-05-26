@@ -52,7 +52,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:ACASX_SA}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_sa(;outdir::AbstractString="./",
+function acasx_sa(;outdir::AbstractString="./ACASX_SA",
                   seed=1,
                   logfileroot::AbstractString="acasx_sa_log",
 
@@ -105,7 +105,7 @@ function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, exp
   push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
 end
 
-function acasx_sa1(;outdir::AbstractString="./",
+function acasx_sa1(;outdir::AbstractString="./ACASX_SA1",
                   seed=1,
                   logfileroot::AbstractString="acasx_sa_log",
 

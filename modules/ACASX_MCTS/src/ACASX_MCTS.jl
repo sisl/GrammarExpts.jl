@@ -55,7 +55,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:ACASX_MCTS}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_mcts(;outdir::AbstractString="./",
+function acasx_mcts(;outdir::AbstractString="./ACASX_MCTS",
                     seed=1,
                     logfileroot::AbstractString="acasx_mcts_log",
 

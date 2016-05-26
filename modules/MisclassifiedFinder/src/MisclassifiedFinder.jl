@@ -33,74 +33,45 @@
 # *****************************************************************************
 
 """
-Grammatical Evolution for the Symbolic regression problem.
-Example usage: config=configure(Symbolic_GE,"normal","nvn_dasc"); symbolic_ge(;config...)
+Given a "predicted" data log find the misclassifieds
 """
-module Symbolic_GE
+module MisclassifiedFinder
 
-export configure, symbolic_ge
+export misclassifieds
 
-using ExprSearch.GE
-using RLESUtils, ArrayUtils, Configure
-using Reexport
+using RLESUtils, Loggers
+using DataFrames
+using StatsBase
 
-using GrammarExpts
-using SymbolicProblem, GE_Logs, DerivTreeVis
-import Configure.configure
+function misclassifieds(logfile::AbstractString;
+                        predictfield::Symbol=:predict,
+                        labelfield::Symbol=:label)
+  logs = load_log(TaggedDFLogger, logfile)
+  D2 = misclassifieds(logs["predicted"]; predictfield=predictfield, labelfield=labelfield)
+  D2
+end
 
-const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+"""
+Given a dataframe, filter for entries where the predicted value doesn't match the mode of the labels
+when labels are grouped by predicted values.  Assumes mode will be used for classification.
+"""
+function misclassifieds(D::DataFrame;
+                        predictfield::Symbol=:predict,
+                        labelfield::Symbol=:label)
 
-configure(::Type{Val{:Symbolic_GE}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+  DTrue = misclassifieds(D, true; predictfield=predictfield, labelfield=labelfield)
+  DFalse = misclassifieds(D, false; predictfield=predictfield, labelfield=labelfield)
 
-function symbolic_ge(;outdir::AbstractString="./Symbolic_GE",
-                     seed=1,
-                     logfileroot::AbstractString="symbolic_ge_log",
+  DTrue, DFalse
+end
 
-                     genome_size::Int64=20,
-                     pop_size::Int64=50,
-                     maxwraps::Int64=0,
-                     top_percent::Float64=0.5,
-                     prob_mutation::Float64=0.2,
-                     mutation_rate::Float64=0.2,
-                     defaultcode::Any=0.0,
-                     maxiterations::Int64=3,
-                     maxvalue::Int64=1000,
-
-                     gt_file::AbstractString="gt_easy.jl",
-                     maxsteps::Int64=25,
-
-                     hist_nbins::Int64=40,
-                     hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
-                     hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
-                     loginterval::Int64=100,
-
-                     vis::Bool=true,
-                     observer::Observer=Observer())
-  srand(seed)
-  mkpath(outdir)
-
-  problem = Symbolic(gt_file)
-
-  logs = default_logs(observer, hist_edges, hist_mids)
-  default_console!(observer)
-  @notify_observer(observer, "parameters", ["seed", seed])
-
-  ge_observer = Observer()
-
-  ge_params = GEESParams(genome_size, pop_size, maxwraps,
-                         top_percent, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, ge_observer, observer)
-
-  result = exprsearch(ge_params, problem)
-
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
-
-  if vis
-    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
-  end
-
-  return result
+function misclassifieds(D::DataFrame, predictvalue::Bool;
+                        predictfield::Symbol=:predict,
+                        labelfield::Symbol=:label)
+  rows = D[predictfield] .== predictvalue
+  labels = D[rows, labelfield]
+  DOut = D[rows & (D[labelfield] .!= mode(labels)), :]
+  DOut
 end
 
 end #module

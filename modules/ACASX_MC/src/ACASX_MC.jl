@@ -52,7 +52,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:ACASX_MC}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_mc(; outdir::AbstractString="./",
+function acasx_mc(; outdir::AbstractString="./ACASX_MC",
                   seed=1,
                   logfileroot::AbstractString="acasx_mc_log",
 
@@ -78,7 +78,6 @@ function acasx_mc(; outdir::AbstractString="./",
 
   observer = Observer()
   par_observer = Observer()
-
   logs = default_logs(par_observer)
   default_console!(observer, loginterval)
 
@@ -98,15 +97,9 @@ function acasx_mc(; outdir::AbstractString="./",
   return result
 end
 
-function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
-  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
-  members_true, members_false = get_members(problem, expr)
-  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
-end
-
 #TODO: combine these two versions
 "single-thread version of acasx_mc"
-function acasx_mc1(; outdir::AbstractString="./",
+function acasx_mc1(; outdir::AbstractString="./ACASX_MC1",
                    seed=1,
                    logfileroot::AbstractString="acasx_mc_log",
 

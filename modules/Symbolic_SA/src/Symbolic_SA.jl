@@ -52,7 +52,7 @@ const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
 configure(::Type{Val{:Symbolic_SA}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function symbolic_sa(;outdir::AbstractString="./",
+function symbolic_sa(;outdir::AbstractString="./Symbolic_SA",
                      seed=1,
                      logfileroot::AbstractString="symbolic_sa_log",
 

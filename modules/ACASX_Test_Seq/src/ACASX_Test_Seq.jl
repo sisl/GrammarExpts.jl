@@ -35,6 +35,7 @@
 """
 Test a given sequence of actions (for example, NMAC rule sequence).
 Returns fitness score as well as the expr.
+Deprecated: use ExprSearch.RefExprSearch and GrammarExpts.ACASX_Ref
 """
 module ACASX_Test_Seq
 
@@ -43,7 +44,7 @@ export setup, playsequence, nmacrule
 using ACASXProblem
 using DerivationTrees
 
-const NMAC_SEQUENCE = Int64[2, 2, 7, 11, 7, 7, 5, 3, 10]
+const NMAC_SEQUENCE = Int64[2, 2, 7, 10, 7, 7, 5, 3, 10]
 #results in :(F((D[:,76] .< 100) & (D[:,77] .< 500))) which is 38 chars
 
 function setup(; runtype::Symbol=:nmacs_vs_nonnmacs,

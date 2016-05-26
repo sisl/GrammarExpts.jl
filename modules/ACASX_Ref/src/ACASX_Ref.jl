@@ -33,97 +33,82 @@
 # *****************************************************************************
 
 """
-Create a decision tree to recursively split encounters in the ACASX Problem. SA algorithm.
-Example usage: config=configure(ACASX_SA_Tree,"normal","nvn_dasc"); acasx_sa_tree(;config...)
+Reference input for the ACASX problem.
+Example usage: config=configure(ACASX_Ref, "nmac_rule", "nvn_libcas0100llcem"); acasx_ref(;config...)
 """
-module ACASX_SA_Tree
+module ACASX_Ref
 
-export configure, acasx_sa_tree
+export configure, acasx_ref, setup, playsequence
 
-using DecisionTrees
-using ExprSearch.SA
-using Datasets
-using RLESUtils, Obj2Dict, Configure
+using ExprSearch.Ref
 using Reexport
 
 using GrammarExpts
-using ACASXProblem, SA_Tree_Logs
-using DerivTreeVis, DecisionTreeVis
+using ACASXProblem, DerivationTrees, DerivTreeVis, Ref_Logs
+using RLESUtils, Configure
 import Configure.configure
-
-include("dtree_callbacks.jl")
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 
-configure(::Type{Val{:ACASX_SA_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_Ref}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function train_dtree{T}(psa_params::PSAESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
-                        maxdepth::Int64, loginterval::Int64)
+function acasx_ref(; outdir::AbstractString="./ACASX_Ref",
+                   seed=1, #not used, only for compatibility with other modules
+                   logfileroot::AbstractString="acasx_ref_log",
 
-  logs = default_logs()
-  add_folder!(logs, "members", [ASCIIString, ASCIIString, Int64], ["members_true", "members_false", "decision_id"])
+                   runtype::Symbol=:nmacs_vs_nonnmacs,
+                   data::AbstractString="dasc",
+                   data_meta::AbstractString="dasc_meta",
+                   manuals::AbstractString="dasc_manual",
+                   clusterdataname::AbstractString="josh1",
+                   maxsteps::Int64=20,
 
-  num_data = length(Dl)
-  T1 = Bool #predict_type
-  T2 = Int64 #label_type
+                   actions::Vector{Int64}=Int64[2, 2, 7, 11, 7, 7, 5, 3, 10], #action seq to be replayed
+                   n_samples::Int64=200, #for emulated logs
 
-  p = DTParams(num_data, maxdepth, T1, T2)
+                   loginterval::Int64=100,
+                   vis::Bool=true)
 
-  dtree = build_tree(p, Dl, problem, psa_params, logs, loginterval) #userargs...
-
-  return dtree, logs
-end
-
-function acasx_sa_tree(;outdir::AbstractString="./ACASX_SA_Tree",
-                       seed=1,
-                       logfileroot::AbstractString="acasx_sa_tree_log",
-
-                       runtype::Symbol=:nmacs_vs_nonnmacs,
-                       data::AbstractString="dasc",
-                       data_meta::AbstractString="dasc_meta",
-                       manuals::AbstractString="dasc_manual",
-                       clusterdataname::AbstractString="josh1",
-
-                       maxsteps::Int64=20,
-                       T1::Float64=12.184,
-                       alpha::Float64=0.99976,
-                       n_epochs::Int64=50,
-                       n_starts::Int64=1,
-                       n_threads::Int64=1,
-                       maxdepth::Int64=1,
-
-                       loginterval::Int64=100,
-                       vis::Bool=true,
-                       plotpdf::Bool=true,
-                       limit_members::Int64=10)
   mkpath(outdir)
 
   problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
 
   observer = Observer()
-  par_observer = Observer()
+  logs = default_logs(observer, loginterval)
+  default_console!(observer, loginterval)
 
-  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
-  psa_params = PSAESParams(n_threads, sa_params, par_observer)
+  ref_params = RefESParams(maxsteps, actions, n_samples, observer)
+  result = exprsearch(ref_params, problem)
 
-  Dl = problem.Dl
-  dtree, logs = train_dtree(psa_params, problem, Dl, maxdepth, loginterval)
-
-  #add to log
-  push!(logs, "parameters", ["seed", seed, 0])
-  push!(logs, "parameters", ["runtype", runtype, 0])
-  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
-
+  push_members!(logs, problem, result.expr)
+  push_predicted!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
-  #visualize
   if vis
-    decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"), limit_members,
-                    FMT_PRETTY, FMT_NATURAL; plotpdf=plotpdf)
+    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
 
-  return dtree, logs
+  return result
+end
+
+function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
+  members_true, members_false = get_members(problem, expr)
+  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
+end
+
+function push_predicted!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+  Dl = problem.Dl
+  labels = Dl.labels
+  encs = Dl.names
+
+  add_folder!(logs, "predicted", [ASCIIString, T, Bool], ["encounter", "label", "predict"])
+  predicts = get_predicts(problem, expr)
+
+  for i = 1:length(problem.Dl)
+    push!(logs, "predicted", [encs[i], labels[i], predicts[i]])
+  end
 end
 
 end #module

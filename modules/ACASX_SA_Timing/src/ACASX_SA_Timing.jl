@@ -46,7 +46,7 @@ using RLESUtils, SwapBuffers, Observers, Loggers, StringUtils
 using GrammarExpts
 using ACASXProblem
 
-function acasx_sa_timing(problem=nothing, outdir::AbstractString="./"; seed=1,
+function acasx_sa_timing(problem=nothing, outdir::AbstractString="./ACASX_SA_Timing"; seed=1,
                   logfileroot::AbstractString="acasx_sa_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,

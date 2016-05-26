@@ -33,74 +33,51 @@
 # *****************************************************************************
 
 """
-Grammatical Evolution for the Symbolic regression problem.
-Example usage: config=configure(Symbolic_GE,"normal","nvn_dasc"); symbolic_ge(;config...)
+Default logs for ExprSearch.Ref
 """
-module Symbolic_GE
+module Ref_Logs
 
-export configure, symbolic_ge
+export default_logs, default_console!
 
-using ExprSearch.GE
-using RLESUtils, ArrayUtils, Configure
 using Reexport
+using RLESUtils
+@reexport using Observers, Loggers
 
-using GrammarExpts
-using SymbolicProblem, GE_Logs, DerivTreeVis
-import Configure.configure
+function default_console!(observer::Observer, loginterval::Int64)
+  add_observer(observer, "verbose1", x -> println(x...))
+  add_observer(observer, "current_best", x -> begin
+                 iter, fitness, expr = x
+                 if rem(iter, loginterval) == 0
+                   println("i=$iter, fitness=$fitness, expr=$expr")
+                 end
+               end)
+end
 
-const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+function default_logs(observer::Observer, loginterval::Int64)
+  logs = TaggedDFLogger()
+  add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString], ["iter", "fitness", "expr"])
+  add_folder!(logs, "elapsed_cpu_s", [Int64, Float64], ["iter", "elapsed_cpu_s"])
 
-configure(::Type{Val{:Symbolic_GE}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+  add_observer(observer, "parameters", push!_f(logs, "parameters"))
+  add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
+  add_observer(observer, "result", push!_f(logs, "result"))
+  add_observer(observer, "current_best", x -> begin
+                 iter = x[1]
+                 if rem(iter, loginterval) == 0
+                   push!(logs, "current_best", x)
+                 end
+               end)
+  add_observer(observer, "elapsed_cpu_s", x -> begin
+                 iter = x[1]
+                 if rem(iter, loginterval) == 0
+                   push!(logs, "elapsed_cpu_s", x)
+                 end
+               end)
 
-function symbolic_ge(;outdir::AbstractString="./Symbolic_GE",
-                     seed=1,
-                     logfileroot::AbstractString="symbolic_ge_log",
-
-                     genome_size::Int64=20,
-                     pop_size::Int64=50,
-                     maxwraps::Int64=0,
-                     top_percent::Float64=0.5,
-                     prob_mutation::Float64=0.2,
-                     mutation_rate::Float64=0.2,
-                     defaultcode::Any=0.0,
-                     maxiterations::Int64=3,
-                     maxvalue::Int64=1000,
-
-                     gt_file::AbstractString="gt_easy.jl",
-                     maxsteps::Int64=25,
-
-                     hist_nbins::Int64=40,
-                     hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
-                     hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
-                     loginterval::Int64=100,
-
-                     vis::Bool=true,
-                     observer::Observer=Observer())
-  srand(seed)
-  mkpath(outdir)
-
-  problem = Symbolic(gt_file)
-
-  logs = default_logs(observer, hist_edges, hist_mids)
-  default_console!(observer)
-  @notify_observer(observer, "parameters", ["seed", seed])
-
-  ge_observer = Observer()
-
-  ge_params = GEESParams(genome_size, pop_size, maxwraps,
-                         top_percent, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, ge_observer, observer)
-
-  result = exprsearch(ge_params, problem)
-
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
-
-  if vis
-    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
-  end
-
-  return result
+  return logs
 end
 
 end #module
