@@ -141,4 +141,10 @@ function acasx_mc1(; outdir::AbstractString="./ACASX_MC1",
   return result
 end
 
+function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
+  members_true, members_false = get_members(problem, expr)
+  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
+end
+
 end #module
