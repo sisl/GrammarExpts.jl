@@ -39,10 +39,12 @@ module FakeDataGen
 
 export generate_fake_data
 
+using RLESUtils, DataFrameSets
 using DataFrames
 
 const DATAPATH = Pkg.dir("Datasets/data")
 const BIN_SYNTH_NAME = "bin_synth"
+const BIN_TS_SYNTH_NAME = "bin_ts_synth"
 
 function generate_fake_data(dataset::AbstractString, args...)
     generate_fake_data(Val{symbol(dataset)}, args...)
@@ -50,9 +52,13 @@ end
 
 """
 bin_synth dataset
+synthetic data with
+static binary features
 """
-function generate_fake_data(::Type{Val{symbol(BIN_SYNTH_NAME)}}, n_feats::Int64=20, 
+function generate_fake_data(::Type{Val{symbol(BIN_SYNTH_NAME)}}, 
+    n_feats::Int64=20, 
     n_samples::Int64=5000)
+    
     mkpath(joinpath(DATAPATH, BIN_SYNTH_NAME))
     D = convert(Array{Int64}, rand(Bool, n_samples, n_feats))
     colnames = [symbol("x$i") for i = 1:n_feats]
@@ -73,4 +79,41 @@ function generate_fake_data(::Type{Val{symbol(BIN_SYNTH_NAME)}}, n_feats::Int64=
     writetable(filename, labels)
 end
 
+"""
+bin_ts_synth dataset
+synthetic data with
+binary time series features
+"""
+function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}}, 
+    n_feats::Int64=20, 
+    n_time::Int64=50,
+    n_samples::Int64=5000)
+
+    featspath = joinpath(DATAPATH, "$(BIN_TS_SYNTH_NAME)_feats")
+    labelspath = joinpath(DATAPATH, "$(BIN_TS_SYNTH_NAME)_labels")
+    mkpath(featspath)
+    mkpath(labelspath)
+
+    feats = DFSet()
+    colnames = [symbol("x$i") for i = 1:n_feats]
+    for j = 1:n_samples
+        A = convert(Array{Int64}, rand(Bool, n_time, n_feats))
+        D = DataFrame(A)
+        names!(D, colnames)
+        push!(feats, ("$j", D))
+    end
+    save_csvs(featspath, feats)
+
+    #labels
+    labels = DataFrame()
+    labels[:name] = names(feats)
+    labels[:F_x1] = [reduce(|, r[:x1]) for r in records(feats)] #F(x1)
+    labels[:G_x2] = [reduce(&, r[:x2]) for r in records(feats)] #G(x2)
+    labels[:F_x3] = [reduce(|, r[:x3]) for r in records(feats)] #F(x3)
+    labels[:G_x4] = [reduce(&, r[:x4]) for r in records(feats)] #G(x4)
+    
+    filename = joinpath(labelspath, "labels.csv.gz") 
+    writetable(filename, labels)
 end
+
+end #module
