@@ -32,43 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-"""
-Generate some fake data into datasets for grammar experiments
-"""
-module FakeDataGen
+using GrammarExpts
+using NNGrammar
 
-export generate_fake_data
 
-using DataFrames
-
-const DATAPATH = Pkg.dir("Datasets/data")
-const BIN_SYNTH_NAME = "bin_synth"
-
-function generate_fake_data(dataset::AbstractString, args...)
-    generate_fake_data(Val{symbol(dataset)}, args...)
-end
-
-"""
-bin_synth dataset
-"""
-function generate_fake_data(::Type{Val{symbol(BIN_SYNTH_NAME)}}, n_feats::Int64=20, 
-    n_samples::Int64=5000)
-    mkpath(joinpath(DATAPATH, BIN_SYNTH_NAME))
-    D = convert(Array{Int64}, rand(Bool, n_samples, n_feats))
-    colnames = [symbol("x$i") for i = 1:n_feats]
-    feats = DataFrame(D)
-    names!(feats, colnames)
-    filename = joinpath(DATAPATH, BIN_SYNTH_NAME, "feats.csv.gz") 
-    writetable(filename, feats)
-
-    #labels
-    labels = DataFrame()
-    labels[:x1] = feats[:x1] #x1
-    labels[:x2] = feats[:x2] #x2
-    labels[:x1_and_x3] = feats[:x1] & feats[:x3] #x1 and x3
-    labels[:x2_or_x4] = feats[:x2] | feats[:x4] #x2 or x4
-    filename = joinpath(DATAPATH, BIN_SYNTH_NAME, "labels.csv.gz") 
-    writetable(filename, labels)
-end
-
-end
