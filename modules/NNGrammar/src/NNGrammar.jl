@@ -44,15 +44,14 @@ import TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, maximum_, minimum_
 
 # Parameters
 const LEARNING_RATE = 0.005
-const TRAINING_EPOCHS = 500
+const TRAINING_EPOCHS = 200
 const BATCH_SIZE = 1000
 const DISPLAY_STEP = 1
 
 # Network parameters
 const HIDDEN_UNITS = [10, 10, 10] 
 
-using Debug
-@debug function circuit_andor(datname::AbstractString="bin_synth",
+function circuit_andor(datname::AbstractString="bin_synth",
     featfile::AbstractString="feats", labelfile::AbstractString="labels";
     labelfield::AbstractString="x1_and_x3",
     b_debug::Bool=false)
@@ -172,11 +171,11 @@ using Debug
             @show db_ymux[1:NSHOW]
             @show db_opmux[1:NSHOW]
             @show db_opmux_nnout[1:NSHOW,1:2]
+            @show db_ypred[1:NSHOW]
+            @show db_labels[1:NSHOW]
             @show db_xmux_hardselect[1:NSHOW]
             @show db_ymux_hardselect[1:NSHOW]
             @show db_opmux_hardselect[1:NSHOW]
-            @show db_ypred[1:NSHOW]
-            @show db_labels[1:NSHOW]
             println("Accuracy:", acc)
         end
     finally
