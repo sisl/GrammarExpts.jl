@@ -67,6 +67,8 @@ function generate_fake_data(::Type{Val{symbol(BIN_SYNTH_NAME)}}, n_feats::Int64=
     labels[:x2] = feats[:x2] #x2
     labels[:x1_and_x3] = feats[:x1] & feats[:x3] #x1 and x3
     labels[:x2_or_x4] = feats[:x2] | feats[:x4] #x2 or x4
+    labels[:x1_and_x4] = feats[:x1] & feats[:x4] #x1 and x4
+    labels[:x2_or_x3] = feats[:x2] | feats[:x3] #x2 or x3
     filename = joinpath(DATAPATH, BIN_SYNTH_NAME, "labels.csv.gz") 
     writetable(filename, labels)
 end

@@ -42,18 +42,16 @@ using TensorFlow
 import TensorFlow: DT_FLOAT32
 import TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, maximum_, minimum_
 
-# Parameters
-const LEARNING_RATE = 0.005
-const TRAINING_EPOCHS = 200
-const BATCH_SIZE = 1000
-const DISPLAY_STEP = 1
-
-# Network parameters
-const HIDDEN_UNITS = [10, 10, 10] 
-
-function circuit_andor(datname::AbstractString="bin_synth",
-    featfile::AbstractString="feats", labelfile::AbstractString="labels";
+function circuit_andor(;
+    datname::AbstractString="bin_synth",
+    featfile::AbstractString="feats", 
+    labelfile::AbstractString="labels",
     labelfield::AbstractString="x1_and_x3",
+    learning_rate::Float64=0.005,
+    training_epochs::Int64=100,
+    batch_size::Int64=1000,
+    hidden_units::Vector{Int64}=Int64[15, 10, 15],
+    display_step::Int64=1,
     b_debug::Bool=false)
 
     Dfeats = dataset(datname, featfile)
@@ -71,12 +69,12 @@ function circuit_andor(datname::AbstractString="bin_synth",
 
     # x mux
     x_muxin = inputs 
-    x_mux = Softmux(n_feats, n_feats, HIDDEN_UNITS, Tensor(x_muxin), Tensor(muxselect))
+    x_mux = Softmux(n_feats, n_feats, hidden_units, Tensor(x_muxin), Tensor(muxselect))
     x_muxout = out(x_mux) 
 
     # y mux
     y_muxin = inputs 
-    y_mux = Softmux(n_feats, n_feats, HIDDEN_UNITS, Tensor(y_muxin), Tensor(muxselect))
+    y_mux = Softmux(n_feats, n_feats, hidden_units, Tensor(y_muxin), Tensor(muxselect))
     y_muxout = out(y_mux) 
 
     # op block
@@ -87,7 +85,7 @@ function circuit_andor(datname::AbstractString="bin_synth",
 
     # op mux
     op_muxin = ops_out 
-    op_mux = Softmux(num_ops(ops_blk), n_feats, HIDDEN_UNITS, Tensor(op_muxin), Tensor(muxselect))
+    op_mux = Softmux(num_ops(ops_blk), n_feats, hidden_units, Tensor(op_muxin), Tensor(muxselect))
     op_muxout = out(op_mux) 
 
     # outputs
@@ -96,7 +94,7 @@ function circuit_andor(datname::AbstractString="bin_synth",
     
     # Define loss and optimizer
     cost = l2_loss(pred - labels) # Squared loss
-    optimizer = minimize(AdamOptimizer(LEARNING_RATE), cost) # Adam Optimizer
+    optimizer = minimize(AdamOptimizer(learning_rate), cost) # Adam Optimizer
     
     # Initializing the variables
     init = initialize_all_variables()
@@ -118,23 +116,23 @@ function circuit_andor(datname::AbstractString="bin_synth",
         #/debug
         
         # Training cycle
-        for epoch in 1:TRAINING_EPOCHS
+        for epoch in 1:training_epochs
             avg_cost = 0.0
-            total_batch = div(num_examples(data_set), BATCH_SIZE)
+            total_batch = div(num_examples(data_set), batch_size)
         
             # Loop over all batches
             for i in 1:total_batch
-                batch_xs, batch_ys = next_batch(data_set, BATCH_SIZE)
+                batch_xs, batch_ys = next_batch(data_set, batch_size)
                 fd = FeedDict(inputs => batch_xs, muxselect => batch_xs, labels => batch_ys)
                 # Fit training using batch data
                 run(sess, optimizer, fd)
                 # Compute average loss
                 batch_average_cost = run(sess, cost, fd)
-                avg_cost += batch_average_cost / (total_batch * BATCH_SIZE)
+                avg_cost += batch_average_cost / (total_batch * batch_size)
             end
         
             # Display logs per epoch step
-            if epoch % DISPLAY_STEP == 0
+            if epoch % display_step == 0
                 println("Epoch $(epoch)  cost=$(avg_cost)")
             end
         end
@@ -149,7 +147,10 @@ function circuit_andor(datname::AbstractString="bin_synth",
         println("Accuracy:", acc)
 
         if b_debug
+            #reload data_set to recover original order
+            data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
             db_x = data_set.X 
+            db_labels = data_set.Y
             db_xmux = run(sess, x_muxout, fd)
             db_xmux_nnout = run(sess, x_mux.nnout, fd)
             db_xmux_hardselect = run(sess, x_mux.hardselect, fd)
@@ -160,7 +161,8 @@ function circuit_andor(datname::AbstractString="bin_synth",
             db_opmux_nnout = run(sess, op_mux.nnout, fd)
             db_opmux_hardselect = run(sess, op_mux.hardselect, fd)
             db_ypred = run(sess, pred, fd)
-            db_labels = data_set.Y
+            #combine these into a single call to prevent multiple forward passes
+            #run(sess, [x_muxout, y_muxout, ops_out, op_muxout, cost], fd)
 
             NSHOW = 20
             @show db_x[1:NSHOW]
