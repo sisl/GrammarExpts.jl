@@ -46,16 +46,18 @@ using TensorFlow
 import TensorFlow: DT_FLOAT32
 import TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, reshape_,
     reduce_max, reduce_min
+using StatsBase
 
 function circuit_fg(;
     featsname::AbstractString="bin_ts_synth_feats",
     labelsname::AbstractString="bin_ts_synth_labels",
     labelfile::AbstractString="labels",
     labelfield::AbstractString="F_x1",
-    learning_rate::Float64=0.005,
-    training_epochs::Int64=200,
+    learning_rate::Float64=0.002,
+    max_training_epochs::Int64=1000,
+    target_cost::Float64=0.001,
     batch_size::Int64=1000,
-    hidden_units::Vector{Int64}=Int64[30,15,30],
+    hidden_units::Vector{Int64}=Int64[30,10],
     display_step::Int64=1,
     b_debug::Bool=false)
 
@@ -119,7 +121,7 @@ function circuit_fg(;
         #/debug
         
         # Training cycle
-        for epoch in 1:training_epochs
+        for epoch in 1:max_training_epochs
             avg_cost = 0.0
             total_batch = div(num_examples(data_set), batch_size)
         
@@ -137,6 +139,9 @@ function circuit_fg(;
             # Display logs per epoch step
             if epoch % display_step == 0
                 println("Epoch $(epoch)  cost=$(avg_cost)")
+                if avg_cost < target_cost
+                    break;
+                end
             end
         end
         println("Optimization Finished")
@@ -174,6 +179,12 @@ function circuit_fg(;
             @show db_labels[1:NSHOW]
             @show db_xmux_hardselect[1:NSHOW]
             @show db_opmux_hardselect[1:NSHOW]
+            xnames = colnames(records(Dfeats)[1])
+            opnames = ["F", "G"]
+            x = map(i -> xnames[i+1], db_xmux_hardselect)
+            op = map(i -> opnames[i+1], db_opmux_hardselect)
+            stringout = ["$(op[i]),$(x[i])" for i = 1:n_examples]
+            @show countmap(stringout)
             println("Accuracy:", acc)
         end
     #finally
