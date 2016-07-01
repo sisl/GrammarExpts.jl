@@ -97,10 +97,22 @@ function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}},
     feats = DFSet()
     colnames = [symbol("x$i") for i = 1:n_feats]
     for j = 1:n_samples
-        A = convert(Array{Int64}, rand(Bool, n_time, n_feats))
+        B = rand(Bool, n_time, n_feats)
+        for i = 1:size(B, 2)
+            r = rand(1:3)
+            if r == 1
+                B[:,i] = false
+            elseif r == 2
+                B[:,i] = true
+            end
+        end
+        A = convert(Array{Int64}, B)
         D = DataFrame(A)
         names!(D, colnames)
-        push!(feats, ("$j", D))
+        #pad with zeros to get ascending reading order  TODO: fix this
+        #so that the reading order doesn't matter...
+        #one idea is to add structure to track feats/labels
+        push!(feats, (lpad("$j",ndigits(n_samples), "0"), D))
     end
     save_csvs(featspath, feats)
 

@@ -44,17 +44,18 @@ using TFTools
 using Datasets
 using TensorFlow
 import TensorFlow: DT_FLOAT32
-import TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, maximum_, minimum_
+import TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, reshape_,
+    reduce_max, reduce_min
 
 function circuit_fg(;
-    featsname::AbstractString="bin_synth_ts_feats",
-    labelsname::AbstractString="bin_synth_ts_labels",
+    featsname::AbstractString="bin_ts_synth_feats",
+    labelsname::AbstractString="bin_ts_synth_labels",
     labelfile::AbstractString="labels",
     labelfield::AbstractString="F_x1",
     learning_rate::Float64=0.005,
-    training_epochs::Int64=100,
+    training_epochs::Int64=200,
     batch_size::Int64=1000,
-    hidden_units::Vector{Int64}=Int64[15, 10, 15],
+    hidden_units::Vector{Int64}=Int64[30,15,30],
     display_step::Int64=1,
     b_debug::Bool=false)
 
@@ -65,28 +66,28 @@ function circuit_fg(;
     data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
 
     # Construct model
-    sizefeats = size(Dfeats)
-    n_feats = sizefeats[2] * sizefeats[3]
+    (n_examples, n_steps, n_feats) = size(Dfeats)
+    n_select = n_steps * n_feats 
 
     # inputs
-    feats = Placeholder(DT_FLOAT32, [-1, sizefeats[2], sizefeats[3]])
-    muxselect = reshape(feats) 
-    inputs = muxselect
+    feats = Placeholder(DT_FLOAT32, [-1, n_steps, n_feats])
+    muxselect = reshape_(feats, Tensor([-1, n_select]))
+    inputs = Tensor(feats)
 
     # x mux
     x_muxin = inputs 
-    x_mux = Softmux(n_feats, n_feats, hidden_units, Tensor(x_muxin), Tensor(muxselect))
+    x_mux = Softmux(n_feats, n_select, hidden_units, x_muxin, muxselect)
     x_muxout = out(x_mux) 
 
     # op block
-    ops_in = (x_muxout)
+    ops_in = (x_muxout,)
     ops_list = [ops_F, ops_G]
     ops_blk = OpsBlock(ops_in, ops_list)
     ops_out = out(ops_blk) 
 
     # op mux
     op_muxin = ops_out 
-    op_mux = Softmux(num_ops(ops_blk), n_feats, hidden_units, Tensor(op_muxin), Tensor(muxselect))
+    op_mux = Softmux(num_ops(ops_blk), n_select, hidden_units, op_muxin, muxselect)
     op_muxout = out(op_mux) 
 
     # outputs
@@ -102,13 +103,15 @@ function circuit_fg(;
     
     # Rock and roll
     sess = Session()
-    try
+    #try
         run(sess, init)
 
         #debug 
-        #fd = FeedDict(inputs => data_set.X, muxselect => data_set.X, labels => data_set.Y)
+        #fd = FeedDict(feats => data_set.X, labels => data_set.Y)
         #@bp
         #tmp=1
+        #run(sess, x_mux.nnout, fd)
+        #run(sess, x_mux.hardselect, fd)
         #run(sess, x_muxout, fd)
         #run(sess, ops_out, fd)
         #run(sess, op_muxout, fd)
@@ -123,7 +126,7 @@ function circuit_fg(;
             # Loop over all batches
             for i in 1:total_batch
                 batch_xs, batch_ys = next_batch(data_set, batch_size)
-                fd = FeedDict(inputs => batch_xs, muxselect => batch_xs, labels => batch_ys)
+                fd = FeedDict(feats => batch_xs, labels => batch_ys)
                 # Fit training using batch data
                 run(sess, optimizer, fd)
                 # Compute average loss
@@ -142,7 +145,7 @@ function circuit_fg(;
         correct_prediction = (round_(pred) == labels)
         # Calculate accuracy
         accuracy = mean(cast(correct_prediction, DT_FLOAT32))
-        fd = FeedDict(inputs => data_set.X, muxselect => data_set.X, labels => data_set.Y)
+        fd = FeedDict(feats => data_set.X, labels => data_set.Y)
         acc = run(sess, accuracy, fd)
         println("Accuracy:", acc)
 
@@ -173,17 +176,17 @@ function circuit_fg(;
             @show db_opmux_hardselect[1:NSHOW]
             println("Accuracy:", acc)
         end
-    finally
-        close(sess)
-    end
+    #finally
+        #close(sess)
+    #end
 end
 
 function ops_F(x::Tensor)
-   @assert false #max 
+   reduce_max(x, Tensor(1))
 end
 
 function ops_G(x::Tensor)
-   @assert false #min 
+   reduce_min(x, Tensor(1))
 end
 
 end #module
