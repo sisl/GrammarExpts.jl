@@ -129,7 +129,20 @@ function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}},
     labels[:G_x4] = [reduce(&, r[:x4]) for r in records(feats)] #G(x4)
     labels[:F_x5] = [reduce(|, r[:x5]) for r in records(feats)] #F(x5)
     labels[:G_x5] = [reduce(&, r[:x5]) for r in records(feats)] #G(x5)
-    
+
+    labels[:F_x1_and_x3] = [reduce(|, r[:x1] & r[:x3]) for r in records(feats)] #F(x1 & x3)
+    labels[:F_x1_or_x3] = [reduce(|, r[:x1] | r[:x3]) for r in records(feats)] #F(x1 | x3)
+    labels[:G_x1_and_x3] = [reduce(&, r[:x1] & r[:x3]) for r in records(feats)] #G(x1 & x3)
+    labels[:G_x1_or_x3] = [reduce(&, r[:x1] | r[:x3]) for r in records(feats)] #G(x1 | x3)
+    labels[:F_x2_and_x4] = [reduce(|, r[:x2] & r[:x4]) for r in records(feats)] #F(x2 & x4)
+    labels[:F_x2_or_x4] = [reduce(|, r[:x2] | r[:x4]) for r in records(feats)] #F(x2 | x4)
+    labels[:G_x2_and_x4] = [reduce(&, r[:x2] & r[:x4]) for r in records(feats)] #G(x2 & x4)
+    labels[:G_x2_or_x4] = [reduce(&, r[:x2] | r[:x4]) for r in records(feats)] #G(x2 | x4)
+    labels[:F_x1_and_x4] = [reduce(|, r[:x1] & r[:x4]) for r in records(feats)] #F(x1 & x4)
+    labels[:F_x1_or_x4] = [reduce(|, r[:x1] | r[:x4]) for r in records(feats)] #F(x1 | x4)
+    labels[:G_x1_and_x4] = [reduce(&, r[:x1] & r[:x4]) for r in records(feats)] #G(x1 & x4)
+    labels[:G_x1_or_x4] = [reduce(&, r[:x1] | r[:x4]) for r in records(feats)] #G(x1 | x4)
+
     filename = joinpath(labelspath, "labels.csv.gz") 
     writetable(filename, labels)
 end
