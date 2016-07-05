@@ -59,7 +59,8 @@ function circuit_fgandor(;
     batch_size::Int64=1000,
     hidden_units::Vector{Int64}=Int64[30,15],
     display_step::Int64=1,
-    b_debug::Bool=false)
+    b_debug::Bool=false,
+    nshow::Int64=20)
 
     Dfeats = dataset(featsname) #DFSet
     Dlabels = dataset(labelsname, labelfile)
@@ -78,12 +79,12 @@ function circuit_fgandor(;
 
     # x mux
     x_muxin = inputs 
-    x_mux = Softmux(n_feats, n_select, hidden_units, x_muxin, muxselect)
+    x_mux = Softmux(n_feats, hidden_units, x_muxin, muxselect)
     x_muxout = out(x_mux) 
 
     # y mux
     y_muxin = inputs 
-    y_mux = Softmux(n_feats, n_select, hidden_units, y_muxin, muxselect)
+    y_mux = Softmux(n_feats, hidden_units, y_muxin, muxselect)
     y_muxout = out(y_mux) 
 
     # logical op block
@@ -94,7 +95,7 @@ function circuit_fgandor(;
 
     # logical op mux
     op1_muxin = ops1_out 
-    op1_mux = Softmux(num_ops(ops1_blk), n_select, hidden_units, op1_muxin, muxselect)
+    op1_mux = Softmux(num_ops(ops1_blk), hidden_units, op1_muxin, muxselect)
     op1_muxout = out(op1_mux) 
 
     # temporal op block 
@@ -105,7 +106,7 @@ function circuit_fgandor(;
 
     # temporal op mux
     op2_muxin = ops2_out
-    op2_mux = Softmux(num_ops(ops2_blk), n_select, hidden_units, op2_muxin, muxselect)
+    op2_mux = Softmux(num_ops(ops2_blk), hidden_units, op2_muxin, muxselect)
     op2_muxout = out(op2_mux) 
 
     # outputs
@@ -170,28 +171,29 @@ function circuit_fgandor(;
     accuracy = mean(cast(correct_prediction, DT_FLOAT32))
     fd = FeedDict(feats => data_set.X, labels => data_set.Y)
     acc = run(sess, accuracy, fd)
-    println("Accuracy:", acc)
+    
+    #reload data_set to recover original order
+    data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
+    fd = FeedDict(feats => data_set.X, labels => data_set.Y)
+    db_x = data_set.X 
+    db_labels = data_set.Y
+    db_hardselects = run(sess, hardselects, fd)
+    xnames = colnames(Dfeats)
+    op1names = ["&", "|"]
+    op2names = ["F", "G"]
+    hs = db_hardselects
+    stringout = ["$(op2names[hs[i,4]+1])($(xnames[hs[i,1]+1]) $(op1names[hs[i,3]+1]) $(xnames[hs[i,2]+1]))" for i = 1:n_examples]
+    cmap = countmap(stringout)
+    cmap = collect(cmap)
+    maxentry = cmap[indmax(map(kv->kv[2], cmap))]
+
     if b_debug
-        #reload data_set to recover original order
-        data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
-        fd = FeedDict(feats => data_set.X, labels => data_set.Y)
-        db_x = data_set.X 
-        db_labels = data_set.Y
-        db_hardselects = run(sess, hardselects, fd)
-        
-        NSHOW = 20
-        @show db_hardselects[1:NSHOW,:] #n_examples by hardselects
-        xnames = colnames(Dfeats)
-        op1names = ["&", "|"]
-        op2names = ["F", "G"]
-        hs = db_hardselects
-        stringout = ["$(op2names[hs[i,4]+1])($(xnames[hs[i,1]+1]) $(op1names[hs[i,3]+1]) $(xnames[hs[i,2]+1]))" for i = 1:n_examples]
-        @show cmap = countmap(stringout)
-        cmap = collect(cmap)
-        maxentry = cmap[indmax(map(kv->kv[2], cmap))]
-        @show (maxentry...)
-        println("Accuracy:", acc)
+        @show db_hardselects[1:nshow,:] #n_examples by hardselects
     end
+
+    @show cmap
+    @show (maxentry...)
+    println("Accuracy:", acc)
 end
 
 function ops2_F(x::Tensor)
