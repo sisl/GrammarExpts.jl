@@ -53,12 +53,13 @@ function circuit_fgandor(;
     labelsname::AbstractString="bin_ts_synth_labels",
     labelfile::AbstractString="labels",
     labelfield::AbstractString="F_x1_and_x3",
-    learning_rate::Float64=0.005,
-    max_training_epochs::Int64=200,
+    learning_rate::Float64=0.002,
+    max_training_epochs::Int64=400,
     target_cost::Float64=0.001,
     batch_size::Int64=1000,
-    hidden_units::Vector{Int64}=Int64[30,15],
-    display_step::Int64=1,
+    embed_hidden_units::Vector{Int64}=Int64[50, 30, 15],
+    mux_hidden_units::Vector{Int64}=Int64[30,15],
+    display_step::Int64=10,
     b_debug::Bool=false,
     nshow::Int64=20)
 
@@ -70,21 +71,29 @@ function circuit_fgandor(;
 
     # Construct model
     (n_examples, n_steps, n_feats) = size(Dfeats)
-    n_select = n_steps * n_feats 
+    n_featsflat = n_steps * n_feats 
 
     # inputs
     feats = Placeholder(DT_FLOAT32, [-1, n_steps, n_feats])
-    muxselect = reshape_(feats, Tensor([-1, n_select]))
     inputs = Tensor(feats)
+    feats_flat = reshape_(feats, Tensor([-1, n_featsflat]))
+
+    # common (embedding) layer
+    embed_in = feats_flat 
+    embed_blk = ReluStack(embed_in, embed_hidden_units)
+    embed_out = out(embed_blk)
+    
+    # mux select input
+    muxselect = feats_flat #embed layer not helping, disable for now...
 
     # x mux
     x_muxin = inputs 
-    x_mux = Softmux(n_feats, hidden_units, x_muxin, muxselect)
+    x_mux = Softmux(n_feats, mux_hidden_units, x_muxin, muxselect)
     x_muxout = out(x_mux) 
 
     # y mux
     y_muxin = inputs 
-    y_mux = Softmux(n_feats, hidden_units, y_muxin, muxselect)
+    y_mux = Softmux(n_feats, mux_hidden_units, y_muxin, muxselect)
     y_muxout = out(y_mux) 
 
     # logical op block
@@ -95,7 +104,7 @@ function circuit_fgandor(;
 
     # logical op mux
     op1_muxin = ops1_out 
-    op1_mux = Softmux(num_ops(ops1_blk), hidden_units, op1_muxin, muxselect)
+    op1_mux = Softmux(num_ops(ops1_blk), mux_hidden_units, op1_muxin, muxselect)
     op1_muxout = out(op1_mux) 
 
     # temporal op block 
@@ -106,7 +115,7 @@ function circuit_fgandor(;
 
     # temporal op mux
     op2_muxin = ops2_out
-    op2_mux = Softmux(num_ops(ops2_blk), hidden_units, op2_muxin, muxselect)
+    op2_mux = Softmux(num_ops(ops2_blk), mux_hidden_units, op2_muxin, muxselect)
     op2_muxout = out(op2_mux) 
 
     # outputs
@@ -184,16 +193,19 @@ function circuit_fgandor(;
     hs = db_hardselects
     stringout = ["$(op2names[hs[i,4]+1])($(xnames[hs[i,1]+1]) $(op1names[hs[i,3]+1]) $(xnames[hs[i,2]+1]))" for i = 1:n_examples]
     cmap = countmap(stringout)
-    cmap = collect(cmap)
-    maxentry = cmap[indmax(map(kv->kv[2], cmap))]
+    cmap1 = collect(cmap)
+    maxentry = sort(collect(cmap1), by=kv->kv[2], rev=true)[1:5]
+    maxentry = map(x->(x...), maxentry)
 
     if b_debug
         @show db_hardselects[1:nshow,:] #n_examples by hardselects
     end
 
     @show cmap
-    @show (maxentry...)
+    println(maxentry)
     println("Accuracy:", acc)
+
+    cmap, maxentry
 end
 
 function ops2_F(x::Tensor)

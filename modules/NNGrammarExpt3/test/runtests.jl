@@ -36,7 +36,7 @@ using GrammarExpts
 using NNGrammarExpt3
 
 function run_expt3()
-    circuit_fgandor(b_debug=true, labelfield="F_x1_or_x3")
+    circuit_fgandor(b_debug=true, labelfield="G_x1_or_x3")
 end
 
 run_expt3()
