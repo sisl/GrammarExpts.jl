@@ -78,7 +78,7 @@ function circuit_fg(;
 
     # x mux
     x_muxin = inputs 
-    x_mux = Softmux(n_feats, n_select, hidden_units, x_muxin, muxselect)
+    x_mux = SoftMux(n_feats, n_select, hidden_units, x_muxin, muxselect)
     x_muxout = out(x_mux) 
 
     # op block
@@ -89,7 +89,7 @@ function circuit_fg(;
 
     # op mux
     op_muxin = ops_out 
-    op_mux = Softmux(num_ops(ops_blk), n_select, hidden_units, op_muxin, muxselect)
+    op_mux = SoftMux(num_ops(ops_blk), n_select, hidden_units, op_muxin, muxselect)
     op_muxout = out(op_mux) 
 
     # outputs

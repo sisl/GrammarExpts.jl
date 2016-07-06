@@ -69,12 +69,12 @@ function circuit_andor(;
 
     # x mux
     x_muxin = inputs 
-    x_mux = Softmux(n_feats, n_feats, hidden_units, Tensor(x_muxin), Tensor(muxselect))
+    x_mux = SoftMux(n_feats, n_feats, hidden_units, Tensor(x_muxin), Tensor(muxselect))
     x_muxout = out(x_mux) 
 
     # y mux
     y_muxin = inputs 
-    y_mux = Softmux(n_feats, n_feats, hidden_units, Tensor(y_muxin), Tensor(muxselect))
+    y_mux = SoftMux(n_feats, n_feats, hidden_units, Tensor(y_muxin), Tensor(muxselect))
     y_muxout = out(y_mux) 
 
     # op block
@@ -85,7 +85,7 @@ function circuit_andor(;
 
     # op mux
     op_muxin = ops_out 
-    op_mux = Softmux(num_ops(ops_blk), n_feats, hidden_units, Tensor(op_muxin), Tensor(muxselect))
+    op_mux = SoftMux(num_ops(ops_blk), n_feats, hidden_units, Tensor(op_muxin), Tensor(muxselect))
     op_muxout = out(op_mux) 
 
     # outputs

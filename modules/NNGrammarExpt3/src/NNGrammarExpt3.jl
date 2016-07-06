@@ -38,7 +38,7 @@ test combined time series and binary logical operations
 """
 module NNGrammarExpt3
 
-export circuit_fgandor
+export circuit_fgandor, restarts
 
 using TFTools
 using Datasets
@@ -47,6 +47,10 @@ import TensorFlow: DT_FLOAT32
 import TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, reshape_,
     reduce_max, reduce_min, pack, minimum_, maximum_, transpose_
 using StatsBase
+
+function restarts(f::Function, N::Int64; kwargs...)
+   [f(; kwargs...) for i = 1:N]
+end
 
 function circuit_fgandor(;
     featsname::AbstractString="bin_ts_synth_feats",
@@ -88,12 +92,12 @@ function circuit_fgandor(;
 
     # x mux
     x_muxin = inputs 
-    x_mux = Softmux(n_feats, mux_hidden_units, x_muxin, muxselect)
+    x_mux = SoftMux(n_feats, mux_hidden_units, x_muxin, muxselect)
     x_muxout = out(x_mux) 
 
     # y mux
     y_muxin = inputs 
-    y_mux = Softmux(n_feats, mux_hidden_units, y_muxin, muxselect)
+    y_mux = SoftMux(n_feats, mux_hidden_units, y_muxin, muxselect)
     y_muxout = out(y_mux) 
 
     # logical op block
@@ -104,7 +108,7 @@ function circuit_fgandor(;
 
     # logical op mux
     op1_muxin = ops1_out 
-    op1_mux = Softmux(num_ops(ops1_blk), mux_hidden_units, op1_muxin, muxselect)
+    op1_mux = SoftMux(num_ops(ops1_blk), mux_hidden_units, op1_muxin, muxselect)
     op1_muxout = out(op1_mux) 
 
     # temporal op block 
@@ -115,7 +119,7 @@ function circuit_fgandor(;
 
     # temporal op mux
     op2_muxin = ops2_out
-    op2_mux = Softmux(num_ops(ops2_blk), mux_hidden_units, op2_muxin, muxselect)
+    op2_mux = SoftMux(num_ops(ops2_blk), mux_hidden_units, op2_muxin, muxselect)
     op2_muxout = out(op2_mux) 
 
     # outputs
@@ -205,7 +209,7 @@ function circuit_fgandor(;
     println(maxentry)
     println("Accuracy:", acc)
 
-    cmap, maxentry
+    cmap, maxentry, acc
 end
 
 function ops2_F(x::Tensor)
