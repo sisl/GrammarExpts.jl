@@ -201,10 +201,13 @@ function name_from_id(filename::AbstractString, ext::AbstractString=".csv.gz")
     name
 end
 
-function mv_files(in_dir::AbstractString, out_dir::AbstractString, get_new_name::Function=identity)
+function mv_files(in_dir::AbstractString, out_dir::AbstractString, 
+    get_new_name::Function=identity)
     mkpath(out_dir)
 
-    files = readdir(in_dir) |> sort! #note sorting is important, ensures sync between directories
+    files = readdir(in_dir)
+    files = sort(files, by=get_id)
+
     for (i, f) in enumerate(files)
         src = joinpath(in_dir, f)
         dst = joinpath(out_dir, get_new_name(f))
@@ -215,7 +218,9 @@ end
 function encounter_meta(in_dir::AbstractString, out_dir::AbstractString)
     mkpath(out_dir)
 
-    files = readdirGZs(in_dir) |> sort! #note sorting is important, ensures sync between directories
+    files = readdirGZs(in_dir)
+    files = sort(files, by=get_id)
+
     meta = metadf(length(files))
     meta[:encounter_id] = map(get_id, files)
     meta[:nmac] = map(is_nmac, files)

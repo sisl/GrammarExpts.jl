@@ -53,9 +53,7 @@ function restarts(f::Function, N::Int64; kwargs...)
 end
 
 function circuit_fgandor(;
-    featsname::AbstractString="bin_ts_synth_feats",
-    labelsname::AbstractString="bin_ts_synth_labels",
-    labelfile::AbstractString="labels",
+    dataname::AbstractString="bin_ts_synth",
     labelfield::AbstractString="F_x1_and_x3",
     learning_rate::Float64=0.002,
     max_training_epochs::Int64=400,
@@ -67,14 +65,11 @@ function circuit_fgandor(;
     b_debug::Bool=false,
     nshow::Int64=20)
 
-    Dfeats = dataset(featsname) #DFSet
-    Dlabels = dataset(labelsname, labelfile)
-    @assert length(Dfeats) == nrow(Dlabels) #sanity check, num examples should be same
-
-    data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
+    Ds = dataset(dataname) #DFSet
+    data_set = TFDataset(Ds, getmeta(Ds)[symbol(labelfield)])
 
     # Construct model
-    (n_examples, n_steps, n_feats) = size(Dfeats)
+    (n_examples, n_steps, n_feats) = size(Ds)
     n_featsflat = n_steps * n_feats 
 
     # inputs
@@ -186,12 +181,12 @@ function circuit_fgandor(;
     acc = run(sess, accuracy, fd)
     
     #reload data_set to recover original order
-    data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
+    data_set = TFDataset(Ds, Dlabels[symbol(labelfield)])
     fd = FeedDict(feats => data_set.X, labels => data_set.Y)
     db_x = data_set.X 
     db_labels = data_set.Y
     db_hardselects = run(sess, hardselects, fd)
-    xnames = colnames(Dfeats)
+    xnames = colnames(Ds)
     op1names = ["&", "|"]
     op2names = ["F", "G"]
     hs = db_hardselects
