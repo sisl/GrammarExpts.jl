@@ -44,10 +44,9 @@ export setup, runtest, acasx_prunecheck
 using ACASXProblem, DerivationTrees
 
 function setup(;data::AbstractString="libcas098small",
-               data_meta::AbstractString="libcas098small_meta",
                maxsteps::Int64=20)
 
-  problem = ACASXClustering(data, data_meta)
+  problem = ACASXClustering(data)
   grammar = create_grammar(problem)
   tree_params = DerivTreeParams(grammar, maxsteps)
   tree = DerivationTree(tree_params)

@@ -58,7 +58,6 @@ function acasx_sa(;outdir::AbstractString="./ACASX_SA",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
                   data::AbstractString="dasc",
-                  data_meta::AbstractString="dasc_meta",
                   manuals::AbstractString="dasc_manual",
                   clusterdataname::AbstractString="josh1",
 
@@ -75,7 +74,7 @@ function acasx_sa(;outdir::AbstractString="./ACASX_SA",
   srand(seed)
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   observer = Observer()
   par_observer = Observer()
@@ -111,7 +110,6 @@ function acasx_sa1(;outdir::AbstractString="./ACASX_SA1",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
                   data::AbstractString="dasc",
-                  data_meta::AbstractString="dasc_meta",
                   manuals::AbstractString="dasc_manual",
                   clusterdataname::AbstractString="josh1",
 
@@ -127,7 +125,7 @@ function acasx_sa1(;outdir::AbstractString="./ACASX_SA1",
   srand(seed)
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   observer = Observer()
 
@@ -154,7 +152,6 @@ function acasx_temp_params(P1::Float64=0.8; seed=1,
                            Tfinal::Float64=1.0,
                            runtype::Symbol=:nmacs_vs_nonnmacs,
                            data::AbstractString="dasc",
-                           data_meta::AbstractString="dasc_meta",
                            manuals::AbstractString="dasc_manual",
                            clusterdataname::AbstractString="josh1",
                            maxsteps::Int64=20,
@@ -163,7 +160,7 @@ function acasx_temp_params(P1::Float64=0.8; seed=1,
 
   srand(seed)
 
-  problem = ACASXClustering(runtype, data, clusterdataname, data_meta)
+  problem = ACASXClustering(runtype, data, clusterdataname)
   T1, alpha, n_epochs = estimate_temp_params(problem, P1, n_epochs, Tfinal, maxsteps, N, ntrials)
 
   return T1, alpha, n_epochs

@@ -45,6 +45,7 @@ using DataFrames
 const DATAPATH = Pkg.dir("Datasets/data")
 const BIN_SYNTH_NAME = "bin_synth"
 const BIN_TS_SYNTH_NAME = "bin_ts_synth"
+const VHMD_NAME = "vhmd"
 
 function generate_fake_data(dataset::AbstractString, args...)
     generate_fake_data(Val{symbol(dataset)}, args...)
@@ -89,12 +90,10 @@ function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}},
     n_time::Int64=50,
     n_samples::Int64=5000)
 
-    featspath = joinpath(DATAPATH, "$(BIN_TS_SYNTH_NAME)_feats")
-    labelspath = joinpath(DATAPATH, "$(BIN_TS_SYNTH_NAME)_labels")
-    mkpath(featspath)
-    mkpath(labelspath)
+    outdir = joinpath(DATAPATH, BIN_TS_SYNTH_NAME)
+    mkpath(outdir)
 
-    feats = DFSet()
+    records = DataFrame[]
     colnames = [symbol("x$i") for i = 1:n_feats]
     for j = 1:n_samples
         B = rand(Bool, n_time, n_feats)
@@ -109,39 +108,118 @@ function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}},
         A = convert(Array{Int64}, B)
         D = DataFrame(A)
         names!(D, colnames)
-        #pad with zeros to get ascending reading order  TODO: fix this
-        #so that the reading order doesn't matter...
-        #one idea is to add structure to track feats/labels
-        push!(feats, (lpad("$j",ndigits(n_samples), "0"), D))
+        push!(records, D)
+    end
+    Ds = DFSet(records)
+    meta = getmeta(Ds)
+
+    #labels, saved into meta df
+    meta[:F_x1] = [reduce(|, r[:x1]) for r in records] #F(x1)
+    meta[:G_x1] = [reduce(&, r[:x1]) for r in records] #G(x1)
+    meta[:F_x2] = [reduce(|, r[:x2]) for r in records] #F(x2)
+    meta[:G_x2] = [reduce(&, r[:x2]) for r in records] #G(x2)
+    meta[:F_x3] = [reduce(|, r[:x3]) for r in records] #F(x3)
+    meta[:G_x3] = [reduce(&, r[:x3]) for r in records] #G(x3)
+    meta[:F_x4] = [reduce(|, r[:x4]) for r in records] #F(x4)
+    meta[:G_x4] = [reduce(&, r[:x4]) for r in records] #G(x4)
+    meta[:F_x5] = [reduce(|, r[:x5]) for r in records] #F(x5)
+    meta[:G_x5] = [reduce(&, r[:x5]) for r in records] #G(x5)
+
+    #F(x1 & x3)
+    meta[:F_x1_and_x3] = [reduce(|, r[:x1] & r[:x3]) for r in records] 
+    #F(x1 | x3)
+    meta[:F_x1_or_x3] = [reduce(|, r[:x1] | r[:x3]) for r in records] 
+    #G(x1 & x3)
+    meta[:G_x1_and_x3] = [reduce(&, r[:x1] & r[:x3]) for r in records] 
+    #G(x1 | x3)
+    meta[:G_x1_or_x3] = [reduce(&, r[:x1] | r[:x3]) for r in records] 
+    #F(x2 & x4)
+    meta[:F_x2_and_x4] = [reduce(|, r[:x2] & r[:x4]) for r in records] 
+    #F(x2 | x4)
+    meta[:F_x2_or_x4] = [reduce(|, r[:x2] | r[:x4]) for r in records] 
+    #G(x2 & x4)
+    meta[:G_x2_and_x4] = [reduce(&, r[:x2] & r[:x4]) for r in records] 
+    #G(x2 | x4)
+    meta[:G_x2_or_x4] = [reduce(&, r[:x2] | r[:x4]) for r in records] 
+    #F(x1 & x4)
+    meta[:F_x1_and_x4] = [reduce(|, r[:x1] & r[:x4]) for r in records] 
+    #F(x1 | x4)
+    meta[:F_x1_or_x4] = [reduce(|, r[:x1] | r[:x4]) for r in records] 
+    #G(x1 & x4)
+    meta[:G_x1_and_x4] = [reduce(&, r[:x1] & r[:x4]) for r in records] 
+    #G(x1 | x4)
+    meta[:G_x1_or_x4] = [reduce(&, r[:x1] | r[:x4]) for r in records] 
+
+    save_csvs(outdir, Ds) 
+    Ds
+end
+
+"""
+vertical and horizontal miss distances from ACASX dataset
+real-valued time series features
+"""
+function generate_fake_data(::Type{Val{symbol(VHMD_NAME)}}, 
+    cas_data_name::ASCIIString="dasc", 
+    vdist_name::Symbol=:abs_alt_diff,
+    hdist_name::Symbol=:horizontal_range,
+    nmac_name::Symbol=:nmac,
+    )
+
+    featspath = joinpath(DATAPATH, "$(VHMD_NAME)_feats")
+    labelspath = joinpath(DATAPATH, "$(VHMD_NAME)_labels")
+    mkpath(featspath)
+    mkpath(labelspath)
+
+    cas_data = dataset(cas_data_name)
+
+    feats = DFSet()
+    colnames = [:vdist, :hdist]
+    for (name, record) in cas_data
+        D = record[[vdist_name, hdist_name]] 
+        names!(D, colnames)
+        push!(feats, (name, D))
     end
     save_csvs(featspath, feats)
 
+    cas_meta = dataset(cas_data_meta, "encounter_meta")
     #labels
     labels = DataFrame()
     labels[:name] = names(feats)
-    labels[:F_x1] = [reduce(|, r[:x1]) for r in records(feats)] #F(x1)
-    labels[:G_x1] = [reduce(&, r[:x1]) for r in records(feats)] #G(x1)
-    labels[:F_x2] = [reduce(|, r[:x2]) for r in records(feats)] #F(x2)
-    labels[:G_x2] = [reduce(&, r[:x2]) for r in records(feats)] #G(x2)
-    labels[:F_x3] = [reduce(|, r[:x3]) for r in records(feats)] #F(x3)
-    labels[:G_x3] = [reduce(&, r[:x3]) for r in records(feats)] #G(x3)
-    labels[:F_x4] = [reduce(|, r[:x4]) for r in records(feats)] #F(x4)
-    labels[:G_x4] = [reduce(&, r[:x4]) for r in records(feats)] #G(x4)
-    labels[:F_x5] = [reduce(|, r[:x5]) for r in records(feats)] #F(x5)
-    labels[:G_x5] = [reduce(&, r[:x5]) for r in records(feats)] #G(x5)
+    labels[:F_x1] = [reduce(|, r[:x1]) for r in getrecords(feats)] #F(x1)
+    labels[:G_x1] = [reduce(&, r[:x1]) for r in getrecords(feats)] #G(x1)
+    labels[:F_x2] = [reduce(|, r[:x2]) for r in getrecords(feats)] #F(x2)
+    labels[:G_x2] = [reduce(&, r[:x2]) for r in getrecords(feats)] #G(x2)
+    labels[:F_x3] = [reduce(|, r[:x3]) for r in getrecords(feats)] #F(x3)
+    labels[:G_x3] = [reduce(&, r[:x3]) for r in getrecords(feats)] #G(x3)
+    labels[:F_x4] = [reduce(|, r[:x4]) for r in getrecords(feats)] #F(x4)
+    labels[:G_x4] = [reduce(&, r[:x4]) for r in getrecords(feats)] #G(x4)
+    labels[:F_x5] = [reduce(|, r[:x5]) for r in getrecords(feats)] #F(x5)
+    labels[:G_x5] = [reduce(&, r[:x5]) for r in getrecords(feats)] #G(x5)
 
-    labels[:F_x1_and_x3] = [reduce(|, r[:x1] & r[:x3]) for r in records(feats)] #F(x1 & x3)
-    labels[:F_x1_or_x3] = [reduce(|, r[:x1] | r[:x3]) for r in records(feats)] #F(x1 | x3)
-    labels[:G_x1_and_x3] = [reduce(&, r[:x1] & r[:x3]) for r in records(feats)] #G(x1 & x3)
-    labels[:G_x1_or_x3] = [reduce(&, r[:x1] | r[:x3]) for r in records(feats)] #G(x1 | x3)
-    labels[:F_x2_and_x4] = [reduce(|, r[:x2] & r[:x4]) for r in records(feats)] #F(x2 & x4)
-    labels[:F_x2_or_x4] = [reduce(|, r[:x2] | r[:x4]) for r in records(feats)] #F(x2 | x4)
-    labels[:G_x2_and_x4] = [reduce(&, r[:x2] & r[:x4]) for r in records(feats)] #G(x2 & x4)
-    labels[:G_x2_or_x4] = [reduce(&, r[:x2] | r[:x4]) for r in records(feats)] #G(x2 | x4)
-    labels[:F_x1_and_x4] = [reduce(|, r[:x1] & r[:x4]) for r in records(feats)] #F(x1 & x4)
-    labels[:F_x1_or_x4] = [reduce(|, r[:x1] | r[:x4]) for r in records(feats)] #F(x1 | x4)
-    labels[:G_x1_and_x4] = [reduce(&, r[:x1] & r[:x4]) for r in records(feats)] #G(x1 & x4)
-    labels[:G_x1_or_x4] = [reduce(&, r[:x1] | r[:x4]) for r in records(feats)] #G(x1 | x4)
+    #F(x1 & x3)
+    labels[:F_x1_and_x3] = [reduce(|, r[:x1] & r[:x3]) for r in getrecords(feats)] 
+    #F(x1 | x3)
+    labels[:F_x1_or_x3] = [reduce(|, r[:x1] | r[:x3]) for r in getrecords(feats)] 
+    #G(x1 & x3)
+    labels[:G_x1_and_x3] = [reduce(&, r[:x1] & r[:x3]) for r in getrecords(feats)] 
+    #G(x1 | x3)
+    labels[:G_x1_or_x3] = [reduce(&, r[:x1] | r[:x3]) for r in getrecords(feats)] 
+    #F(x2 & x4)
+    labels[:F_x2_and_x4] = [reduce(|, r[:x2] & r[:x4]) for r in getrecords(feats)] 
+    #F(x2 | x4)
+    labels[:F_x2_or_x4] = [reduce(|, r[:x2] | r[:x4]) for r in getrecords(feats)] 
+    #G(x2 & x4)
+    labels[:G_x2_and_x4] = [reduce(&, r[:x2] & r[:x4]) for r in getrecords(feats)] 
+    #G(x2 | x4)
+    labels[:G_x2_or_x4] = [reduce(&, r[:x2] | r[:x4]) for r in getrecords(feats)] 
+    #F(x1 & x4)
+    labels[:F_x1_and_x4] = [reduce(|, r[:x1] & r[:x4]) for r in getrecords(feats)] 
+    #F(x1 | x4)
+    labels[:F_x1_or_x4] = [reduce(|, r[:x1] | r[:x4]) for r in getrecords(feats)] 
+    #G(x1 & x4)
+    labels[:G_x1_and_x4] = [reduce(&, r[:x1] & r[:x4]) for r in getrecords(feats)] 
+    #G(x1 | x4)
+    labels[:G_x1_or_x4] = [reduce(&, r[:x1] | r[:x4]) for r in getrecords(feats)] 
 
     filename = joinpath(labelspath, "labels.csv.gz") 
     writetable(filename, labels)

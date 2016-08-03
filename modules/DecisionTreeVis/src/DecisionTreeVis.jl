@@ -60,7 +60,8 @@ function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::
 
   get_name(tree::DecisionTree) = get_name(tree.root)
   function get_name(node::DTNode)
-    members = sort(Dl.names[node.members], by=x->parse(Int64, x))
+    members = getmeta(Dl, node.members)[:encounter_id]
+    sort!(members)
     members_text = if length(members) <= limit_members
       "members=" * join(members, ",")
     else

@@ -67,36 +67,30 @@ type PTest
   dirs::Vector{ASCIIString}
 end
 
-function pipelinetest(orig_dataname::AbstractString="dasc", orig_jsondir::AbstractString=DASC_JSON, test_dataname::AbstractString="exampledata")
+function pipelinetest(orig_dataname::AbstractString="dasc", 
+    orig_jsondir::AbstractString=DASC_JSON, 
+    test_dataname::AbstractString="exampledata")
   test_csvdir = joinpath(DATADIR, test_dataname, "csv")
   test_datadir = Pkg.dir("Datasets", "data", test_dataname)
-
-  orig_datameta = orig_dataname * "_meta"
-  test_datameta = test_dataname * "_meta"
-  test_metadir = Pkg.dir("Datasets", "data", test_datameta)
 
   orig_datafilt = orig_dataname * "filt"
   test_datafilt = test_dataname * "filt"
   test_datafiltdir = Pkg.dir("Datasets", "data", test_datafilt)
 
   #process jsons
-  script_base(orig_jsondir, test_csvdir, test_datadir, test_metadir; fromjson=true, correct_coc=true)
+  script_base(orig_jsondir, test_csvdir, test_datadir; 
+    fromjson=true, correct_coc=true)
 
   #check data
   dset1 = dataset(orig_dataname)
   dset2 = dataset(test_dataname)
   for i in length(dset1)
-    @test records(dset1)[i] == records(dset2)[i]
+    @test getrecords(dset1, i) == getrecords(dset2, i)
   end
-
-  #check meta
-  meta1 = dataset(orig_datameta, "encounter_meta")
-  meta2 = dataset(test_datameta, "encounter_meta")
-  @test meta1 == meta2
 
   #test run
   outdir = joinpath(TESTDIR, test_dataname)
-  acasx_mc(outdir=outdir, data=test_dataname, data_meta=test_datameta)
+  acasx_mc(outdir=outdir, data=test_dataname)
 
   #generate filtered data
   remove_cpa(test_dataname, test_datafiltdir; t_min=35, n_before=5)
@@ -105,16 +99,16 @@ function pipelinetest(orig_dataname::AbstractString="dasc", orig_jsondir::Abstra
   dset1 = dataset(orig_datafilt)
   dset2 = dataset(test_datafilt)
   for i in length(dset1)
-    @test records(dset1)[i] == records(dset2)[i]
+    @test getrecords(dset1, i) == getrecords(dset2, i)
   end
 
   #test run on filt
   outdir = joinpath(TESTDIR, test_datafilt)
-  acasx_mc_tree(outdir=outdir, data=test_datafilt, data_meta=test_datameta)
+  acasx_mc_tree(outdir=outdir, data=test_datafilt)
 
   #for cleanup
   intermediatedir = joinpath(DATADIR, test_dataname)
-  PTest([intermediatedir, test_datadir, test_metadir, test_datafiltdir])
+  PTest([intermediatedir, test_datadir, test_datafiltdir])
 end
 
 function cleanup(ptest::PTest)

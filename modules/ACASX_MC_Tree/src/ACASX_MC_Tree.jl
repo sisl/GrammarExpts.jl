@@ -81,7 +81,6 @@ function acasx_mc_tree(;outdir::AbstractString="./ACASX_MC_Tree",
 
                        runtype::Symbol=:nmacs_vs_nonnmacs,
                        data::AbstractString="dasc",
-                       data_meta::AbstractString="dasc_meta",
                        manuals::AbstractString="dasc_manual",
                        clusterdataname::AbstractString="josh1",
 
@@ -98,7 +97,7 @@ function acasx_mc_tree(;outdir::AbstractString="./ACASX_MC_Tree",
   srand(seed)
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   observer = Observer()
   par_observer = Observer()

@@ -33,55 +33,32 @@
 # *****************************************************************************
 
 function nmac_clusters(clustering::DataFrame, Ds::DFSet)
-  ids = map(x -> parse(Int, x), names(Ds))
-  labeldict = Dict{Int64,Int64}() #facilitate random access
-  for row in eachrow(clustering)
-    labeldict[row[:encounter_id]] = row[:label]
-  end
-  inds = find(x -> haskey(labeldict, x), ids)
-  sublabels = map(x -> labeldict[x], ids[inds])
-  subDs = Ds[inds]
-  return DFSetLabeled(subDs, sublabels)
+    meta = getmeta(Ds)
+    D = join(meta, clustering, on=[:encounter_id])
+    D = D[D[:nmac], :] #nmacs only
+    ids = D[:id]
+    labels = D[:label]
+    Dl = DFSetLabeled(Ds[ids], labels)
+    Dl
 end
 
-function nonnmacs_extra_cluster(clustering::DataFrame, Ds::DFSet, meta::DataFrame)
-  ids = map(x -> parse(Int, x), names(Ds))
-  labeldict = Dict{Int64,Int64}() #facilitate random access
-  for row in eachrow(clustering)
-    labeldict[row[:encounter_id]] = row[:label]
-  end
-
-  nmacdict = Dict{Int64,Bool}() #facilitate random access
-  for row in eachrow(meta)
-    nmacdict[row[:encounter_id]] = row[:nmac]
-  end
-
-  nonnmac_label = maximum(clustering[:label]) + 1
-  labels = map(ids) do id
-    label = if haskey(labeldict, id)
-      labeldict[id]
-    else
-      @assert nmacdict[id] == false
-      nonnmac_label
-    end
-    return label
-  end
-  return DFSetLabeled(Ds, labels)
+function nonnmacs_extra_cluster(clustering::DataFrame, Ds::DFSet)
+    Dl1 = nmac_clusters(clustering, Ds) #cluster labeled nmacs
+    
+    meta = getmeta(Ds)
+    D = meta[!meta[:nmac], :] #non-nmacs only
+    extra_label = maximum(clustering[:label]) + 1 #highest cluster label + 1
+    ids = D[:id]
+    labels = fill(extra_label, length(ids))
+    Dl2 = DFSetLabeled(Ds[ids], labels)
+    Dl = vcat(Dl1, Dl2)
+    Dl
 end
 
-function nmacs_vs_nonnmacs(Ds::DFSet, meta::DataFrame)
-  ids = map(x -> parse(Int, x), names(Ds))
-  nmac_ids = meta[meta[:nmac] .== true, :encounter_id]
-  nonnmac_ids = meta[meta[:nmac] .== false, :encounter_id]
-  labels = map(ids) do id
-    label = if id in nmac_ids
-      1
-    elseif id in nonnmac_ids
-      2
-    else
-      error("encounter id not found: $id")
-    end
-    return label
-  end
-  return DFSetLabeled(Ds, labels)
+function nmacs_vs_nonnmacs(Ds::DFSet)
+    meta = getmeta(Ds)
+    labels = map(b -> b ? 1 : 2, meta[:nmac]) #remap to 1=nmac,2=nonnmac
+    labels = convert(Vector{Int64}, labels)
+    Dl = DFSetLabeled(Ds, labels)
+    Dl
 end

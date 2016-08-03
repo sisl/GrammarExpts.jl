@@ -58,7 +58,6 @@ function acasx_mc(; outdir::AbstractString="./ACASX_MC",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
                   data::AbstractString="dasc",
-                  data_meta::AbstractString="dasc_meta",
                   manuals::AbstractString="dasc_manual",
                   clusterdataname::AbstractString="josh1",
 
@@ -74,7 +73,7 @@ function acasx_mc(; outdir::AbstractString="./ACASX_MC",
   srand(seed)
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   observer = Observer()
   par_observer = Observer()
@@ -105,7 +104,6 @@ function acasx_mc1(; outdir::AbstractString="./ACASX_MC1",
 
                    runtype::Symbol=:nmacs_vs_nonnmacs,
                    data::AbstractString="dasc",
-                   data_meta::AbstractString="dasc_meta",
                    manuals::AbstractString="dasc_manual",
                    clusterdataname::AbstractString="josh1",
 
@@ -120,7 +118,7 @@ function acasx_mc1(; outdir::AbstractString="./ACASX_MC1",
   srand(seed)
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   observer = Observer()
 

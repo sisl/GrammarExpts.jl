@@ -81,7 +81,6 @@ function acasx_mcts_tree(;outdir::AbstractString="./ACASX_MCTS_Tree",
 
                           runtype::Symbol=:nmacs_vs_nonnmacs,
                           data::AbstractString="dasc",
-                          data_meta::AbstractString="dasc_meta",
                           manuals::AbstractString="dasc_manual",
                           clusterdataname::AbstractString="josh1",
 
@@ -100,7 +99,7 @@ function acasx_mcts_tree(;outdir::AbstractString="./ACASX_MCTS_Tree",
                           limit_members::Int64=10)
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
                              explorationconst, q0, seed, Observer(), Observer())

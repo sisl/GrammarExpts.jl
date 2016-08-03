@@ -39,54 +39,49 @@ const DATADIR = joinpath(dirname(@__FILE__), "..", "..", "..", "data")
 const DASC_JSON = joinpath(DATADIR, "dasc/json")
 const DASC_CSV = joinpath(DATADIR, "dasc/csv")
 const DASC_OUT = Pkg.dir("Datasets/data/dasc") #requires Datasets to be installed
-const DASC_META = Pkg.dir("Datasets/data/dasc_meta")
 
 const LIBCAS098SMALL_JSON = joinpath(DATADIR, "libcas098small/json")
 const LIBCAS098SMALL_CSV = joinpath(DATADIR, "libcas098small/csv")
 const LIBCAS098SMALL_OUT = Pkg.dir("Datasets/data/libcas098small")
-const LIBCAS098SMALL_META = Pkg.dir("Datasets/data/libcas098small_meta")
 
 const LIBCAS0100STAR_JSON = joinpath(DATADIR, "libcas0100star/json")
 const LIBCAS0100STAR_CSV = joinpath(DATADIR, "libcas0100star/csv")
 const LIBCAS0100STAR_OUT = Pkg.dir("Datasets/data/libcas0100star")
-const LIBCAS0100STAR_META = Pkg.dir("Datasets/data/libcas0100star_meta")
 
 const LIBCAS0100LLCEM_JSON = joinpath(DATADIR, "libcas0100llcem/json")
 const LIBCAS0100LLCEM_CSV = joinpath(DATADIR, "libcas0100llcem/csv")
 const LIBCAS0100LLCEM_OUT = Pkg.dir("Datasets/data/libcas0100llcem")
-const LIBCAS0100LLCEM_META = Pkg.dir("Datasets/data/libcas0100llcem_meta")
 
 #####################
 #Add an entry here
 
 #dasc set
 function script_dasc(fromjson::Bool=true)
-  script_base(DASC_JSON, DASC_CSV, DASC_OUT, DASC_META;
+  script_base(DASC_JSON, DASC_CSV, DASC_OUT;
                  fromjson=fromjson, correct_coc=true)
 end
 
 #from APL 20151230, libcas0.9.8, MCTS iterations=500, testbatch
 function script_libcas098small(fromjson::Bool=true)
-  script_base(LIBCAS098SMALL_JSON, LIBCAS098SMALL_CSV, LIBCAS098SMALL_OUT, LIBCAS098SMALL_META;
+  script_base(LIBCAS098SMALL_JSON, LIBCAS098SMALL_CSV, LIBCAS098SMALL_OUT;
                  fromjson=fromjson, correct_coc=true)
 end
 
 #Generated 20160413, libcas0.10.0, MCTS iterations=3000, 2ac, stardbn
 function script_libcas0100star(fromjson::Bool=true)
-  script_base(LIBCAS0100STAR_JSON, LIBCAS0100STAR_CSV, LIBCAS0100STAR_OUT, LIBCAS0100STAR_META;
+  script_base(LIBCAS0100STAR_JSON, LIBCAS0100STAR_CSV, LIBCAS0100STAR_OUT;
                  fromjson=fromjson, correct_coc=false)
 end
 
 #Generated 20160422, libcas0.10.0, MCTS iterations=3000, 2ac, llcemdbn
 function script_libcas0100llcem(fromjson::Bool=true)
-  script_base(LIBCAS0100LLCEM_JSON, LIBCAS0100LLCEM_CSV, LIBCAS0100LLCEM_OUT, LIBCAS0100LLCEM_META;
+  script_base(LIBCAS0100LLCEM_JSON, LIBCAS0100LLCEM_CSV, LIBCAS0100LLCEM_OUT;
                  fromjson=fromjson, correct_coc=false)
 end
 
 #####################
-
 function script_base(jsondir::AbstractString, csvdir::AbstractString,
-                        datadir::AbstractString, metadir::AbstractString;
+                        outdir::AbstractString;
                         fromjson::Bool=true, correct_coc::Bool=true)
   if fromjson
     mkpath(csvdir)
@@ -97,11 +92,12 @@ function script_base(jsondir::AbstractString, csvdir::AbstractString,
   if correct_coc
     correct_coc_stays!(tmpdir)
   end
+  add_encounter_info!(tmpdir)
 
-  mkpath(datadir)
-  mv_files(tmpdir, datadir, name_from_id)
-  add_encounter_info!(datadir)
-
-  mkpath(metadir)
-  encounter_meta(jsondir, metadir)
+  mkpath(outdir)
+  mv_files(tmpdir, outdir, name_from_id)
+  encounter_meta(jsondir, outdir)
 end
+
+
+

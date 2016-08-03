@@ -36,7 +36,6 @@
 [
   (:runtype, :nmacs_vs_nonnmacs),
   (:data, "libcas0100starfilt"),
-  (:data_meta, "libcas0100star_meta"),
   (:manuals, ""),
   (:clusterdataname, "")
 ]

@@ -60,7 +60,6 @@ function acasx_ge(;outdir::AbstractString="./ACASX_GE",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
                   data::AbstractString="dasc",
-                  data_meta::AbstractString="dasc_meta",
                   manuals::AbstractString="dasc_manual",
                   clusterdataname::AbstractString="josh1",
 
@@ -82,7 +81,7 @@ function acasx_ge(;outdir::AbstractString="./ACASX_GE",
   srand(seed)
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   observer = Observer()
   logs = default_logs(observer, hist_edges, hist_mids)

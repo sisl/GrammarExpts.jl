@@ -50,7 +50,7 @@ function default_logs()
 
   add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "total_evals", "decision_id"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals", "decision_id"])
   add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
 
   return logs

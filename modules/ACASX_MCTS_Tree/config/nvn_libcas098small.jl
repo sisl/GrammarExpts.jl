@@ -36,7 +36,6 @@
 [
   (:runtype, :nmacs_vs_nonnmacs),
   (:data, "libcas098_small"),
-  (:data_meta, "libcas098_small_meta"),
   (:manuals, ""),
   (:clusterdataname, "")
 ]

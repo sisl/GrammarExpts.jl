@@ -61,7 +61,6 @@ function acasx_mcts(;outdir::AbstractString="./ACASX_MCTS",
 
                     runtype::Symbol=:nmacs_vs_nonnmacs,
                     data::AbstractString="dasc",
-                    data_meta::AbstractString="dasc_meta",
                     manuals::AbstractString="dasc_manual",
                     clusterdataname::AbstractString="josh1",
 
@@ -80,7 +79,7 @@ function acasx_mcts(;outdir::AbstractString="./ACASX_MCTS",
                     treevis_interval::Int64=50)
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   observer = Observer() #TODO: remove one of these...
   mcts_observer = Observer()

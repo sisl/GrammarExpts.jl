@@ -36,7 +36,6 @@
 [
   (:runtype, :nmac_clusters),
   (:data, "dasc"),
-  (:data_meta, "dasc_meta"),
   (:manuals, "dasc_manual"),
   (:clusterdataname, "josh1")
 ]

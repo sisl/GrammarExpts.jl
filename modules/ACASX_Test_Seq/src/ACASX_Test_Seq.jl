@@ -49,13 +49,12 @@ const NMAC_SEQUENCE = Int64[2, 2, 7, 10, 7, 7, 5, 3, 10]
 
 function setup(; runtype::Symbol=:nmacs_vs_nonnmacs,
                data::AbstractString="dasc",
-               data_meta::AbstractString="dasc_meta",
                manuals::AbstractString="dasc_manual",
                clusterdataname::AbstractString="",
 
                maxsteps::Int64=20)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   grammar = create_grammar(problem)
   tree_params = DerivTreeParams(grammar, maxsteps)

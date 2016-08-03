@@ -36,7 +36,6 @@
 [
   (:runtype, :nonnmacs_extra_cluster),
   (:data, "dasc"),
-  (:data_meta, "dasc_meta"),
   (:manuals, "dasc_manual"),
   (:clusterdataname, "mykel")
 ]

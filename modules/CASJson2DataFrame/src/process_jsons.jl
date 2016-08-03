@@ -35,7 +35,7 @@
 #requires RLESCAS to be installed
 include(Pkg.dir("RLESCAS/src/converters/json_to_csv.jl"))
 
-using RLESUtils, FileUtils
+using RLESUtils, FileUtils, DataFrameSets
 
 #read a directory of jsons and output csvs
 function convert2csvs(in_dir::AbstractString, out_dir::AbstractString)
@@ -55,20 +55,3 @@ function convert2csvs(in_dir::AbstractString, out_dir::AbstractString)
   end
 end
 
-function encounter_meta(in_dir::AbstractString, out_dir::AbstractString)
-  if !isdir(out_dir) #create output dir if it doesn't exist
-    mkpath(out_dir)
-  end
-
-  files = readdirGZs(in_dir)
-  colnames = Symbol[:encounter_id, :nmac]
-  coltypes = Type[Int64, Bool]
-
-  D = DataFrame(coltypes, colnames, 0)
-  for f in files
-    id = get_id(f)
-    push!(D, [id, is_nmac(f)])
-  end
-  outfile = joinpath(out_dir, "encounter_meta.csv.gz")
-  writetable(outfile, D)
-end

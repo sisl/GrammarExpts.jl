@@ -38,175 +38,187 @@ using RLESUtils, MathUtils, LookupCallbacks, FileUtils, StringUtils
 using DataFrames
 
 const FEATURE_MAP = LookupCallback[
-  LookupCallback("ra_detailed.ra_active", x -> Bool(x)),
-  LookupCallback("ra_detailed.ownInput.dz", x -> Float64(x)),
-  LookupCallback(["ra_detailed.ownInput.z", "ra_detailed.intruderInput[1].z"], (z1, z2) -> Float64(z2 - z1)), #intruderInput.z is quantized!!!
-  LookupCallback("ra_detailed.ownInput.psi", x -> Float64(x)),
-  LookupCallback("ra_detailed.intruderInput[1].sr", x -> Float64(x)),
-  LookupCallback("ra_detailed.intruderInput[1].chi", x -> Float64(x)),
-  LookupCallback("ra_detailed.intruderInput[1].vrc", x -> x == 0), #split categorical to 1-hot
-  LookupCallback("ra_detailed.intruderInput[1].vrc", x -> x == 1), #split categorical to 1-hot
-  LookupCallback("ra_detailed.intruderInput[1].vrc", x -> x == 2), #split categorical to 1-hot
-  LookupCallback("ra_detailed.ownOutput.cc", x -> bin(Int(x), 3)[1] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.cc", x -> bin(Int(x), 3)[2] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.cc", x -> bin(Int(x), 3)[3] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.vc", x -> bin(Int(x), 3)[1] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.vc", x -> bin(Int(x), 3)[2] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.vc", x -> bin(Int(x), 3)[3] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.ua", x -> bin(Int(x), 3)[1] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.ua", x -> bin(Int(x), 3)[2] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.ua", x -> bin(Int(x), 3)[3] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.da", x -> bin(Int(x), 3)[1] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.da", x -> bin(Int(x), 3)[2] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.da", x -> bin(Int(x), 3)[3] == '1'), #categorical 3-bit
-  LookupCallback("ra_detailed.ownOutput.target_rate", x -> Float64(x)),
-  LookupCallback("ra_detailed.ownOutput.crossing", x -> Bool(x)),
-  LookupCallback("ra_detailed.ownOutput.alarm", x -> Bool(x)),
-  LookupCallback("ra_detailed.ownOutput.alert", x -> Bool(x)),
-  LookupCallback("ra_detailed.intruderOutput[1].vrc", x -> x == 0), #split categorical to 1-hot
-  LookupCallback("ra_detailed.intruderOutput[1].vrc", x -> x == 1), #split categorical to 1-hot
-  LookupCallback("ra_detailed.intruderOutput[1].vrc", x -> x == 2), #split categorical to 1-hot
+    LookupCallback("ra_detailed.ra_active", x -> Bool(x)),
+    LookupCallback("ra_detailed.ownInput.dz", x -> Float64(x)),
+    LookupCallback(["ra_detailed.ownInput.z", "ra_detailed.intruderInput[1].z"], (z1, z2) -> Float64(z2 - z1)), #intruderInput.z is quantized!!!
+    LookupCallback("ra_detailed.ownInput.psi", x -> Float64(x)),
+    LookupCallback("ra_detailed.intruderInput[1].sr", x -> Float64(x)),
+    LookupCallback("ra_detailed.intruderInput[1].chi", x -> Float64(x)),
+    LookupCallback("ra_detailed.intruderInput[1].vrc", x -> x == 0), #split categorical to 1-hot
+    LookupCallback("ra_detailed.intruderInput[1].vrc", x -> x == 1), #split categorical to 1-hot
+    LookupCallback("ra_detailed.intruderInput[1].vrc", x -> x == 2), #split categorical to 1-hot
+    LookupCallback("ra_detailed.ownOutput.cc", x -> bin(Int(x), 3)[1] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.cc", x -> bin(Int(x), 3)[2] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.cc", x -> bin(Int(x), 3)[3] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.vc", x -> bin(Int(x), 3)[1] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.vc", x -> bin(Int(x), 3)[2] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.vc", x -> bin(Int(x), 3)[3] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.ua", x -> bin(Int(x), 3)[1] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.ua", x -> bin(Int(x), 3)[2] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.ua", x -> bin(Int(x), 3)[3] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.da", x -> bin(Int(x), 3)[1] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.da", x -> bin(Int(x), 3)[2] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.da", x -> bin(Int(x), 3)[3] == '1'), #categorical 3-bit
+    LookupCallback("ra_detailed.ownOutput.target_rate", x -> Float64(x)),
+    LookupCallback("ra_detailed.ownOutput.crossing", x -> Bool(x)),
+    LookupCallback("ra_detailed.ownOutput.alarm", x -> Bool(x)),
+    LookupCallback("ra_detailed.ownOutput.alert", x -> Bool(x)),
+    LookupCallback("ra_detailed.intruderOutput[1].vrc", x -> x == 0), #split categorical to 1-hot
+    LookupCallback("ra_detailed.intruderOutput[1].vrc", x -> x == 1), #split categorical to 1-hot
+    LookupCallback("ra_detailed.intruderOutput[1].vrc", x -> x == 2), #split categorical to 1-hot
   LookupCallback("ra_detailed.intruderOutput[1].tds", x -> Float64(x)),
-  LookupCallback("response.state", x -> x == "none"), #split categorical to 1-hot
-  LookupCallback("response.state", x -> x == "stay"), #split categorical to 1-hot
-  LookupCallback("response.state", x -> x == "follow"), #split categorical to 1-hot
-  LookupCallback("response.timer", x -> Float64(x)),
-  LookupCallback("response.h_d", x -> Float64(x)),
-  LookupCallback("response.psi_d", x -> Float64(x)),
-  LookupCallback("adm.v", x -> Float64(x)),
-  LookupCallback("adm.h", x -> Float64(x)) #same as z
-  ]
+    LookupCallback("response.state", x -> x == "none"), #split categorical to 1-hot
+    LookupCallback("response.state", x -> x == "stay"), #split categorical to 1-hot
+    LookupCallback("response.state", x -> x == "follow"), #split categorical to 1-hot
+    LookupCallback("response.timer", x -> Float64(x)),
+    LookupCallback("response.h_d", x -> Float64(x)),
+    LookupCallback("response.psi_d", x -> Float64(x)),
+    LookupCallback("adm.v", x -> Float64(x)),
+    LookupCallback("adm.h", x -> Float64(x)) #same as z
+    ]
 
 const FEATURE_NAMES = ASCIIString[
-  "RA",
-  "vert_rate",
-  "alt_diff",
-  "psi",
-  "intr_sr",
-  "intr_chi",
-  "intr_vrc0",
-  "intr_vrc1",
-  "intr_vrc2",
-  "cc0",
-  "cc1",
-  "cc2",
-  "vc0",
-  "vc1",
-  "vc2",
-  "ua0",
-  "ua1",
-  "ua2",
-  "da0",
-  "da1",
-  "da2",
-  "target_rate",
-  "crossing",
-  "alarm",
-  "alert",
-  "intr_out_vrc0",
-  "intr_out_vrc1",
-  "intr_out_vrc2",
-  "intr_out_tds",
-  "response_none",
-  "response_stay",
-  "response_follow",
-  "response_timer",
-  "response_h_d",
-  "response_psi_d",
-  "v",
-  "h"
-  ]
+    "RA",
+    "vert_rate",
+    "alt_diff",
+    "psi",
+    "intr_sr",
+    "intr_chi",
+    "intr_vrc0",
+    "intr_vrc1",
+    "intr_vrc2",
+    "cc0",
+    "cc1",
+    "cc2",
+    "vc0",
+    "vc1",
+    "vc2",
+    "ua0",
+    "ua1",
+    "ua2",
+    "da0",
+    "da1",
+    "da2",
+    "target_rate",
+    "crossing",
+    "alarm",
+    "alert",
+    "intr_out_vrc0",
+    "intr_out_vrc1",
+    "intr_out_vrc2",
+    "intr_out_tds",
+    "response_none",
+    "response_stay",
+    "response_follow",
+    "response_timer",
+    "response_h_d",
+    "response_psi_d",
+    "v",
+    "h"
+    ]
 
 const COC_STAYS_MAP = LookupCallback[
-  LookupCallback(["RA_1", "response_none_1", "response_stay_1"],
-                 (ra, none, stay) -> (ra, ra ? none : true, ra ? stay : false)),
-  LookupCallback(["RA_2", "response_none_2", "response_stay_2"],
-                 (ra, none, stay) -> (ra, ra ? none : true, ra ? stay : false))
-  ]
+    LookupCallback(["RA_1", "response_none_1", "response_stay_1"],
+                    (ra, none, stay) -> (ra, ra ? none : true, ra ? stay : false)),
+    LookupCallback(["RA_2", "response_none_2", "response_stay_2"],
+                    (ra, none, stay) -> (ra, ra ? none : true, ra ? stay : false))
+    ]
 
 function is_converging(psi1::Float64, chi1::Float64, psi2::Float64, chi2::Float64)
-  #println("psi1=$psi1, chi1=$chi1, psi2=$psi2, chi2=$chi2")
-  if abs(chi1) > pi/2 && abs(chi2) > pi/2 #flying away from each other
-    return false
-  end
-  z1 = to_plusminus_pi(psi2 - psi1)
-  z2 = to_plusminus_pi(psi1 - psi2)
-  return z1 * chi1 <= 0 && z2 * chi2 <= 0
+    #println("psi1=$psi1, chi1=$chi1, psi2=$psi2, chi2=$chi2")
+    if abs(chi1) > pi/2 && abs(chi2) > pi/2 #flying away from each other
+        return false
+    end
+    z1 = to_plusminus_pi(psi2 - psi1)
+    z2 = to_plusminus_pi(psi1 - psi2)
+    isconverge = z1 * chi1 <= 0 && z2 * chi2 <= 0
+    isconverge
 end
 
 const ADD_FEATURE_MAP = LookupCallback[
-  LookupCallback(["psi_1", "intr_chi_1", "psi_2", "intr_chi_2"], is_converging),
-  LookupCallback(["h_1", "h_2"], (h1, h2) -> abs(h2 - h1)),
-  LookupCallback(["intr_sr_1", "abs_alt_diff"], (sr, altdiff) -> sqrt(sr^2 - altdiff^2))
-  ]
-
+    LookupCallback(["psi_1", "intr_chi_1", "psi_2", "intr_chi_2"], is_converging),
+    LookupCallback(["h_1", "h_2"], (h1, h2) -> abs(h2 - h1)),
+    LookupCallback(["intr_sr_1", "abs_alt_diff"], (sr, altdiff) -> sqrt(sr^2 - altdiff^2))
+    ]
+    
 const ADD_FEATURE_NAMES = ASCIIString[
-  "converging",
-  "abs_alt_diff",
-  "horizontal_range"
-  ]
+    "converging",
+    "abs_alt_diff",
+    "horizontal_range"
+    ]
 
 function csvs2dataframes(in_dir::AbstractString, out_dir::AbstractString)
-  if !isdir(out_dir) #create output dir if it doesn't exist
-    mkpath(out_dir)
-  end
-
-  csvfiles = readdir_ext("csv", in_dir)
-  df_files = csv_to_dataframe(csvfiles, FEATURE_MAP, FEATURE_NAMES, outdir=out_dir)
-  add_features!(df_files, ADD_FEATURE_MAP, ADD_FEATURE_NAMES, overwrite=true)
-  transform(df_files, (:psi_1, rad2deg), (:psi_2, rad2deg), (:intr_chi_1, rad2deg), (:intr_chi_2, rad2deg),
-            overwrite=true)
+    if !isdir(out_dir) #create output dir if it doesn't exist
+        mkpath(out_dir)
+    end
+    
+    csvfiles = readdir_ext("csv", in_dir)
+    df_files = csv_to_dataframe(csvfiles, FEATURE_MAP, FEATURE_NAMES, outdir=out_dir)
+    add_features!(df_files, ADD_FEATURE_MAP, ADD_FEATURE_NAMES, overwrite=true)
+    transform(df_files, (:psi_1, rad2deg), (:psi_2, rad2deg), (:intr_chi_1, rad2deg), (:intr_chi_2, rad2deg),
+                overwrite=true)
 end
 
 #Note: This can be improved using DataFramesMeta
 function correct_coc_stays!(dir::AbstractString)
-  df_files = readdir_ext(".csv.gz", dir)
-  transform(df_files, COC_STAYS_MAP, overwrite=true)
+    df_files = readdir_ext(".csv.gz", dir)
+    transform(df_files, COC_STAYS_MAP, overwrite=true)
 end
 
+#TODO: remove hardcodings
 function get_id(filename::AbstractString)
-  s = basename(filename)
-  s = split(s, '.')[1]
-  s = replace(s, "trajSaveMCTS_ACASX_EvE_", "")
-  s = replace(s, "trajSaveMCTS_ACASX_Multi_", "")
-  s = replace(s, "trajSaveMCTS_ACASX_GM_", "")
-  s = replace(s, "_dataframe", "")
-  return parse(Int64, s) #encounter number
+    s = basename(filename)
+    s = split(s, '.')[1]
+    s = replace(s, "trajSaveMCTS_ACASX_EvE_", "")
+    s = replace(s, "trajSaveMCTS_ACASX_Multi_", "")
+    s = replace(s, "trajSaveMCTS_ACASX_GM_", "")
+    s = replace(s, "_dataframe", "")
+    encounter_id = parse(Int64, s) #encounter number
+    encounter_id
 end
 
 function merge_dataframes(dir::AbstractString, outfile::AbstractString)
-  Ds = get_dataframes(dir)
-  D = vcat(Ds...)
-  writetable(outfile, D)
+    Ds = get_dataframes(dir)
+    D = vcat(Ds...)
+    writetable(outfile, D)
 end
 
 function add_encounter_info!(dir::AbstractString)
-  files = readdir_ext(".csv.gz", dir)
-  for (i, f) in enumerate(files)
-    fileroot = split(basename(f), '.')[1]
-    df = readtable(f)
-    df[:t] = Int64[1:nrow(df);]
-    df[:encounter_id] = fill(get_id(fileroot), nrow(df))
-    writetable(f, df)
-  end
-  return files
+    files = readdir_ext(".csv.gz", dir)
+    for (i, f) in enumerate(files)
+        fileroot = split(basename(f), '.')[1]
+        df = readtable(f)
+        df[:t] = Int64[1:nrow(df);]
+        df[:encounter_id] = fill(get_id(fileroot), nrow(df))
+        writetable(f, df)
+    end
+    files
 end
 
 function name_from_id(filename::AbstractString, ext::AbstractString=".csv.gz")
-  id = get_id(filename)
-  return string(id, ext)
+    id = get_id(filename)
+    name = string(id, ext)
+    name
 end
 
-function mv_files(in_dir::AbstractString, out_dir::AbstractString, get_new_name::Function)
-  if !isdir(out_dir) #create output dir if it doesn't exist
+function mv_files(in_dir::AbstractString, out_dir::AbstractString, get_new_name::Function=identity)
     mkpath(out_dir)
-  end
 
-  files = readdir(in_dir)
-  for f in files
-    fileroot, ext = splitext(f)
-    src = joinpath(in_dir, f)
-    dst = joinpath(out_dir, get_new_name(f))
-    mv(src, dst, remove_destination=true)
-  end
+    files = readdir(in_dir) |> sort! #note sorting is important, ensures sync between directories
+    for (i, f) in enumerate(files)
+        src = joinpath(in_dir, f)
+        dst = joinpath(out_dir, get_new_name(f))
+        mv(src, dst, remove_destination=true)
+    end
+end
+
+function encounter_meta(in_dir::AbstractString, out_dir::AbstractString)
+    mkpath(out_dir)
+
+    files = readdirGZs(in_dir) |> sort! #note sorting is important, ensures sync between directories
+    meta = metadf(length(files))
+    meta[:encounter_id] = map(get_id, files)
+    meta[:nmac] = map(is_nmac, files)
+  
+    writemeta(out_dir, meta)
 end

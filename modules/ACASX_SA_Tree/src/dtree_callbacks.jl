@@ -60,7 +60,7 @@ function DecisionTrees.get_splitter{T}(members::Vector{Int64},
                     pretty_string(result.tree, FMT_PRETTY),
                     pretty_string(result.tree, FMT_NATURAL, true)])
 
-  predicts = classify(problem, result, records(Dl_sub))
+  predicts = classify(problem, result, getrecords(Dl_sub))
   info_gain, _, _ = gini_metrics(predicts, labels(Dl_sub))
 
   return info_gain > 0 ? result : nothing #split object
@@ -75,7 +75,7 @@ end
 
 function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},
                                      Dl::DFSetLabeled{T}, problem::ACASXClustering, otherargs...) #userargs...
-  return classify(problem, result, records(Dl, members))
+  return classify(problem, result, getrecords(Dl, members))
 end
 
 DecisionTreeVis.get_tree(result::SAESResult) = result.tree

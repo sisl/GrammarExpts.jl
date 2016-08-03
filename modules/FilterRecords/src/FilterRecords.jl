@@ -46,7 +46,7 @@ using DataFramesMeta
 Same as filter_by_bool! over a single dataframe D, but applies it over all records in a DFSet
 """
 function filter_by_bool!(f::Function, Ds::DFSet; kwargs...)
-  for D in records(Ds)
+  for D in getrecords(Ds)
     filter_by_bool!(f, D; kwargs...)
   end
 end

@@ -51,7 +51,6 @@ function acasx_sa_timing(problem=nothing, outdir::AbstractString="./ACASX_SA_Tim
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
                   data::AbstractString="dasc",
-                  data_meta::AbstractString="dasc_meta",
                   manuals::AbstractString="dasc_manual",
                   clusterdataname::AbstractString="josh1",
 
@@ -66,7 +65,7 @@ function acasx_sa_timing(problem=nothing, outdir::AbstractString="./ACASX_SA_Tim
                   observer::Observer=Observer())
 
   if problem == nothing
-    problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+    problem = ACASXClustering(runtype, data, manuals, clusterdataname)
   end
   p = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
 

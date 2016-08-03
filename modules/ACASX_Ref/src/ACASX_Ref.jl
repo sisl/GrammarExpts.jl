@@ -58,7 +58,6 @@ function acasx_ref(; outdir::AbstractString="./ACASX_Ref",
 
                    runtype::Symbol=:nmacs_vs_nonnmacs,
                    data::AbstractString="dasc",
-                   data_meta::AbstractString="dasc_meta",
                    manuals::AbstractString="dasc_manual",
                    clusterdataname::AbstractString="josh1",
                    maxsteps::Int64=20,
@@ -71,7 +70,7 @@ function acasx_ref(; outdir::AbstractString="./ACASX_Ref",
 
   mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, data_meta, manuals, clusterdataname)
+  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
   observer = Observer()
   logs = default_logs(observer, loginterval)
@@ -101,7 +100,7 @@ end
 function push_predicted!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
   Dl = problem.Dl
   labels = Dl.labels
-  encs = Dl.names
+  encs = getmeta(Dl)[:encounter_id]
 
   add_folder!(logs, "predicted", [ASCIIString, T, Bool], ["encounter", "label", "predict"])
   predicts = get_predicts(problem, expr)

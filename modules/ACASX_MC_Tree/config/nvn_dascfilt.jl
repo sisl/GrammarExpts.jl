@@ -36,7 +36,6 @@
 [
   (:runtype, :nmacs_vs_nonnmacs),
   (:data, "dascfilt"),
-  (:data_meta, "dasc_meta"),
   (:manuals, ""),
   (:clusterdataname, "")
 ]

@@ -43,7 +43,8 @@ Two versions of the fitness function are provided, one with pruning (early stop)
 """
 module ACASXProblem
 
-export ACASXClustering, create_grammar, get_fitness, to_function, get_predicts, get_members
+export ACASXClustering, create_grammar, get_fitness, to_function, get_predicts,
+    get_members
 export FMT_PRETTY, FMT_NATURAL
 export entropy_metrics, gini_metrics
 
@@ -71,64 +72,51 @@ type ACASXClustering{T} <: ExprProblem
 end
 
 """
-Example: problem = ACASXClustering(:nmacs_vs_nonnmacs, "dascfilt", "dasc_meta", "", "")
+Example: problem = ACASXClustering(:nmacs_vs_nonnmacs, "dasc", "", "")
 """
-function ACASXClustering(runtype::Symbol, dataname::AbstractString, meta_name::AbstractString,
+function ACASXClustering(runtype::Symbol, dataname::AbstractString, 
                          manuals::AbstractString, clustername::AbstractString,
                          w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
-  out = if runtype == :nmacs_vs_nonnmacs
-    ACASXClustering(dataname, meta_name, w_metric, w_len)
-  elseif runtype == :nmac_clusters
-    ACASXClustering(dataname, manuals, clustername, w_metric, w_len)
-  elseif runtype == :nonnmacs_extra_cluster
-    ACASXClustering(dataname, meta_name, manuals, clustername, w_metric, w_len)
-  else
-    error("Runtype not defined ($runtype)")
-  end
-  return out
+    if runtype == :nmacs_vs_nonnmacs
+        out = ACASXClustering(dataname, w_metric, w_len)
+    elseif runtype == :nmac_clusters
+        out = ACASXClustering(dataname, manuals, clustername, w_metric, w_len; 
+            incl_nonnmacs=false)
+    elseif runtype == :nonnmacs_extra_cluster
+        out = ACASXClustering(dataname, manuals, clustername, w_metric, w_len; 
+            incl_nonnmacs=true)
+    else
+        error("Runtype not defined ($runtype)")
+    end
+    out
 end
 
 #nmacs vs non-nmacs
 function ACASXClustering(dataname::AbstractString,
-                         meta_name::AbstractString,
                          w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
-
-  data = dataset(dataname)
-  data_meta = dataset(meta_name, "encounter_meta")
-
-  Dl = nmacs_vs_nonnmacs(data, data_meta)
-  labelset = unique(labels(Dl))
-  return ACASXClustering(Dl, w_metric, w_len, labelset)
+    data = dataset(dataname)
+    Dl = nmacs_vs_nonnmacs(data)
+    labelset = unique(labels(Dl))
+    return ACASXClustering(Dl, w_metric, w_len, labelset)
 end
 
-#clusterings only
+#with manual clustering
 function ACASXClustering(dataname::AbstractString,
                          manuals::AbstractString,
                          clustername::AbstractString,
-                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
+                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN;
+                         incl_nonnmacs::Bool=true)
 
-  data = dataset(dataname)
-  clustering = dataset(manuals, clustername)
-
-  Dl =  nmac_clusters(clustering, data)
-  labelset = unique(labels(Dl))
-  return ACASXClustering(Dl, w_metric, w_len, labelset)
-end
-
-#clusterings with nonnmacs as extra cluster
-function ACASXClustering(dataname::AbstractString,
-                         meta_name::AbstractString,
-                         manuals::AbstractString,
-                         clustername::AbstractString,
-                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
-
-  data = dataset(dataname)
-  data_meta = dataset(meta_name, "encounter_meta")
-  clustering = dataset(manuals, clustername)
-
-  Dl =  nonnmacs_extra_cluster(clustering, data, data_meta)
-  labelset = unique(labels(Dl))
-  return ACASXClustering(Dl, w_metric, w_len, labelset)
+    data = dataset(dataname)
+    clustering = dataset(manuals, clustername)
+  
+    if incl_nonnmacs
+        Dl = nonnmacs_extra_cluster(clustering, data)
+    else
+        Dl = nmac_clusters(clustering, data)
+    end
+    labelset = unique(labels(Dl))
+    return ACASXClustering(Dl, w_metric, w_len, labelset)
 end
 
 function ExprSearch.create_grammar(problem::ACASXClustering)
@@ -572,9 +560,9 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
   codelen = length(string(expr))
 
   f = to_function(problem, expr)
-  predicts = Array(Bool, length(Dl.records))
-  for i = 1:length(Dl.records)
-    predicts[i] = f(Dl.records[i])
+  predicts = Array(Bool, length(Dl))
+  for i = 1:length(Dl)
+    predicts[i] = f(getrecords(Dl, i))
   end
   #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
   _, _, metric = gini_metrics(predicts, Dl.labels)
@@ -584,16 +572,20 @@ end
 function get_predicts{T}(problem::ACASXClustering{T}, expr)
   Dl = problem.Dl
   f = to_function(problem, expr)
-  predicts = Array(Bool, length(Dl.records))
-  for i = 1:length(Dl.records)
-    predicts[i] = f(Dl.records[i])
+  predicts = Array(Bool, length(Dl))
+  for i = 1:length(Dl)
+    predicts[i] = f(getrecords(Dl, i))
   end
 
   predicts
 end
 
 function get_members{T}(problem::ACASXClustering{T}, predicts::Vector{Bool})
-  problem.Dl.names[predicts], problem.Dl.names[!predicts] #encounters_true, encounters_false
+    meta = getmeta(problem.Dl)
+    encounter_ids = meta[:encounter_id]
+    true_ids = encounter_ids[predicts]
+    false_ids = encounter_ids[!predicts]
+    (true_ids, false_ids)
 end
 
 function get_members{T}(problem::ACASXClustering{T}, expr)
@@ -631,17 +623,17 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
   metric_thresh = (thresh - problem.w_len * codelen) / problem.w_metric #translate thresh to bound on metric
   c_tracker = CountTracker(problem)
 
-  earlystop_int = round(Int64, length(Dl.records) / earlystop_div)
+  earlystop_int = round(Int64, length(Dl) / earlystop_div)
 
-  predicts = Array(Bool, length(Dl.records))
-  for i = 1:length(Dl.records)
-    predicts[i] = f(Dl.records[i])
+  predicts = Array(Bool, length(Dl))
+  for i = 1:length(Dl)
+    predicts[i] = f(getrecords(Dl, i))
 
     increment!(c_tracker, Val{predicts[i]}, Dl.labels[i])
 
     #evaluate early exit
     if rem(i, earlystop_int) == 0 #on interval
-      optim = gini_optimistic(c_tracker, length(Dl.records) - i)
+      optim = gini_optimistic(c_tracker, length(Dl) - i)
       if optim > metric_thresh #if most optimistic case still doesn't meet thresh, early exit
         #@show metric_thresh
         #@show optim

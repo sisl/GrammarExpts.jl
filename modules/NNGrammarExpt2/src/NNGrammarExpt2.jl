@@ -179,7 +179,7 @@ function circuit_fg(;
             @show db_labels[1:NSHOW]
             @show db_xmux_hardselect[1:NSHOW]
             @show db_opmux_hardselect[1:NSHOW]
-            xnames = colnames(records(Dfeats)[1])
+            xnames = colnames(getrecords(Dfeats)[1])
             opnames = ["F", "G"]
             x = map(i -> xnames[i+1], db_xmux_hardselect)
             op = map(i -> opnames[i+1], db_opmux_hardselect)

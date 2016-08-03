@@ -86,17 +86,18 @@ function remove_cpa(dataname::AbstractString, outdir::AbstractString; kwargs...)
 end
 
 function remove_cpa!(Ds::DFSet; kwargs...)
-  for D in records(Ds)
+  for D in getrecords(Ds)
     remove_cpa!(D; kwargs...)
   end
 end
 
-function remove_cpa!(D::DataFrame; t_min::Int64=35, n_before::Int64=5)
+function remove_cpa!(D::DataFrame; t_min::Int64=35, n_before::Int64=5,
+    rng::AbstractRNG=MersenneTwister(0))
   i_cpa = find_cpa(D)
 
   #not in acceptable range, select randomly
   if !(t_min <= i_cpa <= nrow(D))
-    i_cpa = rand(t_min:nrow(D))
+    i_cpa = rand(rng, t_min:nrow(D))
   end
   deleterows!(D, (i_cpa - n_before):nrow(D))
 end
