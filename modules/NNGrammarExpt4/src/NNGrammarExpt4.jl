@@ -43,50 +43,50 @@ export circuit4, restarts
 using TFTools
 using Datasets
 using TensorFlow
-import TensorFlow: DT_FLOAT32
-import TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, reshape_,
+using TensorFlow: DT_FLOAT32
+using TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, reshape_,
     reduce_max, reduce_min, minimum_, maximum_, transpose_, less_, greater,
-    expand_dims, tile
+    expand_dims, tile, shape, mul
+using TensorFlow.API.TfNn: sigmoid
 using StatsBase
 
 function restarts(f::Function, N::Int64; kwargs...)
    [f(; kwargs...) for i = 1:N]
 end
 
-function circuit4(;
-    dataname::AbstractString="vhdist",
+using Debug
+@debug function circuit4(;
+    dataname::AbstractString="vhdist2",
     labelfield::AbstractString="nmac", #"F_x1_lt_100_and_x2_lt_500",
-    learning_rate::Float64=0.002,
-    max_training_epochs::Int64=400,
+    learning_rate::Float64=0.001,
+    max_training_epochs::Int64=2000,
     target_cost::Float64=0.001,
-    batch_size::Int64=25,
-    embed_hidden_units::Vector{Int64}=Int64[50, 30, 15],
-    mux_hidden_units::Vector{Int64}=Int64[30,15],
-    display_step::Int64=10,
+    batch_size::Int64=2000,
+    mux_hidden_units::Vector{Int64}=Int64[2],
+    display_step::Int64=1,
     b_debug::Bool=false,
     nshow::Int64=20)
 
-    Ds = dataset(dataname) #DFSet
+    Dl = dataset(dataname, :nmac; transform=x->Float64(x)) #DFSetLabeled
     val_inputs = constant(Float32[0, 50, 100, 250, 500, 1000, 3000])
-    b_nmac = getmeta(Ds)[symbol(labelfield)]
-    data_set = TFDataset(Ds, map(Float64, b_nmac))
+    data_set = TFDataset(Dl)
 
     # Construct model
-    (n_examples, n_steps, n_feats) = size(Ds)
+    (n_examples, n_steps, n_feats) = size(Dl)
     n_featsflat = n_steps * n_feats 
     n_vals = get_shape(val_inputs)[1]
 
     # inputs
     feats = Placeholder(DT_FLOAT32, [-1, n_steps, n_feats])
     inputs = Tensor(feats)
-    feats_flat = reshape_(feats, Tensor([-1, n_featsflat]))
 
-    #embed_in = feats_flat 
-    #embed_blk = ReluStack(embed_in, embed_hidden_units)
-    #embed_out = out(embed_blk)
-    
+    normalizer = Normalizer(data_set)
+    normed_input = normalize01(normalizer, inputs)
+    feats_flat = reshape_(normed_input, Tensor([-1, n_featsflat]))
+
     # mux select input
-    muxselect = feats_flat #embed layer not helping, disable for now...
+    muxselect = feats_flat
+    muxselect = constant(ones(Float32, 1, 2))
 
     # f1 feat select
     f1_in = inputs 
@@ -129,6 +129,7 @@ function circuit4(;
 
     # t1 temporal op block
     t1_in = (l1_out,)
+    #t1_in = (constant(rand(Float32, shape(l1_out))), )
     t1_blk = SoftOpsMux(t1_in, temporal_ops, mux_hidden_units, muxselect)
     t1_out = out(t1_blk) 
 
@@ -141,39 +142,61 @@ function circuit4(;
     optimizer = minimize(AdamOptimizer(learning_rate), cost) # Adam Optimizer
 
     #compiled hardselect
-    fmt = TFFormatter([
-        hardselect(t1_blk), 
-        hardselect(f1_mux), hardselect(a1_blk), hardselect(v1_mux),
-        hardselect(l1_blk), 
-        hardselect(f2_mux), hardselect(a2_blk), hardselect(v2_mux)
+    ckt = Circuit([
+        f1_mux, v1_mux,
+        f2_mux, v2_mux,
+        a1_blk, a2_blk, 
+        l1_blk, 
+        t1_blk, 
         ], 
-        Vector{ASCIIString}[["F", "G"],
+        Vector{ASCIIString}[
         ["alt", "range"],
-        ["<", ">"],
         ["0", "50", "100", "250", "500", "1000", "3000", "5000"],
-        ["and", "or"],
         ["alt", "range"],
+        ["0", "50", "100", "250", "500", "1000", "3000", "5000"],
         ["<", ">"],
-        ["0", "50", "100", "250", "500", "1000", "3000", "5000"]])
+        ["<", ">"],
+        ["and", "or"],
+        ["F", "G"]])
+
+    #debug
+    #var_grad = gradient_tensor(cost, t1_blk.softmux.weight)
+    #/debug
     
-    # Initializing the variables
+    # Iniuializing the variables
     init = initialize_all_variables()
     
     # Rock and roll
+    println("Optimization Start: $(now())")
     sess = Session()
     run(sess, init)
+
+    #debug
+    #fd = FeedDict(feats => data_set.X, labels => data_set.Y)
+    #run(sess, normed_input, fd)
+    #/debug
 
     # Training cycle
     for epoch in 1:max_training_epochs
         avg_cost = 0.0
         total_batch = div(num_examples(data_set), batch_size)
 
-        # Loop over all batches
+        #Loop over all batches
         for i in 1:total_batch
             batch_xs, batch_ys = next_batch(data_set, batch_size)
             fd = FeedDict(feats => batch_xs, labels => batch_ys)
             # Fit training using batch data
             run(sess, optimizer, fd)
+
+            #debug
+            #@bp
+            #@show run(sess, pred, fd)
+            #@show run(sess, pred - labels, fd)
+            #@show run(sess, muxselect, fd)
+            #@show run(sess, out(t1_blk.softmux.nn)*t1_blk.softmux.weight+t1_blk.softmux.bias, fd)
+            #@show run(sess, out(a1_blk.opsblock), fd)
+            #/debug
+
             # Compute average loss
             batch_average_cost = run(sess, cost, fd)
             avg_cost += batch_average_cost / (total_batch * batch_size)
@@ -183,36 +206,33 @@ function circuit4(;
         if epoch % display_step == 0
             println("Epoch $(epoch)  cost=$(avg_cost)")
             if avg_cost < target_cost
-                #break;
+                break;
             end
         end
     end
-    println("Optimization Finished")
+    println("Optimization Finished: $(now())")
     
     # Test model
     correct_prediction = (round_(pred) == labels)
     # Calculate accuracy
     accuracy = mean(cast(correct_prediction, DT_FLOAT32))
-    fd = FeedDict(feats => data_set.X, labels => data_set.Y)
-    acc = run(sess, accuracy, fd)
     
     #reload data_set to recover original order (next_batch will internally shuffle)
-    data_set = TFDataset(Ds, getmeta(Ds)[symbol(labelfield)])
-    fd = FeedDict(feats => data_set.X, labels => data_set.Y)
-    X = data_set.X 
+    data_set = TFDataset(Dl)
+    X = data_set.X
     Y = data_set.Y
-    hs = run(sess, gettensor(fmt), fd)
-    stringout = simpleout(fmt, hs)
-    cmap = countmap(stringout)
-    cmap1 = collect(cmap)
-    maxentry = sort(collect(cmap1), by=kv->kv[2], rev=true)[1:5] #show top 5
-    maxentry = map(x->(x...), maxentry)
+    fd = FeedDict(feats => data_set.X, labels => data_set.Y)
+    Ypred = run(sess, round_(pred), fd)
+    acc = run(sess, accuracy, fd)
+    stringout = simplestring(sess, ckt, fd; order=[8,1,5,2,7,3,6,4])
+    top5 = topstrings(stringout, 5)
+    softsel = softselect_by_example(sess, ckt, fd)
 
-    @show cmap
-    println(maxentry)
+    @bp 
     println("Accuracy:", acc)
+    println(top5)
 
-    cmap, maxentry, acc
+    top5, acc
 end
 
 op_F(x::Tensor) = reduce_max(x, Tensor(1))
@@ -220,16 +240,19 @@ op_G(x::Tensor) = reduce_min(x, Tensor(1))
 op_and(x::Tensor, y::Tensor) = minimum_(x, y) #element-wise
 op_or(x::Tensor, y::Tensor) = maximum_(x, y) #element-wise
 
-#FIXME
+#TODO: move these to a central location
 function op_gt(x::Tensor, y::Tensor) 
+    W = constant(200.0)
     tmp = expand_dims(y, Tensor(1))
-    y2 = tile(tmp, Tensor([1, get_shape(x)[2]]))
-    cast(greater(x, y2), DT_FLOAT32) #element-wise
+    ytiled = tile(tmp, Tensor([1, get_shape(x)[2]]))
+    result = sigmoid(mul(W, x - ytiled))
+    result
 end
 function op_lt(x::Tensor, y::Tensor)  
+    W = constant(200.0)
     tmp = expand_dims(y, Tensor(1))
-    y2 = tile(tmp, Tensor([1, get_shape(x)[2]]))
-    cast(less_(x,y2), DT_FLOAT32) #element-wise
+    ytiled = tile(tmp, Tensor([1, get_shape(x)[2]]))
+    result = sigmoid(mul(W, ytiled - x))
 end
 
 end #module

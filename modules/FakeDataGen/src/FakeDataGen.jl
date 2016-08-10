@@ -48,8 +48,8 @@ const BIN_SYNTH_NAME = "bin_synth"
 const BIN_TS_SYNTH_NAME = "bin_ts_synth"
 const VHDIST_NAME = "vhdist"
 
-function generate_fake_data(dataset::AbstractString, args...)
-    generate_fake_data(Val{symbol(dataset)}, args...)
+function generate_fake_data(dataset::AbstractString; kwargs...)
+    generate_fake_data(Val{symbol(dataset)}; kwargs...)
 end
 
 """
@@ -57,7 +57,7 @@ bin_synth dataset
 synthetic data with
 static binary features
 """
-function generate_fake_data(::Type{Val{symbol(BIN_SYNTH_NAME)}}, 
+function generate_fake_data(::Type{Val{symbol(BIN_SYNTH_NAME)}}; 
     n_feats::Int64=20, 
     n_samples::Int64=5000)
     
@@ -86,7 +86,7 @@ bin_ts_synth dataset
 synthetic data with
 binary time series features
 """
-function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}}, 
+function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}}; 
     n_feats::Int64=20, 
     n_time::Int64=50,
     n_samples::Int64=5000)
@@ -160,14 +160,15 @@ vertical and horizontal miss distances from ACASX dataset
 real-valued time series features
 actually not fake data...
 """
-function generate_fake_data(::Type{Val{symbol(VHDIST_NAME)}}, 
+function generate_fake_data(::Type{Val{symbol(VHDIST_NAME)}}; 
     cas_data_name::ASCIIString="dasc", 
     vdist_name::Symbol=:abs_alt_diff,
     hdist_name::Symbol=:horizontal_range,
     nmac_name::Symbol=:nmac,
+    outname::ASCIIString=VHDIST_NAME
     )
 
-    outdir = joinpath(DATAPATH, VHDIST_NAME)
+    outdir = joinpath(DATAPATH, outname)
     mkpath(outdir)
 
     cas_data = dataset(cas_data_name)

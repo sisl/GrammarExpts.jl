@@ -151,7 +151,6 @@ function csvs2dataframes(in_dir::AbstractString, out_dir::AbstractString)
     if !isdir(out_dir) #create output dir if it doesn't exist
         mkpath(out_dir)
     end
-    
     csvfiles = readdir_ext("csv", in_dir)
     df_files = csv_to_dataframe(csvfiles, FEATURE_MAP, FEATURE_NAMES, outdir=out_dir)
     add_features!(df_files, ADD_FEATURE_MAP, ADD_FEATURE_NAMES, overwrite=true)
@@ -195,35 +194,26 @@ function add_encounter_info!(dir::AbstractString)
     files
 end
 
-function name_from_id(filename::AbstractString, ext::AbstractString=".csv.gz")
-    id = get_id(filename)
-    name = string(id, ext)
-    name
-end
+function make_dataset(dfdir::AbstractString, jsondir::AbstractString, 
+    outdir::AbstractString)
 
-function mv_files(in_dir::AbstractString, out_dir::AbstractString, 
-    get_new_name::Function=identity)
-    mkpath(out_dir)
+    mkpath(outdir)
 
-    files = readdir(in_dir)
-    files = sort(files, by=get_id)
+    dffiles = readdir(dfdir)
+    sort!(dffiles, by=get_id) #FIXME: ordering is important to sync with encounter_meta
+    map!(f->joinpath(dfdir, f), dffiles)
 
-    for (i, f) in enumerate(files)
-        src = joinpath(in_dir, f)
-        dst = joinpath(out_dir, get_new_name(f))
-        mv(src, dst, remove_destination=true)
-    end
-end
+    jsonfiles = readdirGZs(jsondir)
+    sort!(jsonfiles, by=get_id) #this order is important
 
-function encounter_meta(in_dir::AbstractString, out_dir::AbstractString)
-    mkpath(out_dir)
+    meta = metadf(length(jsonfiles))
+    meta[:encounter_id] = map(get_id, jsonfiles)
+    meta[:nmac] = map(is_nmac, jsonfiles)
 
-    files = readdirGZs(in_dir)
-    files = sort(files, by=get_id)
+    #make sure things match up
+    @assert all(map(get_id, dffiles) .== map(get_id, jsonfiles))
 
-    meta = metadf(length(files))
-    meta[:encounter_id] = map(get_id, files)
-    meta[:nmac] = map(is_nmac, files)
-  
-    writemeta(out_dir, meta)
+    Ds = DFSet(meta, map(readtable, dffiles))
+    save_csvs(outdir, Ds)
+    Ds
 end

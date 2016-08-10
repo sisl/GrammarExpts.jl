@@ -78,9 +78,9 @@ function circuit_fgandor(;
     feats_flat = reshape_(feats, Tensor([-1, n_featsflat]))
 
     # common (embedding) layer
-    embed_in = feats_flat 
-    embed_blk = ReluStack(embed_in, embed_hidden_units)
-    embed_out = out(embed_blk)
+    #embed_in = feats_flat 
+    #embed_blk = ReluStack(embed_in, embed_hidden_units)
+    #embed_out = out(embed_blk)
     
     # mux select input
     muxselect = feats_flat #embed layer not helping, disable for now...
@@ -98,27 +98,17 @@ function circuit_fgandor(;
     # logical op block
     ops1_in = (x_muxout, y_muxout)
     ops1_list = [ops1_And, ops1_Or]
-    ops1_blk = OpsBlock(ops1_in, ops1_list)
+    ops1_blk = SoftOpsMux(ops1_in, ops1_list, mux_hidden_units, muxselect)
     ops1_out = out(ops1_blk) 
 
-    # logical op mux
-    op1_muxin = ops1_out 
-    op1_mux = SoftMux(num_ops(ops1_blk), mux_hidden_units, op1_muxin, muxselect)
-    op1_muxout = out(op1_mux) 
-
     # temporal op block 
-    ops2_in = (op1_muxout,)
+    ops2_in = (ops1_out,)
     ops2_list = [ops2_F, ops2_G]
-    ops2_blk = OpsBlock(ops2_in, ops2_list)
+    ops2_blk = SoftOpsMux(ops2_in, ops2_list, mux_hidden_units, muxselect)
     ops2_out = out(ops2_blk) 
 
-    # temporal op mux
-    op2_muxin = ops2_out
-    op2_mux = SoftMux(num_ops(ops2_blk), mux_hidden_units, op2_muxin, muxselect)
-    op2_muxout = out(op2_mux) 
-
     # outputs
-    pred = op2_muxout
+    pred = ops2_out
     labels = Placeholder(DT_FLOAT32, [-1]) 
     
     # Define loss and optimizer
@@ -126,7 +116,14 @@ function circuit_fgandor(;
     optimizer = minimize(AdamOptimizer(learning_rate), cost) # Adam Optimizer
 
     #compiled hardselect
-    hardselects = transpose_(pack(Tensor([hardselect(x_mux), hardselect(y_mux), hardselect(op1_mux), hardselect(op2_mux)])))
+    fmt = TFFormatter([
+        hardselect(ops2_blk),
+        hardselect(x_mux), hardselect(ops1_blk), hardselect(y_mux)
+        ],
+        Vector{ASCIIString}[["F", "G"],
+        recordcolnames(Ds),
+        ["and", "or"],
+        recordcolnames(Ds)])
     
     # Initializing the variables
     init = initialize_all_variables()
@@ -135,18 +132,6 @@ function circuit_fgandor(;
     sess = Session()
     run(sess, init)
 
-    #debug 
-    #fd = FeedDict(feats => data_set.X, labels => data_set.Y)
-    #@bp
-    #tmp=1
-    #run(sess, x_mux.nnout, fd)
-    #run(sess, x_mux.hardselect, fd)
-    #run(sess, x_muxout, fd)
-    #run(sess, ops2_out, fd)
-    #run(sess, op1_muxout, fd)
-    #run(sess, cost, fd)
-    #/debug
-    
     # Training cycle
     for epoch in 1:max_training_epochs
         avg_cost = 0.0
@@ -158,6 +143,13 @@ function circuit_fgandor(;
             fd = FeedDict(feats => batch_xs, labels => batch_ys)
             # Fit training using batch data
             run(sess, optimizer, fd)
+
+            #debug
+            @show run(sess, ops2_blk.softmux.weight, fd)
+            @show run(sess, ops2_blk.softmux.bias, fd)
+            @show run(sess, pred - labels, fd)
+            #/debug 
+            
             # Compute average loss
             batch_average_cost = run(sess, cost, fd)
             avg_cost += batch_average_cost / (total_batch * batch_size)
@@ -183,22 +175,14 @@ function circuit_fgandor(;
     #reload data_set to recover original order
     data_set = TFDataset(Ds, getmeta(Ds)[symbol(labelfield)])
     fd = FeedDict(feats => data_set.X, labels => data_set.Y)
-    db_x = data_set.X 
-    db_labels = data_set.Y
-    db_hardselects = run(sess, hardselects, fd)
-    xnames = recordcolnames(Ds)
-    op1names = ["&", "|"]
-    op2names = ["F", "G"]
-    hs = db_hardselects
-    stringout = ["$(op2names[hs[i,4]+1])($(xnames[hs[i,1]+1]) $(op1names[hs[i,3]+1]) $(xnames[hs[i,2]+1]))" for i = 1:n_examples]
+    X = data_set.X 
+    Y = data_set.Y
+    hs = run(sess, gettensor(fmt), fd)
+    stringout = simpleout(fmt, hs) 
     cmap = countmap(stringout)
     cmap1 = collect(cmap)
     maxentry = sort(collect(cmap1), by=kv->kv[2], rev=true)[1:5]
     maxentry = map(x->(x...), maxentry)
-
-    if b_debug
-        @show db_hardselects[1:nshow,:] #n_examples by hardselects
-    end
 
     @show cmap
     println(maxentry)

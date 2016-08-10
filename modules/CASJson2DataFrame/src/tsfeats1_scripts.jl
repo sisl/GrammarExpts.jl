@@ -82,21 +82,26 @@ end
 #####################
 function script_base(jsondir::AbstractString, csvdir::AbstractString,
                         outdir::AbstractString;
-                        fromjson::Bool=true, correct_coc::Bool=true)
+                        fromjson::Bool=true, correct_coc::Bool=true,
+                        verbose::Bool=true)
   if fromjson
+    verbose && println("converting to csv...")
     mkpath(csvdir)
     convert2csvs(jsondir, csvdir)
   end
   tmpdir = mktempdir()
+  verbose && println("tmp=$tmpdir")
+  verbose && println("converting to dataframes...")
   csvs2dataframes(csvdir, tmpdir)
   if correct_coc
+    verbose && println("correcting cocs...")
     correct_coc_stays!(tmpdir)
   end
   add_encounter_info!(tmpdir)
 
   mkpath(outdir)
-  mv_files(tmpdir, outdir, name_from_id)
-  encounter_meta(jsondir, outdir)
+  verbose && println("saving dataset...")
+  make_dataset(tmpdir, jsondir, outdir)
 end
 
 
