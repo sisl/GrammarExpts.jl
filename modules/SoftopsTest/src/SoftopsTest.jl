@@ -34,7 +34,7 @@
 
 module SoftopsTest
 
-export logistic, hard_gt, soft_gt
+export logistic, hard_gt, soft_gt, hard_lt, soft_lt
 
 logistic(t::Float64, w::Float64) = 1 / (1 + exp(-w*t))
 
