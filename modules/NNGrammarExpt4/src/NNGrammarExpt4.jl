@@ -44,7 +44,8 @@ using TFTools
 using Datasets
 using TensorFlow
 using TensorFlow: DT_FLOAT32
-using TensorFlow.API: l2_loss, AdamOptimizer, cast, round_, reshape_,
+using TensorFlow.API: l2_loss, AdamOptimizer, GradientDescentOptimizer, cast, 
+    round_, reshape_, l2_normalize, RMSPropOptimizer,
     reduce_max, reduce_min, minimum_, maximum_, transpose_, less_, greater,
     expand_dims, tile, shape, mul
 using TensorFlow.API.TfNn: sigmoid
@@ -60,16 +61,17 @@ using Debug
     dataname::AbstractString="vhdist3",
     labelfield::AbstractString="nmac", #"F_x1_lt_100_and_x2_lt_500",
     learning_rate::Float64=0.001,
-    max_training_epochs::Int64=200,
+    max_training_epochs::Int64=500,
     target_cost::Float64=0.001,
     batch_size::Int64=500,
-    mux_hidden_units::Vector{Int64}=Int64[1],
+    mux_hidden_units::Vector{Int64}=Int64[],
     display_step::Int64=1,
     b_debug::Bool=false,
     nshow::Int64=20)
 
-    Dl = dataset(dataname, :nmac; transform=x->Float64(x)) #DFSetLabeled
-    val_inputs = constant(Float32[0, 50, 100, 250, 500, 1000, 3000])
+    Dl = dataset(dataname, :nmac; transform=x->Float32(x)) #DFSetLabeled
+    val_inputs = constant(Float32[0, 50, 100, 250, 500, 1000, 3000, 5000])
+    #val_inputs = constant(Float32[0, 100, 500, 1000])
     data_set = TFDataset(Dl)
 
     # Construct model
@@ -81,12 +83,12 @@ using Debug
     feats = Placeholder(DT_FLOAT32, [-1, n_steps, n_feats])
     inputs = Tensor(feats)
 
-    normalizer = Normalizer(data_set)
+    normalizer = Normalizer(data_set; converttype=Float32)
     normed_input = normalize01(normalizer, inputs)
     feats_flat = reshape_(normed_input, Tensor([-1, n_featsflat]))
 
     #softness parameter
-    softness = collect(linspace(0.01, 30.0, max_training_epochs))
+    softness = collect(linspace(0.0001, 100.0, max_training_epochs))
     softness_pl = Placeholder(DT_FLOAT32, [1])
 
     # common (embedding) layer
@@ -151,7 +153,7 @@ using Debug
     
     # Define loss and optimizer
     cost = l2_loss(pred - labels) # Squared loss
-    optimizer = minimize(AdamOptimizer(learning_rate), cost) # Adam Optimizer
+    optimizer = minimize(GradientDescentOptimizer(learning_rate), cost) # Adam Optimizer
 
     #compiled hardselect
     ckt = Circuit([
@@ -164,8 +166,10 @@ using Debug
         Vector{ASCIIString}[
         ["alt", "range"],
         ["0", "50", "100", "250", "500", "1000", "3000", "5000"],
+        #["0", "100", "500", "1000"],
         ["alt", "range"],
         ["0", "50", "100", "250", "500", "1000", "3000", "5000"],
+        #["0", "100", "500", "1000"],
         ["<", ">"],
         ["<", ">"],
         ["and", "or"],
@@ -208,7 +212,9 @@ using Debug
             run(sess, optimizer, fd)
 
             #debug
-            #@bp
+            #softsel = softselect_by_example(sess, ckt, fd)
+            #grads = run(sess, Tensor([f1_grad, v1_grad, f2_grad, v2_grad, a1_grad, a2_grad, l1_grad, t1_grad]), fd)
+            #@bp 
             #@show run(sess, pred, fd)
             #@show run(sess, pred - labels, fd)
             #@show run(sess, muxselect, fd)
@@ -223,10 +229,12 @@ using Debug
     
         # Display logs per epoch step
         if epoch % display_step == 0
-            #softsel = softselect_by_example(sess, ckt, fd)
-            #grads = run(sess, Tensor([f1_grad, v1_grad, f2_grad, v2_grad, a1_grad, a2_grad, l1_grad, t1_grad]), fd)
-            #@bp 
+            softsel = softselect_by_example(sess, ckt, fd)
+            grads = run(sess, Tensor([f1_grad, v1_grad, f2_grad, v2_grad, a1_grad, a2_grad, l1_grad, t1_grad]), fd)
+            println(softsel)
+            @bp 
             println("Epoch $(epoch)  cost=$(avg_cost)")
+            println("Norm=$(norm(grads))")
             if avg_cost < target_cost
                 break;
             end
@@ -249,6 +257,7 @@ fd = FeedDict(feats => data_set.X, labels => data_set.Y, softness_pl => [softnes
     stringout = simplestring(sess, ckt, fd; order=[8,1,5,2,7,3,6,4])
     top5 = topstrings(stringout, 5)
     softsel = softselect_by_example(sess, ckt, fd)
+    grads = run(sess, Tensor([f1_grad, v1_grad, f2_grad, v2_grad, a1_grad, a2_grad, l1_grad, t1_grad]), fd)
     conf = confusion(Ypred.==1.0, Y.==1.0)
 
     println("Accuracy:", acc)
@@ -265,14 +274,14 @@ op_or(x::Tensor, y::Tensor) = maximum_(x, y) #element-wise
 
 #TODO: move these to a central location
 function op_gt(x::Tensor, y::Tensor) 
-    W = constant(1.0)
+    W = constant(1.0/500.0)
     tmp = expand_dims(y, Tensor(1))
     ytiled = tile(tmp, Tensor([1, get_shape(x)[2]]))
     result = sigmoid(mul(W, x - ytiled))
     result
 end
 function op_lt(x::Tensor, y::Tensor)  
-    W = constant(1.0)
+    W = constant(1.0/500.0)
     tmp = expand_dims(y, Tensor(1))
     ytiled = tile(tmp, Tensor([1, get_shape(x)[2]]))
     result = sigmoid(mul(W, ytiled - x))
