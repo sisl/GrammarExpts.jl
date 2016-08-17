@@ -43,11 +43,11 @@ export circuit4, restarts
 using TFTools
 using Datasets
 using TensorFlow
-using TensorFlow: DT_FLOAT32
+using TensorFlow: DT_FLOAT32, DT_BOOL
 using TensorFlow.API: l2_loss, AdamOptimizer, GradientDescentOptimizer, cast, 
     round_, reshape_, l2_normalize, RMSPropOptimizer,
     reduce_max, reduce_min, minimum_, maximum_, transpose_, less_, greater,
-    expand_dims, tile, shape, mul
+    expand_dims, tile, shape, mul, reduce_sum, moments
 using TensorFlow.API.TfNn: sigmoid
 using StatsBase
 using RLESUtils, Confusion
@@ -61,10 +61,10 @@ using Debug
     dataname::AbstractString="vhdist3",
     labelfield::AbstractString="nmac", #"F_x1_lt_100_and_x2_lt_500",
     learning_rate::Float64=0.001,
-    max_training_epochs::Int64=500,
+    max_training_epochs::Int64=200,
     target_cost::Float64=0.001,
     batch_size::Int64=500,
-    mux_hidden_units::Vector{Int64}=Int64[],
+    mux_hidden_units::Vector{Int64}=Int64[20,10],
     display_step::Int64=1,
     b_debug::Bool=false,
     nshow::Int64=20)
@@ -88,8 +88,11 @@ using Debug
     feats_flat = reshape_(normed_input, Tensor([-1, n_featsflat]))
 
     #softness parameter
-    softness = collect(linspace(0.0001, 100.0, max_training_epochs))
+    softness = collect(linspace(0.01, 100.0, max_training_epochs))
     softness_pl = Placeholder(DT_FLOAT32, [1])
+
+    #toggle hard or soft output
+    harden_pl = Placeholder(DT_BOOL, [1])
 
     # common (embedding) layer
     #embed_in = constant(rand(Float32, 1, 5))
@@ -99,27 +102,27 @@ using Debug
 
     # mux select input
     #muxselect = feats_flat
-    muxselect = constant(ones(Float32, 1, 1))
+    #muxselect = constant(ones(Float32, 1, 1))
     #muxselect = embed_out
 
     # f1 feat select
     f1_in = inputs 
-    f1_mux = SoftMux(n_feats, mux_hidden_units, f1_in, muxselect, Tensor(softness_pl))
+    f1_mux = SoftMux(n_feats, mux_hidden_units, f1_in, muxselect, Tensor(harden_pl), Tensor(softness_pl))
     f1_out = out(f1_mux) 
 
     # f2 feat select
     f2_in = inputs 
-    f2_mux = SoftMux(n_feats, mux_hidden_units, f2_in, muxselect, Tensor(softness_pl))
+    f2_mux = SoftMux(n_feats, mux_hidden_units, f2_in, muxselect, Tensor(harden_pl), Tensor(softness_pl))
     f2_out = out(f2_mux) 
 
     # v1 value select
     v1_in = val_inputs 
-    v1_mux = SoftMux(n_vals, mux_hidden_units, v1_in, muxselect, Tensor(softness_pl))
+    v1_mux = SoftMux(n_vals, mux_hidden_units, v1_in, muxselect, Tensor(harden_pl), Tensor(softness_pl))
     v1_out = out(v1_mux) 
 
     # v2 value select
     v2_in = val_inputs 
-    v2_mux = SoftMux(n_vals, mux_hidden_units, v2_in, muxselect, Tensor(softness_pl))
+    v2_mux = SoftMux(n_vals, mux_hidden_units, v2_in, muxselect, Tensor(harden_pl), Tensor(softness_pl))
     v2_out = out(v2_mux) 
 
     compare_ops = [op_lt, op_gt]
@@ -128,32 +131,44 @@ using Debug
 
     # a1 float op block
     a1_in = (f1_out, v1_out)
-    a1_blk = SoftOpsMux(a1_in, compare_ops, mux_hidden_units, muxselect, Tensor(softness_pl))
+    a1_blk = SoftOpsMux(a1_in, compare_ops, mux_hidden_units, muxselect, Tensor(harden_pl), Tensor(softness_pl); opargs=Any[Tensor(softness_pl)])
     a1_out = out(a1_blk) 
 
     # a2 float op block
     a2_in = (f2_out, v2_out)
-    a2_blk = SoftOpsMux(a2_in, compare_ops, mux_hidden_units, muxselect, Tensor(softness_pl))
+    a2_blk = SoftOpsMux(a2_in, compare_ops, mux_hidden_units, muxselect, Tensor(harden_pl), Tensor(softness_pl); opargs=Any[Tensor(softness_pl)])
     a2_out = out(a2_blk) 
 
     # l1 logical op block
     l1_in = (a1_out, a2_out)
-    l1_blk = SoftOpsMux(l1_in, logical_ops, mux_hidden_units, muxselect, Tensor(softness_pl))
+    l1_blk = SoftOpsMux(l1_in, logical_ops, mux_hidden_units, muxselect, Tensor(harden_pl), Tensor(softness_pl))
     l1_out = out(l1_blk) 
 
     # t1 temporal op block
     t1_in = (l1_out,)
     #t1_in = (constant(rand(Float32, shape(l1_out))), )
-    t1_blk = SoftOpsMux(t1_in, temporal_ops, mux_hidden_units, muxselect, Tensor(softness_pl))
+    t1_blk = SoftOpsMux(t1_in, temporal_ops, mux_hidden_units, muxselect, Tensor(harden_pl), Tensor(softness_pl))
     t1_out = out(t1_blk) 
 
     # outputs
     pred = t1_out
     labels = Placeholder(DT_FLOAT32, [-1]) 
     
+    #take nnout of batch, compute moments, take variance component and sum
+    f1_var = reduce_sum(moments(f1_mux.nnout, Tensor(Int32[0]))[2], Tensor(0))
+    v1_var = reduce_sum(moments(v1_mux.nnout, Tensor(Int32[0]))[2], Tensor(0))
+    f2_var = reduce_sum(moments(f2_mux.nnout, Tensor(Int32[0]))[2], Tensor(0))
+    v2_var = reduce_sum(moments(v2_mux.nnout, Tensor(Int32[0]))[2], Tensor(0))
+    a1_var = reduce_sum(moments(a1_blk.softmux.nnout, Tensor(Int32[0]))[2], Tensor(0))
+    a2_var = reduce_sum(moments(a2_blk.softmux.nnout, Tensor(Int32[0]))[2], Tensor(0))
+    l1_var = reduce_sum(moments(l1_blk.softmux.nnout, Tensor(Int32[0]))[2], Tensor(0))
+    t1_var = reduce_sum(moments(t1_blk.softmux.nnout, Tensor(Int32[0]))[2], Tensor(0))
+    sum_var = f1_var + v1_var + f2_var + v2_var + a1_var + a2_var + l1_var + t1_var
+
     # Define loss and optimizer
-    cost = l2_loss(pred - labels) # Squared loss
-    optimizer = minimize(GradientDescentOptimizer(learning_rate), cost) # Adam Optimizer
+    #cost = l2_loss(pred - labels) # Squared loss
+    cost = l2_loss(pred - labels) + constant(200.0) .* sum_var
+    optimizer = minimize(AdamOptimizer(learning_rate), cost) # Adam Optimizer
 
     #compiled hardselect
     ckt = Circuit([
@@ -207,7 +222,7 @@ using Debug
         #Loop over all batches
         for i in 1:total_batch
             batch_xs, batch_ys = next_batch(data_set, batch_size)
-            fd = FeedDict(feats => batch_xs, labels => batch_ys, softness_pl => [softness[epoch]])
+            fd = FeedDict(feats => batch_xs, labels => batch_ys, softness_pl => [softness[epoch]], harden_pl => [false])
             # Fit training using batch data
             run(sess, optimizer, fd)
 
@@ -229,13 +244,13 @@ using Debug
     
         # Display logs per epoch step
         if epoch % display_step == 0
-            softsel = softselect_by_example(sess, ckt, fd)
+            #softsel = softselect_by_example(sess, ckt, fd)
             grads = run(sess, Tensor([f1_grad, v1_grad, f2_grad, v2_grad, a1_grad, a2_grad, l1_grad, t1_grad]), fd)
-            println(softsel)
-            @bp 
+            #println(softsel)
+            #@bp 
             println("Epoch $(epoch)  cost=$(avg_cost)")
             println("Norm=$(norm(grads))")
-            if avg_cost < target_cost
+            if avg_cost < Float32(target_cost)
                 break;
             end
         end
@@ -251,16 +266,25 @@ using Debug
     data_set = TFDataset(Dl)
     X = data_set.X
     Y = data_set.Y
-fd = FeedDict(feats => data_set.X, labels => data_set.Y, softness_pl => [softness[end]])
-    Ypred = run(sess, round_(pred), fd)
-    acc = run(sess, accuracy, fd)
+
+    #soft metrics
+    fd = FeedDict(feats => data_set.X, labels => data_set.Y, softness_pl => [softness[end]], harden_pl => [false])
+    Ypred_soft = run(sess, round_(pred), fd)
+    acc_soft = run(sess, accuracy, fd)
     stringout = simplestring(sess, ckt, fd; order=[8,1,5,2,7,3,6,4])
     top5 = topstrings(stringout, 5)
     softsel = softselect_by_example(sess, ckt, fd)
     grads = run(sess, Tensor([f1_grad, v1_grad, f2_grad, v2_grad, a1_grad, a2_grad, l1_grad, t1_grad]), fd)
-    conf = confusion(Ypred.==1.0, Y.==1.0)
+    conf = confusion(Ypred_soft.==1.0, Y.==1.0)
+    conf_indices = confusion_indices(Ypred_soft.==1.0, Y.==1.0)
 
-    println("Accuracy:", acc)
+    #hard metrics
+    fd = FeedDict(feats => data_set.X, labels => data_set.Y, softness_pl => [softness[end]], harden_pl => [true])
+    Ypred_hard = run(sess, round_(pred), fd)
+    acc_hard = run(sess, accuracy, fd)
+
+    println("Soft Accuracy:", acc_soft)
+    println("Hard Accuracy:", acc_hard)
     println(top5)
     @bp 
 
@@ -273,15 +297,13 @@ op_and(x::Tensor, y::Tensor) = minimum_(x, y) #element-wise
 op_or(x::Tensor, y::Tensor) = maximum_(x, y) #element-wise
 
 #TODO: move these to a central location
-function op_gt(x::Tensor, y::Tensor) 
-    W = constant(1.0/500.0)
+function op_gt(x::Tensor, y::Tensor, W::Tensor=constant(1.0/100.0)) 
     tmp = expand_dims(y, Tensor(1))
     ytiled = tile(tmp, Tensor([1, get_shape(x)[2]]))
     result = sigmoid(mul(W, x - ytiled))
     result
 end
-function op_lt(x::Tensor, y::Tensor)  
-    W = constant(1.0/500.0)
+function op_lt(x::Tensor, y::Tensor, W::Tensor=constant(1.0/100.0))  
     tmp = expand_dims(y, Tensor(1))
     ytiled = tile(tmp, Tensor([1, get_shape(x)[2]]))
     result = sigmoid(mul(W, ytiled - x))
