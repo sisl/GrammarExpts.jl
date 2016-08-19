@@ -91,7 +91,7 @@ using Debug
     feats_flat = reshape_(normed_input, constant(Int32[-1, n_featsflat]))
 
     #softness parameter
-    softness = collect(linspace(0.01, 100.0, max_training_epochs))
+    softness = collect(linspace(0.1, 1.0, max_training_epochs))
     softness_pl = Placeholder(DT_FLOAT32, [1])
 
     #toggle hard or soft output
@@ -108,9 +108,9 @@ using Debug
     #muxselect = constant(ones(Float32, 1, 1)) #constant 1
     #muxselect = embed_out #relustack embedding
 
-    #overrides = zeros(Int64, 8)
+    overrides = zeros(Int64, 8)
     #overrides = [1, 2, 3, 5, 1, 1, 1, 1]
-    overrides = [0, 2, 0, 5, 0, 1, 1, 0]
+    #overrides = [0, 2, 0, 5, 0, 1, 1, 0]
 
     #convolution stuff
     HT = 3 
@@ -131,13 +131,17 @@ using Debug
     f2_out = hardout(f2_mux) 
 
     # v1 value select
-    v1_in = val_inputs 
-    v1_mux = SoftMux(n_vals, mux_hidden_units, v1_in, muxselect, Tensor(harden_pl), Tensor(softness_pl); override=overrides[3])
+    #v1_in = val_inputs 
+    n_vals=1
+    v1_in = constant(Float32[100.0])
+    v1_mux = SoftMux(n_vals, mux_hidden_units, v1_in, muxselect, Tensor(harden_pl); override=overrides[3])
     v1_out = out(v1_mux) 
 
     # v2 value select
-    v2_in = val_inputs 
-    v2_mux = SoftMux(n_vals, mux_hidden_units, v2_in, muxselect, Tensor(harden_pl), Tensor(softness_pl); override=overrides[4])
+    #v2_in = val_inputs 
+    n_vals = 1
+    v2_in = constant(Float32[500.0])
+    v2_mux = SoftMux(n_vals, mux_hidden_units, v2_in, muxselect, Tensor(harden_pl); override=overrides[4])
     v2_out = hardout(v2_mux) 
 
     compare_ops = [op_lt, op_gt]
@@ -193,10 +197,9 @@ using Debug
     #optimizer
     #optimizer = minimize(AdamOptimizer(learning_rate), cost) 
     #@bp
-    opt = GradientDescentOptimizer(learning_rate)
-    gvs = opt.x[:compute_gradients](cost.x)
-    #capped_gvs = [(tf.clip_by_value(grad, -1.0, 1.0), var) for (grad, var) in gvs]
-    capped_gvs = [(tf.clip_by_norm(grad, 10.0), var) for (grad, var) in gvs]
+    opt = Optimizer(tf.train[:GradientDescentOptimizer](learning_rate))
+    gvs = opt.x[:compute_gradients](cost.x) 
+    capped_gvs = [(tf.nn[:l2_normalize](tf.clip_by_value(grad, -1.0, 1.0), 0), var) for (grad, var) in gvs]
     optimizer = Operation(opt.x[:apply_gradients](capped_gvs))
 
     #compiled hardselect

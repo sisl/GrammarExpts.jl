@@ -75,7 +75,7 @@ using Debug
 
     Dl = dataset(dataname, :nmac; transform=x->Float32(x)) #DFSetLabeled
     #val_inputs = constant(Float32[0, 50, 100, 250, 500, 1000, 3000, 5000])
-    val_inputs = constant(Float32[100, 100, 100, 100, 100, 100, 100, 100])
+    val_inputs = constant(Float32[100.0])
     data_set = TFDataset(Dl)
 
     # Construct model
@@ -164,43 +164,44 @@ using Debug
     #optimizer
     #optimizer = minimize(GradientDescentOptimizer(learning_rate), cost) 
     #@bp
-    #opt = Optimizer(tf.train[:GradientDescentOptimizer](learning_rate))
-    #gvs = opt.x[:compute_gradients](cost.x) #capped_gvs = [(tf.nn[:l2_normalize](tf.clip_by_value(grad, -1.0, 1.0), 0), var) for (grad, var) in gvs]
-    #optimizer = Operation(opt.x[:apply_gradients](capped_gvs))
+    opt = Optimizer(tf.train[:GradientDescentOptimizer](learning_rate))
+    gvs = opt.x[:compute_gradients](cost.x) 
+    capped_gvs = [(tf.nn[:l2_normalize](tf.clip_by_value(grad, -1.0, 1.0), 0), var) for (grad, var) in gvs]
+    optimizer = Operation(opt.x[:apply_gradients](capped_gvs))
     #@bp
-    conv_vars = [filt_weights] 
-    fv1_vars = vcat(get_variables(f1_mux), get_variables(v1_mux))
-    a1_vars = get_variables(a1_blk)
-    t1_vars = get_variables(t1_blk)
-    conv_opt = GradientDescentOptimizer(0.001)
-    conv_gvs = conv_opt.x[:compute_gradients](cost, conv_vars)
-    #conv_gvs_capped = conv_gvs
-    #conv_gvs_capped = [(tf.nn[:l2_normalize](tf.clip_by_value(grad,-1.0,1.0),0), var) for (grad, var) in conv_gvs]
-    #conv_gvs_capped = [(tf.nn[:l2_normalize](grad,0), var) for (grad, var) in conv_gvs]
-    conv_gvs_capped = [(tf.clip_by_value(grad,-1.0,1.0), var) for (grad, var) in conv_gvs]
-    conv_optimizer = Operation(conv_opt.x[:apply_gradients](conv_gvs_capped))
-    fv1_opt = GradientDescentOptimizer(0.001)
-    fv1_gvs = fv1_opt.x[:compute_gradients](cost, fv1_vars)
-    #fv1_gvs_capped = fv1_gvs 
-    #fv1_gvs_capped = [(tf.nn[:l2_normalize](tf.clip_by_value(grad,-1.0,1.0),0), var) for (grad, var) in fv1_gvs]
-    #fv1_gvs_capped = [(tf.nn[:l2_normalize](grad,0), var) for (grad, var) in fv1_gvs]
-    fv1_gvs_capped = [(tf.clip_by_value(grad,-1.0,1.0), var) for (grad, var) in fv1_gvs]
-    fv1_optimizer = Operation(fv1_opt.x[:apply_gradients](fv1_gvs_capped))
-    a1_opt = GradientDescentOptimizer(0.001)
-    a1_gvs = a1_opt.x[:compute_gradients](cost, a1_vars)
-    #a1_gvs_capped = a1_gvs
-    #a1_gvs_capped = [(tf.nn[:l2_normalize](tf.clip_by_value(grad,-1.0,1.0),0), var) for (grad, var) in a1_gvs]
-    #a1_gvs_capped = [(tf.nn[:l2_normalize](grad,0), var) for (grad, var) in a1_gvs]
-    a1_gvs_capped = [(tf.clip_by_value(grad,-1.0,1.0), var) for (grad, var) in a1_gvs]
-    a1_optimizer = Operation(a1_opt.x[:apply_gradients](a1_gvs_capped))
-    t1_opt = GradientDescentOptimizer(0.001)
-    t1_gvs = t1_opt.x[:compute_gradients](cost, t1_vars)
-    #t1_gvs_capped = t1_gvs
-    #t1_gvs_capped = [(tf.nn[:l2_normalize](tf.clip_by_value(grad,-1.0,1.0),0), var) for (grad, var) in t1_gvs]
-    #t1_gvs_capped = [(tf.nn[:l2_normalize](grad,0), var) for (grad, var) in t1_gvs]
-    t1_gvs_capped = [(tf.clip_by_value(grad,-1.0,1.0), var) for (grad, var) in t1_gvs]
-    t1_optimizer = Operation(t1_opt.x[:apply_gradients](t1_gvs_capped))
-    optimizer = Operation(tf.group(fv1_optimizer.x, a1_optimizer.x, t1_optimizer.x, conv_optimizer.x)) 
+    #conv_vars = [filt_weights] 
+    #fv1_vars = vcat(get_variables(f1_mux), get_variables(v1_mux))
+    #a1_vars = get_variables(a1_blk)
+    #t1_vars = get_variables(t1_blk)
+    #conv_opt = GradientDescentOptimizer(0.001)
+    #conv_gvs = conv_opt.x[:compute_gradients](cost, conv_vars)
+    ##conv_gvs_capped = conv_gvs
+    ##conv_gvs_capped = [(tf.nn[:l2_normalize](tf.clip_by_value(grad,-1.0,1.0),0), var) for (grad, var) in conv_gvs]
+    ##conv_gvs_capped = [(tf.nn[:l2_normalize](grad,0), var) for (grad, var) in conv_gvs]
+    #conv_gvs_capped = [(tf.clip_by_value(grad,-1.0,1.0), var) for (grad, var) in conv_gvs]
+    #conv_optimizer = Operation(conv_opt.x[:apply_gradients](conv_gvs_capped))
+    #fv1_opt = GradientDescentOptimizer(0.001)
+    #fv1_gvs = fv1_opt.x[:compute_gradients](cost, fv1_vars)
+    ##fv1_gvs_capped = fv1_gvs 
+    ##fv1_gvs_capped = [(tf.nn[:l2_normalize](tf.clip_by_value(grad,-1.0,1.0),0), var) for (grad, var) in fv1_gvs]
+    ##fv1_gvs_capped = [(tf.nn[:l2_normalize](grad,0), var) for (grad, var) in fv1_gvs]
+    #fv1_gvs_capped = [(tf.clip_by_value(grad,-1.0,1.0), var) for (grad, var) in fv1_gvs]
+    #fv1_optimizer = Operation(fv1_opt.x[:apply_gradients](fv1_gvs_capped))
+    #a1_opt = GradientDescentOptimizer(0.001)
+    #a1_gvs = a1_opt.x[:compute_gradients](cost, a1_vars)
+    ##a1_gvs_capped = a1_gvs
+    ##a1_gvs_capped = [(tf.nn[:l2_normalize](tf.clip_by_value(grad,-1.0,1.0),0), var) for (grad, var) in a1_gvs]
+    ##a1_gvs_capped = [(tf.nn[:l2_normalize](grad,0), var) for (grad, var) in a1_gvs]
+    #a1_gvs_capped = [(tf.clip_by_value(grad,-1.0,1.0), var) for (grad, var) in a1_gvs]
+    #a1_optimizer = Operation(a1_opt.x[:apply_gradients](a1_gvs_capped))
+    #t1_opt = GradientDescentOptimizer(0.001)
+    #t1_gvs = t1_opt.x[:compute_gradients](cost, t1_vars)
+    ##t1_gvs_capped = t1_gvs
+    ##t1_gvs_capped = [(tf.nn[:l2_normalize](tf.clip_by_value(grad,-1.0,1.0),0), var) for (grad, var) in t1_gvs]
+    ##t1_gvs_capped = [(tf.nn[:l2_normalize](grad,0), var) for (grad, var) in t1_gvs]
+    #t1_gvs_capped = [(tf.clip_by_value(grad,-1.0,1.0), var) for (grad, var) in t1_gvs]
+    #t1_optimizer = Operation(t1_opt.x[:apply_gradients](t1_gvs_capped))
+    #optimizer = Operation(tf.group(fv1_optimizer.x, a1_optimizer.x, t1_optimizer.x, conv_optimizer.x)) 
 
     #compiled hardselect
     ckt = Circuit([
