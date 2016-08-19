@@ -47,6 +47,7 @@ const DATAPATH = Pkg.dir("Datasets/data")
 const BIN_SYNTH_NAME = "bin_synth"
 const BIN_TS_SYNTH_NAME = "bin_ts_synth"
 const VHDIST_NAME = "vhdist"
+const VDIST_NAME = "vdist"
 
 function generate_fake_data(dataset::AbstractString; kwargs...)
     generate_fake_data(Val{symbol(dataset)}; kwargs...)
@@ -182,6 +183,39 @@ function generate_fake_data(::Type{Val{symbol(VHDIST_NAME)}};
     end
 
     Ds = DFSet(getmeta(cas_data), records)
+    save_csvs(outdir, Ds)
+end
+
+"""
+vertical distances from ACASX dataset
+real-valued time series features
+actually not fake data...
+"""
+function generate_fake_data(::Type{Val{symbol(VDIST_NAME)}}; 
+    cas_data_name::ASCIIString="dasc", 
+    vdist_name::Symbol=:abs_alt_diff,
+    nmac_name::Symbol=:nmac,
+    nmac_thresh::Float64=100.0,
+    outname::ASCIIString=VDIST_NAME
+    )
+
+    outdir = joinpath(DATAPATH, outname)
+    mkpath(outdir)
+
+    cas_data = dataset(cas_data_name)
+    meta = metadf(length(cas_data))
+
+    records = DataFrame[]
+    nmac = Bool[]
+    for r in getrecords(cas_data)
+        D = DataFrame()
+        D[:vdist] = r[vdist_name] 
+        push!(records, D)
+        push!(nmac, any(D[:vdist] .< nmac_thresh))
+    end
+
+    meta[nmac_name] = nmac
+    Ds = DFSet(meta, records)
     save_csvs(outdir, Ds)
 end
 
