@@ -52,10 +52,16 @@ using DerivTreeVis, MCTSTreeView
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 
 configure(::Type{Val{:ACASX_MCTS}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_mcts(;outdir::AbstractString="./ACASX_MCTS",
+"""
+Example call:
+config=configure(ACASX_MCTS, "nvn_dasc", "normal")
+acasx_mcts(; config...)
+"""
+function acasx_mcts(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MCTS"),
                     seed=1,
                     logfileroot::AbstractString="acasx_mcts_log",
 
@@ -107,7 +113,7 @@ function acasx_mcts(;outdir::AbstractString="./ACASX_MCTS",
                                              pretty_string(result.tree, FMT_PRETTY),
                                              pretty_string(result.tree, FMT_NATURAL, true)])
 
-  push_members!(logs, problem, result.expr)
+  add_members_to_log!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -128,7 +134,7 @@ function acasx_mcts(;outdir::AbstractString="./ACASX_MCTS",
   return result
 end
 
-function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+function add_members_to_log!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
   add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
   members_true, members_false = get_members(problem, expr)
   push!(logs, "members", [join(members_true, ","), join(members_false, ",")])

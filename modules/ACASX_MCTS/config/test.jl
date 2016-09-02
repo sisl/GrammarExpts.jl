@@ -32,38 +32,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-"""
-Goes into each sub-directory of 'logdir', loads the 'logfile', extracts each log named 'logname',
-stacks them all together into a single DataFrame, loads them into a TaggedDFLogger,
-and saves the log to 'outfileroot'.txt.
-Main entry: logjoin()
-"""
-module LogJoiner
+const N_ITERS = 100
 
-export logjoin
+#mdp
+[
+  (:maxsteps, 20),
 
-using RLESUtils, Loggers, FileUtils
-using DataFrames
+  #mcts
+  (:n_iters, N_ITERS),
+  (:searchdepth, 20),
+  (:explorationconst, 2000.0),
 
-function logjoin{T<:AbstractString}(logdir::AbstractString, logfile::AbstractString, 
-    lognames::Vector{T}, outfileroot::AbstractString="joined", logtype::Type=TaggedDFLogger)
+  #reward function
+  (:max_neg_reward, -1000.0),
+  (:step_reward, 0.0),
 
-    lognames = convert(Vector{ASCIIString}, lognames)
-    joined = TaggedDFLogger()
-    for subdir in readdir_dir(logdir)
-        logs = load_log(logtype, joinpath(subdir, logfile))
-        for logname in lognames
-            D = logs[logname]
-            D[:name] = fill(basename(subdir), nrow(D))
-            if !haskey(joined, logname)
-                set!(joined, logname, D)
-            else
-                append!(joined, logname, D)
-            end
-        end
-    end
-    save_log("$outfileroot.txt", joined)
-    joined
-end
-
-end #module
+  #vis
+  (:treevis_interval, Int(N_ITERS / 5))
+]

@@ -45,7 +45,7 @@ using Reexport
 
 using GrammarExpts
 using ACASXProblem, DerivationTrees, DerivTreeVis, Ref_Logs
-using RLESUtils, Configure
+using RLESUtils, Configure, DataFrameSets
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
@@ -79,8 +79,8 @@ function acasx_ref(; outdir::AbstractString="./ACASX_Ref",
   ref_params = RefESParams(maxsteps, actions, n_samples, observer)
   result = exprsearch(ref_params, problem)
 
-  push_members!(logs, problem, result.expr)
-  push_predicted!(logs, problem, result.expr)
+  add_members_to_log!(logs, problem, result.expr)
+  add_predicted_to_log!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -91,13 +91,13 @@ function acasx_ref(; outdir::AbstractString="./ACASX_Ref",
   return result
 end
 
-function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+function add_members_to_log!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
   add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
   members_true, members_false = get_members(problem, expr)
   push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
 end
 
-function push_predicted!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+function add_predicted_to_log!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
   Dl = problem.Dl
   labels = Dl.labels
   encs = getmeta(Dl)[:encounter_id]
@@ -106,7 +106,7 @@ function push_predicted!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, e
   predicts = get_predicts(problem, expr)
 
   for i = 1:length(problem.Dl)
-    push!(logs, "predicted", [encs[i], labels[i], predicts[i]])
+    push!(logs, "predicted", ["$(encs[i])", labels[i], predicts[i]])
   end
 end
 

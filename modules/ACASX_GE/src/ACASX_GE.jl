@@ -50,11 +50,17 @@ using ACASXProblem, GE_Logs, DerivTreeVis
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 
 configure(::Type{Val{:ACASX_GE}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 #nmacs vs nonnmacs
-function acasx_ge(;outdir::AbstractString="./ACASX_GE",
+"""
+Example call:
+config=configure(ACASX_GE, "nvn_dasc", "normal")
+acasx_ge(; config...)
+"""
+function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
                   seed=1,
                   logfileroot::AbstractString="acasx_ge_log",
 

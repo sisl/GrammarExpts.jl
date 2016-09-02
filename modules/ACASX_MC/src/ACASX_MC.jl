@@ -49,10 +49,19 @@ using RLESUtils, Configure
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 
 configure(::Type{Val{:ACASX_MC}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_mc(; outdir::AbstractString="./ACASX_MC",
+"""
+Example call:
+config=configure(ACASX_MC, "nvn_dasc", "test")
+acasx_mc1(; config...)
+or
+config=configure(ACASX_MC, "nvn_dasc", "normal")
+acasx_mc(; config...)
+"""
+function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
                   seed=1,
                   logfileroot::AbstractString="acasx_mc_log",
 
@@ -85,7 +94,7 @@ function acasx_mc(; outdir::AbstractString="./ACASX_MC",
 
   result = exprsearch(pmc_params, problem)
 
-  push_members!(logs, problem, result.expr)
+  add_members_to_log!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -98,7 +107,7 @@ end
 
 #TODO: combine these two versions
 "single-thread version of acasx_mc"
-function acasx_mc1(; outdir::AbstractString="./ACASX_MC1",
+function acasx_mc1(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC1"),
                    seed=1,
                    logfileroot::AbstractString="acasx_mc_log",
 
@@ -128,7 +137,7 @@ function acasx_mc1(; outdir::AbstractString="./ACASX_MC1",
   mc_params = MCESParams(maxsteps, n_samples, earlystop, earlystop_div, observer)
   result = exprsearch(mc_params, problem)
 
-  push_members!(logs, problem, result.expr)
+  add_members_to_log!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -139,7 +148,7 @@ function acasx_mc1(; outdir::AbstractString="./ACASX_MC1",
   return result
 end
 
-function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+function add_members_to_log!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
   add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
   members_true, members_false = get_members(problem, expr)
   push!(logs, "members", [join(members_true, ","), join(members_false, ",")])

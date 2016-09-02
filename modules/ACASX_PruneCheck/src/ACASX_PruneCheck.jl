@@ -47,7 +47,7 @@ function setup(;data::AbstractString="libcas098small",
                maxsteps::Int64=20)
 
   problem = ACASXClustering(data)
-  grammar = create_grammar(problem)
+  grammar = get_grammar(problem)
   tree_params = DerivTreeParams(grammar, maxsteps)
   tree = DerivationTree(tree_params)
 

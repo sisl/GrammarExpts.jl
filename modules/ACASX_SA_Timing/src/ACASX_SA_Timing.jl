@@ -69,7 +69,7 @@ function acasx_sa_timing(problem=nothing, outdir::AbstractString="./ACASX_SA_Tim
   end
   p = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
 
-  grammar = create_grammar(problem)
+  grammar = get_grammar(problem)
   tree_params = DerivTreeParams(grammar, p.maxsteps)
   s_buffer = SwapBuffer(SA.SAState(DerivationTree(tree_params)),
                         SA.SAState(DerivationTree(tree_params)))

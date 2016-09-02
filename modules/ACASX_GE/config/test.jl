@@ -32,38 +32,25 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-"""
-Goes into each sub-directory of 'logdir', loads the 'logfile', extracts each log named 'logname',
-stacks them all together into a single DataFrame, loads them into a TaggedDFLogger,
-and saves the log to 'outfileroot'.txt.
-Main entry: logjoin()
-"""
-module LogJoiner
+const HIST_NBINS = 40
+const HIST_EDGES = linspace(0.0, 200.0, HIST_NBINS + 1)
+const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect
 
-export logjoin
+#grammatical evolution
+[
+  (:genome_size, 20),
+  (:maxwraps, 0),
+  (:defaultcode, :(eval(false))),
+  (:top_percent, 0.5),
+  (:prob_mutation, 0.2),
+  (:mutation_rate, 0.2),
 
-using RLESUtils, Loggers, FileUtils
-using DataFrames
+  (:pop_size, 50),
+  (:maxiterations, 5),
 
-function logjoin{T<:AbstractString}(logdir::AbstractString, logfile::AbstractString, 
-    lognames::Vector{T}, outfileroot::AbstractString="joined", logtype::Type=TaggedDFLogger)
-
-    lognames = convert(Vector{ASCIIString}, lognames)
-    joined = TaggedDFLogger()
-    for subdir in readdir_dir(logdir)
-        logs = load_log(logtype, joinpath(subdir, logfile))
-        for logname in lognames
-            D = logs[logname]
-            D[:name] = fill(basename(subdir), nrow(D))
-            if !haskey(joined, logname)
-                set!(joined, logname, D)
-            else
-                append!(joined, logname, D)
-            end
-        end
-    end
-    save_log("$outfileroot.txt", joined)
-    joined
-end
-
-end #module
+  #vis
+  (:limit_members, 30),
+  (:hist_nbins, HIST_NBINS),
+  (:hist_edges, HIST_EDGES),
+  (:hist_mids, HIST_MIDS)
+]

@@ -52,15 +52,15 @@ using Datasets
 using ExprSearch
 using Devectorize
 using RLESUtils, LogicUtils
-import ExprSearch: ExprProblem, create_grammar, get_fitness
+import ExprSearch: ExprProblem, get_fitness, get_grammar
 
 include("labeleddata.jl")
 include("infogain.jl")
 include("format.jl")
 
-#fitness
+#weights for fitness function
 const W_METRIC = 100.0 #entropy
-const W_LEN = 0.05 #
+const W_LEN = 0.05 #length of expression
 
 typealias RealVec Union{DataArray{Float64,1}, Vector{Float64}}
 
@@ -69,6 +69,7 @@ type ACASXClustering{T} <: ExprProblem
   w_metric::Float64
   w_len::Float64
   labelset::Vector{T}
+  grammar::Grammar
 end
 
 """
@@ -97,7 +98,8 @@ function ACASXClustering(dataname::AbstractString,
     data = dataset(dataname)
     Dl = nmacs_vs_nonnmacs(data)
     labelset = unique(labels(Dl))
-    return ACASXClustering(Dl, w_metric, w_len, labelset)
+    grammar = create_grammar()
+    return ACASXClustering(Dl, w_metric, w_len, labelset, grammar)
 end
 
 #with manual clustering
@@ -116,10 +118,10 @@ function ACASXClustering(dataname::AbstractString,
         Dl = nmac_clusters(clustering, data)
     end
     labelset = unique(labels(Dl))
-    return ACASXClustering(Dl, w_metric, w_len, labelset)
+    return ACASXClustering(Dl, w_metric, w_len, labelset, grammar)
 end
 
-function ExprSearch.create_grammar(problem::ACASXClustering)
+function create_grammar()
   @grammar grammar begin
     start = bin
 
@@ -554,6 +556,8 @@ function to_function(problem::ACASXClustering, expr)
   @eval f(D) = $expr
   return f
 end
+
+ExprSearch.get_grammar{T}(problem::ACASXClustering{T}) = problem.grammar
 
 function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
   Dl = problem.Dl

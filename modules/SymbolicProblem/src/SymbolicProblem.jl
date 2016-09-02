@@ -40,7 +40,7 @@ module SymbolicProblem
 export Symbolic, create_grammar, get_fitness, to_function
 
 using ExprSearch
-import ExprSearch: ExprProblem, create_grammar, get_fitness
+import ExprSearch: ExprProblem, get_fitness, get_grammar
 
 const DIR = dirname(@__FILE__)
 const XRANGE = 0.0:0.5:10.0
@@ -51,6 +51,7 @@ type Symbolic{T<:AbstractFloat} <: ExprProblem
   xrange::FloatRange{T}
   yrange::FloatRange{T}
   w_len::Float64
+  grammar::Grammar
 end
 
 function Symbolic{T<:AbstractFloat}(gt_file::AbstractString, xrange::FloatRange{T}=XRANGE, yrange::FloatRange{T}=YRANGE, w_len::Float64=W_LEN)
@@ -59,10 +60,11 @@ function Symbolic{T<:AbstractFloat}(gt_file::AbstractString, xrange::FloatRange{
   end
 
   @eval include(joinpath($DIR, $gt_file)) #define gt in module scope
-  return Symbolic(xrange, yrange, w_len)
+  grammar = create_grammar()
+  return Symbolic(xrange, yrange, w_len, grammar)
 end
 
-function ExprSearch.create_grammar(problem::Symbolic)
+function create_grammar()
   @grammar grammar begin
     start = ex
     ex = sum | product | (ex) | value
@@ -78,6 +80,8 @@ function to_function(problem::Symbolic, expr)
   @eval f(x, y) = $expr
   return f
 end
+
+ExprSearch.get_grammar(problem::Symbolic) = problem.grammar
 
 function ExprSearch.get_fitness(problem::Symbolic, expr)
   #mean-square error over a range

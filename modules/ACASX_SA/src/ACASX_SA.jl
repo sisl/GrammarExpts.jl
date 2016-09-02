@@ -49,10 +49,16 @@ using RLESUtils, Configure
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 
 configure(::Type{Val{:ACASX_SA}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function acasx_sa(;outdir::AbstractString="./ACASX_SA",
+"""
+Example call:
+config=configure(ACASX_SA, "nvn_dasc", "normal")
+acasx_sa(; config...)
+"""
+function acasx_sa(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_SA"),
                   seed=1,
                   logfileroot::AbstractString="acasx_sa_log",
 
@@ -87,7 +93,7 @@ function acasx_sa(;outdir::AbstractString="./ACASX_SA",
 
   result = exprsearch(psa_params, problem)
 
-  push_members!(logs, problem, result.expr)
+  add_members_to_log!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -98,11 +104,6 @@ function acasx_sa(;outdir::AbstractString="./ACASX_SA",
   return result
 end
 
-function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
-  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
-  members_true, members_false = get_members(problem, expr)
-  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
-end
 
 function acasx_sa1(;outdir::AbstractString="./ACASX_SA1",
                   seed=1,
@@ -135,7 +136,7 @@ function acasx_sa1(;outdir::AbstractString="./ACASX_SA1",
   sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
   result = exprsearch(sa_params, problem)
 
-  push_members!(logs, problem, result.expr)
+  add_members_to_log!(logs, problem, result.expr)
   outfile = joinpath(outdir, "$(logfileroot).txt")
   save_log(outfile, logs)
 
@@ -146,7 +147,15 @@ function acasx_sa1(;outdir::AbstractString="./ACASX_SA1",
   return result
 end
 
+function add_members_to_log!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
+  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
+  members_true, members_false = get_members(problem, expr)
+  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
+end
 
+"""
+Get recommended temperature commands
+"""
 function acasx_temp_params(P1::Float64=0.8; seed=1,
                            n_epochs::Int64=1,
                            Tfinal::Float64=1.0,

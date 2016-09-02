@@ -56,7 +56,7 @@ function setup(; runtype::Symbol=:nmacs_vs_nonnmacs,
 
   problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-  grammar = create_grammar(problem)
+  grammar = get_grammar(problem)
   tree_params = DerivTreeParams(grammar, maxsteps)
   tree = DerivationTree(tree_params)
 
