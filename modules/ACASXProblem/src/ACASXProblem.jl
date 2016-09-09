@@ -44,7 +44,7 @@ Two versions of the fitness function are provided, one with pruning (early stop)
 module ACASXProblem
 
 export ACASXClustering, create_grammar, get_fitness, to_function, get_predicts,
-    get_members
+    get_members, get_grammar
 export FMT_PRETTY, FMT_NATURAL
 export entropy_metrics, gini_metrics
 
@@ -120,6 +120,9 @@ function ACASXClustering(dataname::AbstractString,
     labelset = unique(labels(Dl))
     return ACASXClustering(Dl, w_metric, w_len, labelset, grammar)
 end
+
+ExprSearch.get_grammar{T}(problem::ACASXClustering{T}) = get_grammar(problem)
+ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr) = get_fitness(problem, expr)
 
 function create_grammar()
   @grammar grammar begin
@@ -557,17 +560,14 @@ function to_function(problem::ACASXClustering, expr)
   return f
 end
 
-ExprSearch.get_grammar{T}(problem::ACASXClustering{T}) = problem.grammar
+get_grammar{T}(problem::ACASXClustering{T}) = problem.grammar
 
-function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
+function get_fitness{T}(problem::ACASXClustering{T}, expr)
   Dl = problem.Dl
   codelen = length(string(expr))
 
-  f = to_function(problem, expr)
-  predicts = Array(Bool, length(Dl))
-  for i = 1:length(Dl)
-    predicts[i] = f(getrecords(Dl, i))
-  end
+  predicts = get_predicts(problem, expr)
+
   #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
   _, _, metric = gini_metrics(predicts, Dl.labels)
   return problem.w_metric * metric + problem.w_len * codelen
@@ -616,7 +616,39 @@ function CountTracker{T}(problem::ACASXClustering{T})
   return CountTracker(c_true, c_false, 0, 0)
 end
 
-function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
+function increment!{T}(tracker::CountTracker{T}, ::Type{Val{true}}, label::T)
+  tracker.c_true[label] += 1
+  tracker.N_true += 1
+end
+
+function increment!{T}(tracker::CountTracker{T}, ::Type{Val{false}}, label::T)
+  tracker.c_false[label] += 1
+  tracker.N_false += 1
+end
+
+function gini_optimistic{T}(tracker::CountTracker{T}, N_remaining::Int64)
+  c_true = collect(values(tracker.c_true))
+  c_false = collect(values(tracker.c_false))
+
+  #add to true
+  i = indmax(c_true)
+  c_true[i] += N_remaining
+  g_true = gini_from_counts(c_true, c_false)
+
+  #add to false
+  c_true = collect(values(tracker.c_true)) #restore
+  i = indmax(c_false) #mode
+  c_false[i] += N_remaining
+  g_false = gini_from_counts(c_true, c_false)
+
+  return min(g_true, g_false)
+end
+
+end #module
+
+#Code that might be useful later
+#=
+function get_fitness{T}(problem::ACASXClustering{T}, expr,
                                    thresh::Float64, default::Float64,
                                    earlystop_div::Int64)
 
@@ -651,33 +683,4 @@ function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr,
   _, _, metric = gini_metrics(predicts, Dl.labels)
   return problem.w_metric * metric + problem.w_len * codelen
 end
-
-function increment!{T}(tracker::CountTracker{T}, ::Type{Val{true}}, label::T)
-  tracker.c_true[label] += 1
-  tracker.N_true += 1
-end
-
-function increment!{T}(tracker::CountTracker{T}, ::Type{Val{false}}, label::T)
-  tracker.c_false[label] += 1
-  tracker.N_false += 1
-end
-
-function gini_optimistic{T}(tracker::CountTracker{T}, N_remaining::Int64)
-  c_true = collect(values(tracker.c_true))
-  c_false = collect(values(tracker.c_false))
-
-  #add to true
-  i = indmax(c_true)
-  c_true[i] += N_remaining
-  g_true = gini_from_counts(c_true, c_false)
-
-  #add to false
-  c_true = collect(values(tracker.c_true)) #restore
-  i = indmax(c_false) #mode
-  c_false[i] += N_remaining
-  g_false = gini_from_counts(c_true, c_false)
-
-  return min(g_true, g_false)
-end
-
-end #module
+=#

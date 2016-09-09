@@ -39,7 +39,7 @@ Main entry: study_main()
 """
 module ACASX_Compare
 
-export study_main
+export run_main, plot_main
 export run_ref, run_mc_full, run_mcts
 export combine_sweep_logs, combine_ref_logs, combine_mc_full_logs, combine_mcts_logs
 export master_log, master_plot
@@ -50,9 +50,9 @@ using ExprSearch: Ref, SA, MC, MCTS
 using ACASX_Ref, ACASX_SA, ACASX_MC, ACASX_MCTS
 using LogJoiner
 
-using RLESUtils, Loggers, MathUtils, Configure
+using RLESUtils, Loggers, MathUtils, Configure, LatexUtils
 using DataFrames
-using Gadfly
+using PGFPlots, TikzPictures
 import Configure.configure
 
 const CONFIG = "nvn_dasc"
@@ -67,6 +67,7 @@ const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 
 const MASTERLOG_FILE = joinpath(RESULTDIR, STUDYNAME, "masterlog.csv.gz")
 const PLOTLOG_FILE =  joinpath(RESULTDIR, STUDYNAME, "plotlog.csv.gz")
+const PLOTFILEROOT = joinpath(RESULTDIR, STUDYNAME, "plots")
 
 configure(::Type{Val{:ACASX_Compare}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
@@ -74,17 +75,17 @@ resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)
 
 #TODO: to fix: configuration is distributed, too many magic numbers
-function run_ref(; seed=1:1, n_samples::Int64=10000)
+function run_ref(; seed=1:1, n_samples::Int64=500000)
   baseconfig = configure(ACASX_Ref, "nmac_rule", CONFIG) #start with base config
   baseconfig[:outdir] = "./"
   baseconfig[:n_samples] = n_samples
   sweep_cfg = configure(ACASX_Compare, "ref") #study config that goes over base config
-  sweep_cfg[:outdir] = studypath(REFNAME)
+  sweep_cfg[:outdir] = studypath(REF_NAME)
   sweep_cfg[:seed] = seed
   ref_results = sweeper(acasx_ref, RefESResult, baseconfig; sweep_cfg...)
   ref_results
 end
-function run_mc_full(; seed=1:5, n_samples=10000)
+function run_mc_full(; seed=1:5, n_samples=500000)
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
   baseconfig[:outdir] = "./"
   baseconfig[:earlystop] = false #FIXME: locally overriding (in all of these!) is not a good idea!
@@ -95,7 +96,7 @@ function run_mc_full(; seed=1:5, n_samples=10000)
   mc_results = sweeper(acasx_mc1, MCESResult, baseconfig; sweep_cfg...)
   mc_results
 end
-function run_mcts(; seed=1:5, n_iters=10000)
+function run_mcts(; seed=1:5, n_iters=500000)
   baseconfig = configure(ACASX_MCTS, "normal", CONFIG)
   baseconfig[:outdir] = "./"
   baseconfig[:maxmod] = false
@@ -127,81 +128,110 @@ function combine_sweep_logs()
     logjoin(dir, "sweeper_log.txt", ["result"], joinpath(dir, "sweepjoined"))
 end
 
-#TODO: make these better...
-function master_log()
-  masterlog = DataFrame([Int64, Float64, Float64, UTF8String, ASCIIString, UTF8String], 
-    [:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name], 0)
+#TODO: clean this up...
+function master_log(; b_ref=true, b_mc_full=true, b_mcts=true, b_ge=false)
+    masterlog = DataFrame([Int64, Float64, Float64, UTF8String, ASCIIString, UTF8String], 
+        [:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name], 0)
 
-  #REF
-  dir = studypath(REF_NAME)
-  logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-  D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
-  D[:algorithm] = fill("REF", nrow(D))
-  rename!(D, :iter, :nevals)
-  append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+    #REF
+    if b_ref
+        dir = studypath(REF_NAME)
+        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+        D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
+        D[:algorithm] = fill("REF", nrow(D))
+        rename!(D, :iter, :nevals)
+        append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+    end
 
+    #MCFULL
+    if b_mc_full
+        dir = studypath(MCFULL_NAME)
+        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+        D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
+        D[:algorithm] = fill("MC_FULL", nrow(D))
+        rename!(D, :iter, :nevals)
+        append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+    end
 
-  #MCFULL
-  dir = studypath(MCFULL_NAME)
-  logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-  D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
-  D[:algorithm] = fill("MC_FULL", nrow(D))
-  rename!(D, :iter, :nevals)
-  append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+    #MCTS
+    if b_mcts
+        dir = studypath(MCTS_NAME)
+        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+        D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
+        D[:algorithm] = fill("MCTS", nrow(D))
+        rename!(D, :iter, :nevals)
+        append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+    end
 
-  #MCTS
-  dir = studypath(MCTS_NAME)
-  logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-  D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
-  D[:algorithm] = fill("MCTS", nrow(D))
-  rename!(D, :iter, :nevals)
-  append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
-
-  writetable(MASTERLOG_FILE, masterlog)
-  masterlog
+    writetable(MASTERLOG_FILE, masterlog)
+    masterlog
 end
+
+master_plot(; kwargs...) = master_plot(readtable(MASTERLOG_FILE); kwargs...)
 
 """
 Subsamples the collected data at 'subsample' rate to plot at a lower rate than collected
 """
-function master_plot(masterlog::DataFrame; subsample::Int64=5000)
-  D = masterlog 
+function master_plot(masterlog::DataFrame; subsample::Int64=25000)
+    D = masterlog 
 
-  #aggregate over seed
-  D = aggregate(D[[:nevals, :elapsed_cpu_s, :fitness, :algorithm]], [:nevals, :algorithm], 
-    [mean, std, length, SEM_ymin, SEM_ymax])
-  D = D[rem(D[:nevals], subsample) .== 0, :] #subsample data
+    #aggregate over seed
+    D = aggregate(D[[:nevals, :elapsed_cpu_s, :fitness, :algorithm]], [:nevals, :algorithm], 
+        [mean, std, length, SEM])
+    D = D[rem(D[:nevals], subsample) .== 0, :] #subsample data
 
-  #workaround for naming in julia 0.4
-  rename!(D, symbol("fitness_MathUtils.SEM_ymin"), :fitness_SEM_ymin) 
-  rename!(D, symbol("fitness_MathUtils.SEM_ymax"), :fitness_SEM_ymax) 
-  rename!(D, symbol("elapsed_cpu_s_MathUtils.SEM_ymin"), :elapsed_cpu_s_SEM_ymin) 
-  rename!(D, symbol("elapsed_cpu_s_MathUtils.SEM_ymax"), :elapsed_cpu_s_SEM_ymax) 
+    #workaround for naming in julia 0.4
+    rename!(D, symbol("fitness_MathUtils.SEM"), :fitness_SEM) 
+    rename!(D, symbol("elapsed_cpu_s_MathUtils.SEM"), :elapsed_cpu_s_SEM) 
 
-  writetable(PLOTLOG_FILE, D)
+    writetable(PLOTLOG_FILE, D)
 
-  plotname = "nevals_vs_fitness"
-  p = plot(D, x=:nevals, y=:fitness_mean, ymin=:fitness_SEM_ymin, ymax=:fitness_SEM_ymax, 
-    color=:algorithm, Guide.title(CONFIG), Geom.line, Geom.errorbar);
-  draw(PGF(studypath("$plotname.tex"), 12cm, 6cm), p)
-  draw(PDF(studypath("$plotname.pdf"), 12cm, 6cm), p)
+    td = TikzDocument()
+    algo_names = unique(D[:algorithm])
+    n_algos = length(algo_names)
 
-  plotname = "elapsed_cpu_vs_fitness"
-  p = plot(D, x=:elapsed_cpu_s_mean, y=:fitness_mean, ymin=:fitness_SEM_ymin, 
-    ymax=:fitness_SEM_ymax, Guide.title(CONFIG), Geom.line, Geom.errorbar);
-  draw(PGF(studypath("$plotname.tex"), 12cm, 6cm), p)
-  draw(PDF(studypath("$plotname.pdf"), 12cm, 6cm), p)
+    #nevals_vs_fitness
+    plotarray = Plots.Plot[]
+    for i = 1:n_algos 
+        D1 = D[D[:algorithm].==algo_names[i], [:nevals, :fitness_mean, :fitness_SEM]]
+        push!(plotarray, Plots.ErrorBars(D1[:nevals], D1[:fitness_mean], D1[:fitness_SEM],   
+            legendentry=escape_latex(algo_names[i])))
+    end
+    tp = PGFPlots.plot(Axis(plotarray, xlabel="Number of Evaluations", ylabel="Fitness",
+        title="Fitness vs. Number of Evaluations", legendPos="north east"))
+    push!(td, tp) 
+    
+    #elapsed_cpu_vs_fitness
+    empty!(plotarray)
+    for i = 1:n_algos
+        D1 = D[D[:algorithm].==algo_names[i], [:elapsed_cpu_s_mean, :fitness_mean, 
+            :fitness_SEM]]
+        push!(plotarray, Plots.ErrorBars(D1[:elapsed_cpu_s_mean], D1[:fitness_mean], 
+            D1[:fitness_SEM], legendentry=escape_latex(algo_names[i])))
+    end
+    tp = PGFPlots.plot(Axis(plotarray, xlabel="CPU Time (s)", ylabel="Fitness",
+        title="Fitness vs. Number of CPU Time", legendPos="north east"))
+    push!(td, tp) 
 
-  plotname = "nevals_vs_elapsed_cpu"
-  p = plot(D, x=:nevals, y=:elapsed_cpu_s_mean, ymin=:elapsed_cpu_s_SEM_ymin, 
-    ymax=:elapsed_cpu_s_SEM_ymax, Guide.title(CONFIG), Geom.line, Geom.errorbar);
-  draw(PGF(studypath("$plotname.tex"), 12cm, 6cm), p)
-  draw(PDF(studypath("$plotname.pdf"), 12cm, 6cm), p)
+    #nevals_vs_elapsed_cpu
+    empty!(plotarray)
+    for i = 1:n_algos
+        D1 = D[D[:algorithm].==algo_names[i], [:nevals, :elapsed_cpu_s_mean, 
+            :elapsed_cpu_s_SEM]]
+        push!(plotarray, Plots.ErrorBars(D1[:nevals], D1[:elapsed_cpu_s_mean], 
+            D1[:elapsed_cpu_s_SEM], legendentry=escape_latex(algo_names[i])))
+    end
+    tp = PGFPlots.plot(Axis(plotarray, xlabel="CPU Time (s)", ylabel="Fitness",
+        title="Fitness vs. Number of CPU Time", legendPos="north east"))
+    push!(td, tp) 
+
+    save(PDF(PLOTFILEROOT * ".pdf"), td)
+    save(TEX(PLOTFILEROOT * ".tex"), td)
 end
 
 #Configured for single-thread at the moment...
 #Start separate sessions manually to parallelize...
-function study_main(; 
+function run_main(; 
     b_ref::Bool=false,
     b_mc_full::Bool=false,
     b_mcts::Bool=false,
@@ -223,18 +253,24 @@ function study_main(;
         mcts = run_mcts()
         combine_mcts_logs()
     end
+end
+
+function plot_main(;
+    b_ref::Bool=true,
+    b_mc_full::Bool=true,
+    b_mcts::Bool=true,
+    b_ge::Bool=false)
 
     #meta info logs
-    combine_sweep_logs(; b_ref=b_ref, b_mc_full=b_mc_full, b_mcts=b_mcts, b_ge=b_ge)
+    combine_sweep_logs()
 
-    masterlog = master_log()
+    masterlog = master_log(; b_ref=b_ref, b_mc_full=b_mc_full, b_mcts=b_mcts, b_ge=b_ge)
 
     #plot
     master_plot(masterlog)
 end
 
 end #module
-
 
 #################################
 # Extra code that might be revived later...
@@ -282,7 +318,7 @@ end
 =#
 
 #=
-function run_mc_earlystop(; seed=1:5, n_samples=10000)
+function run_mc_earlystop(; seed=1:5, n_samples=500000)
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
   baseconfig[:outdir] = "./"
   baseconfig[:earlystop] = true
@@ -296,7 +332,7 @@ end
 =#
 
 #=
-function run_mcts_max(; seed=1:5, n_iters=10000)
+function run_mcts_max(; seed=1:5, n_iters=500000)
   baseconfig = configure(ACASX_MCTS, "normal", CONFIG)
   baseconfig[:outdir] = "./"
   baseconfig[:maxmod] = true

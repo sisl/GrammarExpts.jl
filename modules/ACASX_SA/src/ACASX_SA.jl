@@ -105,7 +105,7 @@ function acasx_sa(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_SA"),
 end
 
 
-function acasx_sa1(;outdir::AbstractString="./ACASX_SA1",
+function acasx_sa1(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_SA1"),
                   seed=1,
                   logfileroot::AbstractString="acasx_sa_log",
 
