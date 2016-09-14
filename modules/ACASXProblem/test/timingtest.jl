@@ -47,7 +47,10 @@ function test1(;
     n_trials::Int64=50,
     n_reps::Int64=2500,
     verbose::Bool=true,
-    b_get_fitness::Bool=true)
+    b_get_fitness::Bool=false,
+    b_emulated_fitness::Bool=false,
+    b_predicts::Bool=false,
+    b_emulated_predicts::Bool=false)
 
     problem = ACASXClustering(data)
     grammar = get_grammar(problem)
@@ -61,8 +64,11 @@ function test1(;
     add_folder!(logs, "get_expr", [Int64, Float64], [:trial, :t_elapsed])
     add_folder!(logs, "get_fitness", [Int64, Float64], [:trial, :t_elapsed])
     add_folder!(logs, "to_function", [Int64, Float64], [:trial, :t_elapsed])
+    add_folder!(logs, "to_function2", [Int64, Float64], [:trial, :t_elapsed])
     add_folder!(logs, "emulated_fitness", [Int64, Float64], [:trial, :t_elapsed])
     add_folder!(logs, "predicts", [Int64, Float64], [:trial, :t_elapsed])
+    add_folder!(logs, "emulated_predicts", [Int64, Float64], [:trial, :t_elapsed])
+    add_folder!(logs, "emulated_predicts2", [Int64, Float64], [:trial, :t_elapsed])
     add_folder!(logs, "metrics", [Int64, Float64], [:trial, :t_elapsed])
     observer = Observer()
     add_observer(observer, "params", push!_f(logs, "params"))
@@ -70,8 +76,11 @@ function test1(;
     add_observer(observer, "get_expr", push!_f(logs, "get_expr"))
     add_observer(observer, "get_fitness", push!_f(logs, "get_fitness"))
     add_observer(observer, "to_function", push!_f(logs, "to_function"))
+    add_observer(observer, "to_function2", push!_f(logs, "to_function2"))
     add_observer(observer, "emulated_fitness", push!_f(logs, "emulated_fitness"))
     add_observer(observer, "predicts", push!_f(logs, "predicts"))
+    add_observer(observer, "emulated_predicts", push!_f(logs, "emulated_predicts"))
+    add_observer(observer, "emulated_predicts2", push!_f(logs, "emulated_predicts2"))
     add_observer(observer, "metrics", push!_f(logs, "metrics"))
 
     @notify_observer(observer, "params", ["data", data])
@@ -83,7 +92,9 @@ function test1(;
     for trial = 1:n_trials
         tstart = CPUtime_start()
         for i = 1:n_reps
+            #########################
             rand!(tree, retries=typemax(Int64))
+            #########################
         end
         t_elapsed = CPUtime_elapsed_s(tstart)
         @notify_observer(observer, "rand", [trial, t_elapsed]) 
@@ -93,7 +104,9 @@ function test1(;
     for trial = 1:n_trials
         tstart = CPUtime_start()
         for i = 1:n_reps
+            #########################
             expr = get_expr(tree)
+            #########################
         end
         t_elapsed = CPUtime_elapsed_s(tstart)
         @notify_observer(observer, "get_expr", [trial, t_elapsed]) 
@@ -106,7 +119,9 @@ function test1(;
         for trial = 1:n_trials
             tstart = CPUtime_start()
             for i = 1:n_reps
+                #########################
                 fitness = get_fitness(problem, expr)
+                #########################
             end
             t_elapsed = CPUtime_elapsed_s(tstart)
             @notify_observer(observer, "get_fitness", [trial, t_elapsed]) 
@@ -117,47 +132,118 @@ function test1(;
     for trial = 1:n_trials
         tstart = CPUtime_start()
         for i = 1:n_reps
+            #########################
             f = to_function(problem, expr)
+            #########################
         end
         t_elapsed = CPUtime_elapsed_s(tstart)
         @notify_observer(observer, "to_function", [trial, t_elapsed]) 
     end
-    #time emulated_fitness
-    println("timing emulated_fitness")
+    #time to_function2
+    D_1 = getrecords(problem.Dl, 1) #only the first record
+    println("timing to_function2")
     for trial = 1:n_trials
         tstart = CPUtime_start()
         for i = 1:n_reps
+            #########################
             rand!(tree, retries=typemax(Int64))
             expr = get_expr(tree)
-            predicts = get_predicts(problem, expr)
+            f = to_function(problem, expr)
+            f(D_1)
+            #########################
         end
         t_elapsed = CPUtime_elapsed_s(tstart)
-        @notify_observer(observer, "emulated_fitness", [trial, t_elapsed]) 
+        @notify_observer(observer, "to_function2", [trial, t_elapsed]) 
     end
-    #time predicts
-    f = to_function(problem, expr)
-    println("timing predicts")
+
+    if b_emulated_fitness
+        #time emulated_fitness
+        println("timing emulated_fitness")
+        for trial = 1:n_trials
+            tstart = CPUtime_start()
+            for i = 1:n_reps
+                #########################
+                rand!(tree, retries=typemax(Int64))
+                expr = get_expr(tree)
+                predicts = get_predicts(problem, expr)
+                #########################
+            end
+            t_elapsed = CPUtime_elapsed_s(tstart)
+            @notify_observer(observer, "emulated_fitness", [trial, t_elapsed]) 
+        end
+    end
+
+    if b_predicts
+        #time predicts
+        println("timing predicts")
+        for trial = 1:n_trials
+            rand!(tree, retries=typemax(Int64))
+            expr = get_expr(tree)
+            println("trial=$trial, expr=", string(expr))
+            tstart = CPUtime_start()
+            for i = 1:n_reps
+                #########################
+                predicts = get_predicts(problem, expr)
+                #########################
+            end
+            t_elapsed = CPUtime_elapsed_s(tstart)
+            @notify_observer(observer, "predicts", [trial, t_elapsed]) 
+        end
+    end
+
+    if b_emulated_predicts
+        #time emulated_predicts
+        println("timing emulated_predicts")
+        for trial = 1:n_trials
+            rand!(tree, retries=typemax(Int64))
+            expr = get_expr(tree)
+            println("trial=$trial, expr=", string(expr))
+            tstart = CPUtime_start()
+            for i = 1:n_reps
+                #########################
+                Dl = problem.Dl
+                f = to_function(problem, expr)
+                predicts = Array(Bool, length(Dl))
+                for i = 1:length(Dl)
+                    predicts[i] = f(getrecords(Dl, i))
+                end
+                #########################
+            end
+            t_elapsed = CPUtime_elapsed_s(tstart)
+            @notify_observer(observer, "emulated_predicts", [trial, t_elapsed]) 
+        end
+    end
+
+    #time emulated_predicts2
+    println("timing emulated_predicts2")
     for trial = 1:n_trials
+        rand!(tree, retries=typemax(Int64))
+        expr = get_expr(tree)
+        Dl = problem.Dl
+        f = to_function(problem, expr)
+        println("trial=$trial, expr=", string(expr))
         tstart = CPUtime_start()
         for i = 1:n_reps
-            predicts = Array(Bool, length(problem.Dl))
-            for i = 1:length(predicts)
-                predicts[i] = f(getrecords(problem.Dl, i))
+            #########################
+            predicts = Array(Bool, length(Dl))
+            for i = 1:length(Dl)
+                predicts[i] = f(getrecords(Dl, i))
             end
+            #########################
         end
         t_elapsed = CPUtime_elapsed_s(tstart)
-        @notify_observer(observer, "predicts", [trial, t_elapsed]) 
+        @notify_observer(observer, "emulated_predicts2", [trial, t_elapsed]) 
     end
-    predicts = Array(Bool, length(problem.Dl))
-    for i = 1:length(predicts)
-        predicts[i] = f(getrecords(problem.Dl, i))
-    end
+
+    predicts = get_predicts(problem, expr)
     #time metrics
     println("timing metrics")
     for trial = 1:n_trials
         tstart = CPUtime_start()
         for i = 1:n_reps
+            #########################
             _, _, metric = gini_metrics(predicts, problem.Dl.labels)
+            #########################
         end
         t_elapsed = CPUtime_elapsed_s(tstart)
         @notify_observer(observer, "metrics", [trial, t_elapsed]) 

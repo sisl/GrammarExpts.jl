@@ -580,7 +580,6 @@ function get_predicts{T}(problem::ACASXClustering{T}, expr)
   for i = 1:length(Dl)
     predicts[i] = f(getrecords(Dl, i))
   end
-
   predicts
 end
 

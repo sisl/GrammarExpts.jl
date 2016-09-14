@@ -54,12 +54,12 @@ function default_logs(observer::Observer, hist_edges::Range{Float64}, hist_mids:
               ["iter", "bin_center", "count", "unique_fitness", "unique_code"])
   add_folder!(logs, "pop_diversity", [Int64, Int64, Int64],
               ["iter", "unique_fitness", "unique_code"])
-  add_folder!(logs, "iteration_time", [Int64, Float64],
-              ["iter", "iteration_time_s"])
+  add_folder!(logs, "elapsed_cpu_s", [Int64, Float64],
+              ["nevals", "elapsed_cpu_s"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "parameters", [ASCIIString, Any], ["parameter", "value"])
   add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals"])
-  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString], ["iter", "fitness", "expr"])
+  add_folder!(logs, "current_best", [Int64, Float64, ASCIIString], ["nevals", "fitness", "expr"])
 
   add_observer(observer, "fitness", push!_f(logs, "fitness"))
   add_observer(observer, "fitness5", x -> begin
@@ -94,13 +94,16 @@ function default_logs(observer::Observer, hist_edges::Range{Float64}, hist_mids:
                  n_code = length(unique(imap(i -> string(pop[i].code), 1:length(pop))))
                  push!(logs, "pop_diversity", [iter, n_fit, n_code])
                end)
-  add_observer(observer, "iteration_time", push!_f(logs, "iteration_time"))
   add_observer(observer, "computeinfo", push!_f(logs, "computeinfo"))
   add_observer(observer, "parameters", push!_f(logs, "parameters"))
   add_observer(observer, "result", push!_f(logs, "result"))
   add_observer(observer, "current_best", x -> begin
-                 iter, fitness, expr = x
-                 push!(logs, "current_best", [iter, fitness, string(expr)])
+                 nevals, fitness, expr = x
+                 push!(logs, "current_best", [nevals, fitness, string(expr)])
+               end)
+  add_observer(observer, "elapsed_cpu_s", x -> begin
+                 nevals = x[1]
+                 push!(logs, "elapsed_cpu_s", x)
                end)
 
   return logs
@@ -109,10 +112,10 @@ end
 function default_console!(observer::Observer)
   add_observer(observer, "verbose1", x -> println(x[1]))
   add_observer(observer, "current_best", x -> begin
-                 iter, fitness, code = x
+                 nevals, fitness, code = x
                  code = string(code)
                  code_short = take(code, 50) |> join
-                 println("generation: $iter, max fitness=$(signif(fitness, 4)),",
+                 println("nevals: $nevals, max fitness=$(signif(fitness, 4)),",
                          "length=$(length(code)), code=$(code_short)")
                end)
   add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2])"))

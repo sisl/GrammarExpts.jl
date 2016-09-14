@@ -33,21 +33,22 @@
 # *****************************************************************************
 
 """
-ACASX Study comparing performance of SA, MC with full evaluations, and MC with early stop.
+ACASX Study comparing performance of MC, MCTS, GE.
 Single-threaded versions are used for more stable comparison.
 Main entry: study_main()
 """
 module ACASX_Compare
 
 export run_main, plot_main
-export run_ref, run_mc_full, run_mcts
-export combine_sweep_logs, combine_ref_logs, combine_mc_full_logs, combine_mcts_logs
+export run_ref, run_mc_full, run_mcts, run_ge
+export combine_sweep_logs, combine_ref_logs, combine_mc_full_logs, combine_mcts_logs, 
+    combine_ge_logs
 export master_log, master_plot
 
 using GrammarExpts
 using Sweeper
-using ExprSearch: Ref, SA, MC, MCTS
-using ACASX_Ref, ACASX_SA, ACASX_MC, ACASX_MCTS
+using ExprSearch: Ref, SA, MC, MCTS, GE
+using ACASX_Ref, ACASX_SA, ACASX_MC, ACASX_MCTS, ACASX_GE
 using LogJoiner
 
 using RLESUtils, Loggers, MathUtils, Configure, LatexUtils
@@ -61,6 +62,7 @@ const REF_NAME = "ACASX_Ref"
 const SA_NAME = "ACASX_SA"
 const MCFULL_NAME = "ACASX_MC_full"
 const MCTS_NAME = "ACASX_MCTS"
+const GE_NAME = "ACASX_GE"
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
@@ -82,19 +84,18 @@ function run_ref(; seed=1:1, n_samples::Int64=500000)
   sweep_cfg = configure(ACASX_Compare, "ref") #study config that goes over base config
   sweep_cfg[:outdir] = studypath(REF_NAME)
   sweep_cfg[:seed] = seed
-  ref_results = sweeper(acasx_ref, RefESResult, baseconfig; sweep_cfg...)
-  ref_results
+  result = sweeper(acasx_ref, RefESResult, baseconfig; sweep_cfg...)
+  result
 end
 function run_mc_full(; seed=1:5, n_samples=500000)
   baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
   baseconfig[:outdir] = "./"
-  baseconfig[:earlystop] = false #FIXME: locally overriding (in all of these!) is not a good idea!
   baseconfig[:n_samples] = n_samples
   sweep_cfg = configure(ACASX_Compare, "mc")
   sweep_cfg[:outdir] = studypath(MCFULL_NAME)
   sweep_cfg[:seed] = seed
-  mc_results = sweeper(acasx_mc1, MCESResult, baseconfig; sweep_cfg...)
-  mc_results
+  result = sweeper(acasx_mc1, MCESResult, baseconfig; sweep_cfg...)
+  result
 end
 function run_mcts(; seed=1:5, n_iters=500000)
   baseconfig = configure(ACASX_MCTS, "normal", CONFIG)
@@ -104,8 +105,19 @@ function run_mcts(; seed=1:5, n_iters=500000)
   sweep_cfg = configure(ACASX_Compare, "mcts")
   sweep_cfg[:outdir] = studypath(MCTS_NAME)
   sweep_cfg[:seed] = seed
-  mcts_results = sweeper(acasx_mcts, MCTSESResult, baseconfig; sweep_cfg...)
-  mcts_results
+  result = sweeper(acasx_mcts, MCTSESResult, baseconfig; sweep_cfg...)
+  result
+end
+function run_ge(; seed=1:5, n_iters=100, pop_size::Int64=5000)
+  baseconfig = configure(ACASX_GE, "normal", CONFIG)
+  baseconfig[:outdir] = "./"
+  baseconfig[:maxiterations] = n_iters
+  baseconfig[:pop_size] = pop_size
+  sweep_cfg = configure(ACASX_Compare, "ge")
+  sweep_cfg[:outdir] = studypath(GE_NAME)
+  sweep_cfg[:seed] = seed
+  result = sweeper(acasx_ge, GEESResult, baseconfig; sweep_cfg...)
+  result
 end
 
 function combine_ref_logs()
@@ -123,13 +135,18 @@ function combine_mcts_logs()
     logjoin(dir, "acasx_mcts_log.txt", ["current_best", "elapsed_cpu_s"], 
         joinpath(dir, "subdirjoined"))
 end
+function combine_ge_logs()
+    dir = studypath(GE_NAME)
+    logjoin(dir, "acasx_ge_log.txt", ["current_best", "elapsed_cpu_s"], 
+        joinpath(dir, "subdirjoined"))
+end
 function combine_sweep_logs()
     dir = studypath()
     logjoin(dir, "sweeper_log.txt", ["result"], joinpath(dir, "sweepjoined"))
 end
 
 #TODO: clean this up...
-function master_log(; b_ref=true, b_mc_full=true, b_mcts=true, b_ge=false)
+function master_log(; b_ref=true, b_mc_full=true, b_mcts=true, b_ge=true)
     masterlog = DataFrame([Int64, Float64, Float64, UTF8String, ASCIIString, UTF8String], 
         [:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name], 0)
 
@@ -138,7 +155,7 @@ function master_log(; b_ref=true, b_mc_full=true, b_mcts=true, b_ge=false)
         dir = studypath(REF_NAME)
         logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
         D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
-        D[:algorithm] = fill("REF", nrow(D))
+        D[:algorithm] = fill("Global Min", nrow(D))
         rename!(D, :iter, :nevals)
         append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
     end
@@ -148,7 +165,7 @@ function master_log(; b_ref=true, b_mc_full=true, b_mcts=true, b_ge=false)
         dir = studypath(MCFULL_NAME)
         logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
         D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
-        D[:algorithm] = fill("MC_FULL", nrow(D))
+        D[:algorithm] = fill("MC", nrow(D))
         rename!(D, :iter, :nevals)
         append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
     end
@@ -160,6 +177,15 @@ function master_log(; b_ref=true, b_mc_full=true, b_mcts=true, b_ge=false)
         D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:iter, :name])
         D[:algorithm] = fill("MCTS", nrow(D))
         rename!(D, :iter, :nevals)
+        append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+    end
+
+    #GE
+    if b_ge
+        dir = studypath(GE_NAME)
+        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+        D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:nevals, :name])
+        D[:algorithm] = fill("GE", nrow(D))
         append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
     end
 
@@ -253,13 +279,18 @@ function run_main(;
         mcts = run_mcts()
         combine_mcts_logs()
     end
+
+    if b_ge
+        ge = run_ge()
+        combine_ge_logs()
+    end
 end
 
 function plot_main(;
     b_ref::Bool=true,
     b_mc_full::Bool=true,
     b_mcts::Bool=true,
-    b_ge::Bool=false)
+    b_ge::Bool=true)
 
     #meta info logs
     combine_sweep_logs()
