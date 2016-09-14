@@ -108,7 +108,7 @@ function run_mcts(; seed=1:5, n_iters=500000)
   result = sweeper(acasx_mcts, MCTSESResult, baseconfig; sweep_cfg...)
   result
 end
-function run_ge(; seed=1:5, n_iters=100, pop_size::Int64=6250)
+function run_ge(; seed=1:5, n_iters=100, pop_size::Int64=5000)
   baseconfig = configure(ACASX_GE, "normal", CONFIG)
   baseconfig[:outdir] = "./"
   baseconfig[:maxiterations] = n_iters

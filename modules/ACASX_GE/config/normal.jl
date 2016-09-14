@@ -41,13 +41,13 @@ const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect
   (:genome_size, 20),
   (:maxwraps, 0),
   (:defaultcode, :(eval(false))),
-  (:top_keep, 0.2),
+  (:top_keep, 0.25),
   (:top_seed, 0.5),
-  (:rand_frac, 0.3),
+  (:rand_frac, 0.25),
   (:prob_mutation, 0.2),
   (:mutation_rate, 0.2),
 
-  (:pop_size, 6250),
+  (:pop_size, 5000),
   (:maxiterations, 100),
 
   #vis
