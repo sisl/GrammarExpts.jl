@@ -33,7 +33,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 11:20
+const RANGE = 17:20
 
 for i in RANGE 
     expr = 

@@ -72,7 +72,9 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
                   genome_size::Int64=20,
                   pop_size::Int64=50,
                   maxwraps::Int64=0,
-                  top_percent::Float64=0.5,
+                  top_keep::Float64=0.25,
+                  top_seed::Float64=0.5,
+                  rand_frac::Float64=0.25,
                   prob_mutation::Float64=0.2,
                   mutation_rate::Float64=0.2,
                   defaultcode::Union{Symbol,Expr}=:(eval(false)),
@@ -96,7 +98,7 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
   ge_observer = Observer()
 
   ge_params = GEESParams(genome_size, pop_size, maxwraps,
-                         top_percent, prob_mutation, mutation_rate, defaultcode,
+                         top_keep, top_seed, rand_frac, prob_mutation, mutation_rate, defaultcode,
                          maxiterations, ge_observer, observer)
 
   result = exprsearch(ge_params, problem)
