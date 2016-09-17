@@ -65,7 +65,7 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
                   logfileroot::AbstractString="acasx_ge_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dasc",
+                  data::AbstractString="dascfilt",
                   manuals::AbstractString="dasc_manual",
                   clusterdataname::AbstractString="josh1",
 
@@ -84,7 +84,6 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
                   hist_nbins::Int64=40,
                   hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
                   hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
-                  loginterval::Int64=100,
                   vis::Bool=true)
   srand(seed)
   mkpath(outdir)
@@ -95,11 +94,9 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
   logs = default_logs(observer, hist_edges, hist_mids)
   default_console!(observer)
 
-  ge_observer = Observer()
-
   ge_params = GEESParams(genome_size, pop_size, maxwraps,
                          top_keep, top_seed, rand_frac, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, ge_observer, observer)
+                         maxiterations, observer)
 
   result = exprsearch(ge_params, problem)
 

@@ -62,6 +62,11 @@ type DecisionTree{T1,T2}
   root::DTNode{T1,T2}
 end
 
+#User should override these functions
+get_truth() = error("get_truth not defined")
+get_splitter() = error("get_splitter not defined")
+get_labels() = error("get_labels not defined")
+
 function build_tree(p::DTParams, userargs...)
   members = collect(1:p.num_data)
   depth = 0
@@ -120,9 +125,5 @@ function get_max_depth{T1,T2}(node::DTNode{T1,T2})
     return map(get_max_depth, values(node.children)) |> maximum
   end
 end
-
-get_truth() = error("get_truth not defined")
-get_splitter() = error("get_splitter not defined")
-get_labels() = error("get_labels not defined")
 
 end #module
