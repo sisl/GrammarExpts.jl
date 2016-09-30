@@ -49,7 +49,8 @@ const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect
   (:maxiterations, 100),
   
   #vis
-  (:limit_members, 30),
+  (:limit_members, 10),
+
   (:hist_nbins, HIST_NBINS),
   (:hist_edges, HIST_EDGES),
   (:hist_mids, HIST_MIDS),
