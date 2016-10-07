@@ -1,3 +1,4 @@
+
 # *****************************************************************************
 # Written by Ritchie Lee, ritchie.lee@sv.cmu.edu
 # *****************************************************************************
@@ -32,57 +33,15 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#TODO: can all the dtree_callbacks be unified?
+const RANGE = 1:2
 
-using DecisionTrees
-using RLESUtils, Observers, Loggers
-import DecisionTreeVis: get_tree, get_metric
-import DecisionTrees.classify
-
-function DecisionTrees.get_truth{T}(members::Vector{Int64},
-                                 Dl::DFSetLabeled{T}, otherargs...) #userargs...
-  return labels(Dl, members)
+for i in RANGE 
+    expr = 
+    """
+    using GrammarExpts, ACASX_GE_Tree
+    config = configure(ACASX_GE_Tree, "nvn_dasc", "normal")
+    acasx_ge_tree(; seed=$i, outdir=joinpath(ACASX_GE_Tree.RESULTDIR, "./ACASX_GE_Tree_noflags$i"), config...)
+    """
+    run(`julia -e $expr`)
 end
-
-function classify(problem::ACASXClustering, result::GEESResult, Ds::Vector{DataFrame})
-  f = to_function(problem, result.expr)
-  return map(f, Ds)
-end
-
-function DecisionTrees.get_splitter{T}(members::Vector{Int64},
-                                       Dl::DFSetLabeled{T}, problem::ACASXClustering,
-                                       ge_params::GEESParams, logs::TaggedDFLogger,
-                                       hist_edges::Range{Float64}, 
-                                       hist_mids::Vector{Float64}) #userargs...
-  set_observers!(ge_params.observer, logs, hist_edges, hist_mids)
-
-  problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
-  result = exprsearch(ge_params, problem)
-
-  push_members!(logs, problem, result.expr)
-  @notify_observer(ge_params.observer, "expression",
-                   [string(result.expr),
-                    pretty_string(result.tree, FMT_PRETTY),
-                    pretty_string(result.tree, FMT_NATURAL, true)])
-
-  predicts = classify(problem, result, getrecords(Dl_sub))
-  info_gain, _, _ = gini_metrics(predicts, labels(Dl_sub)) #TODO: try to get rid of this, it's being used separately in get_fitness
-
-  return info_gain > 0 ? result : nothing
-end
-
-function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
-  decision_id = nrow(logs["members"]) > 0 ?
-    maximum(logs["members"][:decision_id]) + 1 : 1
-  members_true, members_false = ACASXProblem.get_members(problem, expr)
-  push!(logs, "members", [join(members_true, ","), join(members_false, ","), decision_id])
-end
-
-function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64},
-                                     Dl::DFSetLabeled{T}, problem::ACASXClustering, otherargs...) #userargs...
-  return classify(problem, result, getrecords(Dl, members))
-end
-
-DecisionTreeVis.get_tree(result::GEESResult) = result.tree
-DecisionTreeVis.get_metric(result::GEESResult) = result.fitness
-
+notify()

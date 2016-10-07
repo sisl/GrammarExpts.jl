@@ -37,8 +37,8 @@ Generic decision tree based on callbacks
 """
 module DecisionTrees
 
-export DTParams, DecisionTree, DTNode, build_tree, classify, isleaf, get_max_depth
-export get_truth, get_splitter, get_labels
+export DTParams, DecisionTree, DTNode, build_tree, classify, isleaf, get_max_depth, get_members
+export get_truth, get_splitter, get_labels #to be overridden
 
 using StatsBase
 
@@ -108,11 +108,11 @@ end
 classify{T1,T2}(p::DTParams, tree::DecisionTree{T1,T2}, x, userargs...) = classify(p, tree.root, x, userargs...) #x could be either id or data
 function classify{T1,T2}(p::DTParams, node::DTNode{T1,T2}, x, userargs...)
   if isempty(node.children) #leaf node
-    return node.label::T1
+    return node.label::T2
   end
   label = get_labels(node.split_rule, [x], userargs...)[1]
   child = node.children[label]
-  return classify(child, x, userargs...)
+  return classify(p, child, x, userargs...)
 end
 
 isleaf{T1,T2}(node::DTNode{T1,T2}) = isempty(node.children)
@@ -125,5 +125,8 @@ function get_max_depth{T1,T2}(node::DTNode{T1,T2})
     return map(get_max_depth, values(node.children)) |> maximum
   end
 end
+
+get_members{T1,T2}(tree::DecisionTree{T1,T2}) = get_members(tree.root)
+get_members{T1,T2}(node::DTNode{T1,T2}) = node.members
 
 end #module
