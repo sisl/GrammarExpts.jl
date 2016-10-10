@@ -33,7 +33,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 1:10
+const RANGE = 11:15
 
 for i in RANGE
     expr = 
@@ -43,3 +43,5 @@ for i in RANGE
     """
     run(`julia -e $expr`)
 end
+@show RANGE
+notify(;value1="run_mcts_compare", value2="$RANGE")

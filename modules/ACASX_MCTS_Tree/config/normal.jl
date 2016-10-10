@@ -37,7 +37,7 @@
   (:maxsteps, 20),
 
   #mcts
-  (:n_iters, 50000),
+  (:n_iters, 500000),
   (:searchdepth , 20),
   (:explorationconst, 2000.0),
 

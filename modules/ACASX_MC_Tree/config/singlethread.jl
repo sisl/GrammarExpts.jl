@@ -1,4 +1,3 @@
-
 # *****************************************************************************
 # Written by Ritchie Lee, ritchie.lee@sv.cmu.edu
 # *****************************************************************************
@@ -21,7 +20,7 @@
 # of this software and associated documentation files (the "Software"), to
 # deal in the Software without restriction, including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-# sell copies of the Software, and to permit persons to whom the Software is
+# sell copies of the Software, , and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED
@@ -33,15 +32,14 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 11:15
+[
+  #tree
+  (:maxsteps, 20),
 
-for i in RANGE
-    expr = 
-    """
-    using GrammarExpts, ACASX_Compare
-    run_mc_full(; seed=$i)
-    """
-    run(`julia -e $expr`)
-end
-@show RANGE
-notify(;value1="run_mc_compare", value2="$RANGE")
+  #MC
+  (:n_samples, 500000),
+  (:n_threads, 1),
+
+  #decision tree
+  (:maxdepth, 3)
+]

@@ -1,4 +1,3 @@
-
 # *****************************************************************************
 # Written by Ritchie Lee, ritchie.lee@sv.cmu.edu
 # *****************************************************************************
@@ -33,15 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 11:15
+#nmacs vs nonnmacs
+[
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "dascfilt"),
+  (:manuals, ""),
+  (:clusterdataname, "")
+]
 
-for i in RANGE
-    expr = 
-    """
-    using GrammarExpts, ACASX_Compare
-    run_mc_full(; seed=$i)
-    """
-    run(`julia -e $expr`)
-end
-@show RANGE
-notify(;value1="run_mc_compare", value2="$RANGE")
+

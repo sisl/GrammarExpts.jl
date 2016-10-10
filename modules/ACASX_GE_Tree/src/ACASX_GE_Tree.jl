@@ -83,13 +83,12 @@ function train_dtree{T}(ge_params::GEESParams,
   return dtree, logs
 end
 
-#"""
-#Example call:
-#config=configure(ACASX_GE_Tree, "nvn_dasc", "normal")
-#acasx_ge_tree(; config...)
-#"""
-using Debug
-@debug function acasx_ge_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE_Tree"),
+"""
+Example call:
+config=configure(ACASX_GE_Tree, "nvn_dasc", "normal")
+acasx_ge_tree(; config...)
+"""
+function acasx_ge_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE_Tree"),
                         seed=1,
                         logfileroot::AbstractString="acasx_ge_tree_log",
 

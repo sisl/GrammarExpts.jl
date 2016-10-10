@@ -34,6 +34,7 @@
 
 using DecisionTrees
 import DecisionTreeVis: get_tree, get_metric
+import DecisionTrees.classify
 
 function DecisionTrees.get_truth{T}(members::Vector{Int64},
                                  Dl::DFSetLabeled{T}, otherargs...) #userargs...
@@ -68,7 +69,7 @@ end
 function push_members!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
   decision_id = nrow(logs["members"]) > 0 ?
     maximum(logs["members"][:decision_id]) + 1 : 1
-  members_true, members_false = get_members(problem, expr)
+  members_true, members_false = ACASXProblem.get_members(problem, expr)
   push!(logs, "members", [join(members_true, ","), join(members_false, ","), decision_id])
 end
 
@@ -78,5 +79,5 @@ function DecisionTrees.get_labels{T}(result::SearchResult, members::Vector{Int64
 end
 
 DecisionTreeVis.get_tree(result::MCTSESResult) = result.tree
-DecisionTreeVis.get_metric(result::MCTSESResult) = -result.reward
+DecisionTreeVis.get_metric(result::MCTSESResult) = result.fitness
 
