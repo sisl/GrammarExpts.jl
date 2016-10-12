@@ -43,7 +43,7 @@ Two versions of the fitness function are provided, one with pruning (early stop)
 """
 module ACASXProblem
 
-export ACASXClustering, create_grammar, get_fitness, to_function, get_predicts,
+export ACASXClustering, create_grammar, get_fitness, eval_expr, get_predicts,
     get_members, get_grammar
 export FMT_PRETTY, FMT_NATURAL
 export entropy_metrics, gini_metrics
@@ -51,7 +51,7 @@ export entropy_metrics, gini_metrics
 using Datasets
 using ExprSearch
 using Devectorize
-using RLESUtils, LogicUtils
+using RLESUtils, LogicUtils, Interpreter
 import ExprSearch: ExprProblem, get_fitness, get_grammar
 
 include("labeleddata.jl")
@@ -276,18 +276,18 @@ function create_grammar()
     v_absdiff_lte = Expr(:call, :adfle, v_feat, v_feat, v_val)
 
     #read features
-    bin_feat = Expr(:ref, :D, :(:), bin_feat_id)
-    vrate_feat = Expr(:ref, :D, :(:), vrate_feat_id)
-    altdiff_feat = Expr(:ref, :D, :(:), altdiff_feat_id)
-    abs_altdiff_feat = Expr(:ref, :D, :(:), abs_altdiff_feat_id)
-    angle_feat = Expr(:ref, :D, :(:), angle_feat_id)
-    psi_angle_feat = Expr(:ref, :D, :(:), psi_angle_feat_id)
-    chi_angle_feat = Expr(:ref, :D, :(:), chi_angle_feat_id)
-    sr_feat = Expr(:ref, :D, :(:), sr_feat_id)
-    timer_feat = Expr(:ref, :D, :(:), timer_feat_id)
-    psid_feat = Expr(:ref, :D, :(:), psid_feat_id)
-    v_feat = Expr(:ref, :D, :(:), v_feat_id)
-    alt_feat = Expr(:ref, :D, :(:), alt_feat_id)
+    bin_feat = Expr(:call, :g, :D, bin_feat_id)
+    vrate_feat = Expr(:call, :g, :D, vrate_feat_id)
+    altdiff_feat = Expr(:call, :g, :D, altdiff_feat_id)
+    abs_altdiff_feat = Expr(:call, :g, :D, abs_altdiff_feat_id)
+    angle_feat = Expr(:call, :g, :D, angle_feat_id)
+    psi_angle_feat = Expr(:call, :g, :D, psi_angle_feat_id)
+    chi_angle_feat = Expr(:call, :g, :D, chi_angle_feat_id)
+    sr_feat = Expr(:call, :g, :D, sr_feat_id)
+    timer_feat = Expr(:call, :g, :D, timer_feat_id)
+    psid_feat = Expr(:call, :g, :D, psid_feat_id)
+    v_feat = Expr(:call, :g, :D, v_feat_id)
+    alt_feat = Expr(:call, :g, :D, alt_feat_id)
 
     #indices of each type
     #include bit flags
@@ -539,29 +539,61 @@ function count_gte(v::AbstractVector{Bool}, b::Real)
   count(identity, v) >= b
 end
 
-#shorthands used in grammar to reduce impact on code length
-abeq = abs_eq
-able = abs_lte
-ablt = abs_lt
-dfeq = diff_eq
-dfle = diff_lte
-dflt = diff_lt
-adfeq = abs_diff_eq
-adfle = abs_diff_lte
-adflt = abs_diff_lt
-F = eventually
-G = globally
-Y = implies
-sn = sign_ #avoid conflict with Base.sign
-ctlt = count_lt
-ctle = count_lte
-ctgt = count_gt
-ctge = count_gte
-cteq = count_eq
+#get
+get_ref(D, id) = D[:, id]
 
-function to_function(problem::ACASXClustering, expr)
-  @eval f(D) = $expr
-  return f
+#shorthands used in grammar to reduce impact on code length
+#g = get_ref
+#abeq = abs_eq
+#able = abs_lte
+#ablt = abs_lt
+#dfeq = diff_eq
+#dfle = diff_lte
+#dflt = diff_lt
+#adfeq = abs_diff_eq
+#adfle = abs_diff_lte
+#adflt = abs_diff_lt
+#F = eventually
+#G = globally
+#Y = implies
+#sn = sign_ #avoid conflict with Base.sign
+#ctlt = count_lt
+#ctle = count_lte
+#ctgt = count_gt
+#ctge = count_gte
+#cteq = count_eq
+
+const SYMTABLE = SymbolTable(
+    :g => get_ref,
+    :abeq => abs_eq,
+    :able => abs_lte,
+    :ablt => abs_lt,
+    :dfeq => diff_eq,
+    :dfle => diff_lte,
+    :dflt => diff_lt,
+    :adfeq => abs_diff_eq,
+    :adfle => abs_diff_lte,
+    :adflt => abs_diff_lt,
+    :F => eventually,
+    :G => globally,
+    :Y => implies,
+    :sn => sign_, #avoid conflict with Base.sign
+    :ctlt => count_lt,
+    :ctle => count_lte,
+    :ctgt => count_gt,
+    :ctge => count_gte,
+    :cteq => count_eq,
+    :eq => eq,
+    :lt => lt,
+    :lte => lte,
+    :| => |,
+    :& => &,
+    :! => !
+    )
+
+function eval_expr(problem::ACASXClustering, expr, D)
+  SYMTABLE[:D] = D
+  return interpret(SYMTABLE, expr)
 end
 
 get_grammar{T}(problem::ACASXClustering{T}) = problem.grammar
@@ -579,10 +611,9 @@ end
 
 function get_predicts{T}(problem::ACASXClustering{T}, expr)
   Dl = problem.Dl
-  f = to_function(problem, expr)
   predicts = Array(Bool, length(Dl))
   for i = 1:length(Dl)
-    predicts[i] = f(getrecords(Dl, i))
+    predicts[i] = eval_expr(problem, expr, getrecords(Dl, i))
   end
   predicts
 end

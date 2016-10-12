@@ -45,8 +45,7 @@ function DecisionTrees.get_truth{T}(members::Vector{Int64},
 end
 
 function classify(problem::ACASXClustering, result::GEESResult, Ds::Vector{DataFrame})
-  f = to_function(problem, result.expr)
-  return map(f, Ds)
+  map(D -> eval_expr(problem, result.expr, D), Ds)
 end
 
 function DecisionTrees.get_splitter{T}(members::Vector{Int64},

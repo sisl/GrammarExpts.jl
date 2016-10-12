@@ -1,4 +1,3 @@
-
 # *****************************************************************************
 # Written by Ritchie Lee, ritchie.lee@sv.cmu.edu
 # *****************************************************************************
@@ -33,15 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 16:20
+using GrammarExpts, ACASXProblem
+using Datasets
 
-for i in RANGE 
-    expr = 
-    """
-    using GrammarExpts, ACASX_Compare
-    run_ge(; seed=$i)
-    """
-    run(`julia -e $expr`)
-end
-@show RANGE
-notify(;value1="run_ge_compare", value2="$RANGE")
+problem = ACASXClustering("dasc")
+D = getrecords(problem.Dl, 1) 
+expr = :(g(D,1))
+
+eval_expr(problem, expr, D)
+

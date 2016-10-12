@@ -33,14 +33,14 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 5:6
+const RANGE = 11:20
 
 for i in RANGE 
     expr = 
     """
     using GrammarExpts, ACASX_MCTS_Tree
     config = configure(ACASX_MCTS_Tree, "nvn_dascfilt", "normal")
-    acasx_mcts_tree(; seed=$i, outdir=joinpath(ACASX_MCTS_Tree.RESULTDIR, "./ACASX_MCTS_Tree_noflags$i"), config...)
+    acasx_mcts_tree(; seed=$i, outdir=joinpath(ACASX_MCTS_Tree.RESULTDIR, "./ACASX_MCTS_Tree_noflags_interp$i"), config...)
     """
     run(`julia -e $expr`)
 end
