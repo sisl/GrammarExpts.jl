@@ -50,7 +50,7 @@ function default_logs()
   add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
   add_folder!(logs, "cputime", [Int64, Float64, Int64], ["step", "cputime_s", "decision_id"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["total_reward", "expr", "best_at_eval", "total_evals", "decision_id"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals", "decision_id"])
   add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
   add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, ASCIIString, Int64], ["iteration", "reward", "state", "expr", "decision_id"])
 
@@ -66,7 +66,7 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger, loginterval::I
                  i = x[1]
                  rem(i, 100) == 0 && println("iteration $i")
                end)
-  add_observer(observer, "result", x -> println("total_reward=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
+  add_observer(observer, "result", x -> println("fitness=$(x[1]), expr=$(x[2]), best_at_eval=$(x[3]), total_evals=$(x[4])"))
   add_observer(observer, "current_best", x -> begin
                  i, reward, state = x
                  if rem(i, 100) == 0
