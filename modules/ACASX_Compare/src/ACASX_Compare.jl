@@ -208,8 +208,8 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
     D = D[rem(D[:nevals], subsample) .== 0, :] #subsample data
 
     #workaround for naming in julia 0.4
-    rename!(D, symbol("fitness_MathUtils.SEM"), :fitness_SEM) 
-    rename!(D, symbol("elapsed_cpu_s_MathUtils.SEM"), :elapsed_cpu_s_SEM) 
+    rename!(D, Symbol("fitness_MathUtils.SEM"), :fitness_SEM) 
+    rename!(D, Symbol("elapsed_cpu_s_MathUtils.SEM"), :elapsed_cpu_s_SEM) 
 
     writetable(PLOTLOG_FILE, D)
 

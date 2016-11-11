@@ -4,3 +4,4 @@ DataFrames
 Gadfly
 Devectorize
 GZip
+StatsBase

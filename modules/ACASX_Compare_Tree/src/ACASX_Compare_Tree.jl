@@ -141,7 +141,7 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
     for s0 in names(D)
         str = string(s0)
         str = replace(str, "MathUtils.", "")
-        s1 = symbol(str)
+        s1 = Symbol(str)
         if s0 != s1
             rename!(D, s0, s1)
         end

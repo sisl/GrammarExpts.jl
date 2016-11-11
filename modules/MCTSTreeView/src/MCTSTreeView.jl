@@ -37,8 +37,8 @@ Support module for logging and viewing the MCTS tree
 """
 module MCTSTreeView
 
+using ExprSearch, GBMCTS, GBMCTSView, POMDPs
 using POMDPs.State
-using ExprSearch, GBMCTS, GBMCTSView
 
 function viewstep_f(interval::Int64)
   view = TreeView()

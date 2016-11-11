@@ -33,10 +33,5 @@
 # *****************************************************************************
 
 using GrammarExpts
-using NNGrammarExpt4
+#using NNGrammarExpt4 #NNGrammarExpts require TFTools and TensorFlow.jl
 
-function run_expt4()
-    circuit4(b_debug=true, labelfield="F_x1_lt_100_x2_lt_500")
-end
-
-run_expt4()

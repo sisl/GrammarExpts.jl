@@ -33,9 +33,9 @@
 # *****************************************************************************
 
 using GrammarExpts
-using ACASX_MC
+using ACASX_Ref
 
-const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_MC")
+const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_Ref")
 
 mkpath(TESTDIR)
-acasx_mc(outdir=TESTDIR)
+acasx_ref(outdir=TESTDIR)

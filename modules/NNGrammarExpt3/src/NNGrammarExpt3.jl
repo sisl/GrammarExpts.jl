@@ -72,7 +72,7 @@ function circuit_fgandor(;
     nshow::Int64=20)
 
     Ds = dataset(dataname) #DFSet
-    data_set = TFDataset(Ds, getmeta(Ds)[symbol(labelfield)])
+    data_set = TFDataset(Ds, getmeta(Ds)[Symbol(labelfield)])
 
     # Construct model
     (n_examples, n_steps, n_feats) = size(Ds)
@@ -211,7 +211,7 @@ function circuit_fgandor(;
     accuracy = mean(cast(correct_prediction, DT_FLOAT32))
     
     #reload data_set to recover original order
-    data_set = TFDataset(Ds, getmeta(Ds)[symbol(labelfield)])
+    data_set = TFDataset(Ds, getmeta(Ds)[Symbol(labelfield)])
     X = data_set.X 
     Y = data_set.Y
 

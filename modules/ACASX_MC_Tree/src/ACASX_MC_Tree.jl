@@ -40,6 +40,8 @@ module ACASX_MC_Tree
 
 export configure, acasx_mc_tree
 
+import Compat.ASCIIString
+
 using DecisionTrees
 using ExprSearch.MC
 using Datasets

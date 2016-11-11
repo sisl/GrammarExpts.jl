@@ -37,15 +37,21 @@ Symbolic regression grammar problem.
 """
 module SymbolicProblem
 
-export Symbolic, create_grammar, get_fitness, to_function
+export Symbolic, create_grammar, get_fitness
 
 using ExprSearch
 import ExprSearch: ExprProblem, get_fitness, get_grammar
+using RLESUtils, Interpreter
 
 const DIR = dirname(@__FILE__)
 const XRANGE = 0.0:0.5:10.0
 const YRANGE = 0.0:0.5:10.0
 const W_LEN = 0.1
+
+const SYMTABLE = SymbolTable(
+    :+ => +,
+    :* => *
+    )
 
 type Symbolic{T<:AbstractFloat} <: ExprProblem
   xrange::FloatRange{T}
@@ -76,9 +82,10 @@ function create_grammar()
   return grammar
 end
 
-function to_function(problem::Symbolic, expr)
-  @eval f(x, y) = $expr
-  return f
+function eval_expr(problem::Symbolic, expr, x, y)
+    SYMTABLE[:x] = x
+    SYMTABLE[:y] = y
+    return interpret(SYMTABLE, expr)
 end
 
 ExprSearch.get_grammar(problem::Symbolic) = problem.grammar
@@ -86,9 +93,8 @@ ExprSearch.get_grammar(problem::Symbolic) = problem.grammar
 function ExprSearch.get_fitness(problem::Symbolic, expr)
   #mean-square error over a range
   sum_se = 0.0
-  f = to_function(problem, expr)
   for x in problem.xrange, y in problem.yrange
-    sum_se += abs2(f(x, y) - gt(x, y))
+    sum_se += abs2(eval_expr(problem, expr, x, y) - gt(x, y))
   end
   n = length(problem.xrange) * length(problem.yrange)
   fitness = sum_se / n + problem.w_len * length(string(expr))

@@ -33,6 +33,6 @@
 # *****************************************************************************
 
 using GrammarExpts
-using NNGrammarExpt1
+#using NNGrammarExpt1 #NNGrammarExpts require TFTools and TensorFlow.jl
 
 

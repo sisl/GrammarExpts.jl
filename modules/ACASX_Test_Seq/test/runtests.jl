@@ -34,7 +34,9 @@
 
 using GrammarExpts
 using ACASX_Test_Seq
+using Base.Test
 
-nmacrule();
+tree, fitness, expr = nmacrule();
+@test_approx_eq_eps fitness 1.9 1e-2
 
 

@@ -32,12 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-code = "x"
+#nmacs vs nonnmacs
+[(:runtype, :nmacs_vs_nonnmacs),
+(:data, "dascfilt"),
+(:manuals, ""),
+(:clusterdataname, "")]
 
-while true
-  tic()
-  for i = 1:10000
-    @eval f(x) = $code
-  end
-  println("$(toq())")
-end
+

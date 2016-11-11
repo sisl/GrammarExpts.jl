@@ -32,5 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts, CASJson2DataFrame
-script_dasc(false)
+using GrammarExpts, CASJson2DataFrame, FilterNMACInfo
+
+CASJson2DataFrame.script_dasc(false)
+FilterNMACInfo.script_dasc()

@@ -33,4 +33,4 @@
 # *****************************************************************************
 
 using GrammarExpts
-using NNGrammarExpt5
+#using NNGrammarExpt5 #NNGrammarExpts require TFTools and TensorFlow.jl

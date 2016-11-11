@@ -46,6 +46,7 @@ using Reexport
 using RLESUtils
 @reexport using Observers, Loggers
 using Iterators
+using StatsBase
 
 function default_logs()
   logs = TaggedDFLogger()
@@ -98,7 +99,9 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger, hist_edges::Ra
     add_observer(observer, "population", x -> begin
                     iter, pop = x
                     fitness_vec = Float64[pop[i].fitness  for i = 1:length(pop)]
-                    edges, counts = hist(fitness_vec, hist_edges)
+                    h = fit(Histogram, fitness_vec, hist_edges)
+                    edges = h.edges
+                    counts = h.weights
                     uniq_fitness = Int64[]
                     uniq_code = Int64[]
                     for (e1, e2) in partition(hist_edges, 2, 1)

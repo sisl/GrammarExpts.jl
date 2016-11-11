@@ -32,13 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using Base.Test
+#nmacs vs nonnmacs
+[(:runtype, :nmacs_vs_nonnmacs),
+(:data, "nvn_libcas098small"),
+(:manuals, ""),
+(:clusterdataname, "")]
 
-const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
 
-pkgs = readdir(MODULEDIR)
-
-for pkg in pkgs
-  GrammarExpts.test(pkg)
-end

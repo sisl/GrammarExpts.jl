@@ -51,7 +51,7 @@ const VHDIST_NAME = "vhdist"
 const VDIST_NAME = "vdist"
 
 function generate_fake_data(dataset::AbstractString; kwargs...)
-    generate_fake_data(Val{symbol(dataset)}; kwargs...)
+    generate_fake_data(Val{Symbol(dataset)}; kwargs...)
 end
 
 """
@@ -59,13 +59,13 @@ bin_synth dataset
 synthetic data with
 static binary features
 """
-function generate_fake_data(::Type{Val{symbol(BIN_SYNTH_NAME)}}; 
+function generate_fake_data(::Type{Val{Symbol(BIN_SYNTH_NAME)}}; 
     n_feats::Int64=20, 
     n_samples::Int64=5000)
     
     mkpath(joinpath(DATAPATH, BIN_SYNTH_NAME))
     D = convert(Array{Int64}, rand(Bool, n_samples, n_feats))
-    colnames = [symbol("x$i") for i = 1:n_feats]
+    colnames = [Symbol("x$i") for i = 1:n_feats]
     feats = DataFrame(D)
     names!(feats, colnames)
     filename = joinpath(DATAPATH, BIN_SYNTH_NAME, "feats.csv.gz") 
@@ -88,7 +88,7 @@ bin_ts_synth dataset
 synthetic data with
 binary time series features
 """
-function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}}; 
+function generate_fake_data(::Type{Val{Symbol(BIN_TS_SYNTH_NAME)}}; 
     n_feats::Int64=20, 
     n_time::Int64=50,
     n_samples::Int64=5000)
@@ -97,7 +97,7 @@ function generate_fake_data(::Type{Val{symbol(BIN_TS_SYNTH_NAME)}};
     mkpath(outdir)
 
     records = DataFrame[]
-    colnames = [symbol("x$i") for i = 1:n_feats]
+    colnames = [Symbol("x$i") for i = 1:n_feats]
     for j = 1:n_samples
         B = rand(Bool, n_time, n_feats)
         for i = 1:size(B, 2)
@@ -162,7 +162,7 @@ vertical and horizontal miss distances from ACASX dataset
 real-valued time series features
 actually not fake data...
 """
-function generate_fake_data(::Type{Val{symbol(VHDIST_NAME)}}; 
+function generate_fake_data(::Type{Val{Symbol(VHDIST_NAME)}}; 
     cas_data_name::ASCIIString="dasc", 
     vdist_name::Symbol=:abs_alt_diff,
     hdist_name::Symbol=:horizontal_range,
@@ -192,7 +192,7 @@ vertical distances from ACASX dataset
 real-valued time series features
 actually not fake data...
 """
-function generate_fake_data(::Type{Val{symbol(VDIST_NAME)}}; 
+function generate_fake_data(::Type{Val{Symbol(VDIST_NAME)}}; 
     cas_data_name::ASCIIString="dasc", 
     vdist_name::Symbol=:abs_alt_diff,
     nmac_name::Symbol=:nmac,

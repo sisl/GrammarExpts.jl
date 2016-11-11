@@ -72,9 +72,9 @@ end
 function add_features!(D::DataFrame, feature_map::Vector{LookupCallback},
                         feature_names::Vector{ASCIIString})
   for i = 1:length(feature_map)
-    lookups = map(symbol, feature_map[i].lookups) #map lookups to symbols
+    lookups = map(Symbol, feature_map[i].lookups) #map lookups to symbols
     f = feature_map[i].callback #function
-    feat_name = symbol(feature_names[i]) #as a symbol
+    feat_name = Symbol(feature_names[i]) #as a symbol
     D[feat_name] = Array(Any, size(D, 1)) #add a new column
     for r = 1:size(D, 1)
       x = map(l -> D[r, l], lookups) #extract to a vector
@@ -109,7 +109,7 @@ end
 
 function transform!(D::DataFrame, lookup_callbacks::Vector{LookupCallback})
   for lcb in lookup_callbacks
-    lookups = map(symbol, lcb.lookups)
+    lookups = map(Symbol, lcb.lookups)
     f = lcb.callback
     for row = 1:size(D, 1)
       inputs = [D[row, l] for l in lookups]

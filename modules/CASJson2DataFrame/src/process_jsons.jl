@@ -32,9 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # ***********************************************i******************************
 
-#requires RLESCAS to be installed
-include(Pkg.dir("RLESCAS/src/converters/json_to_csv.jl"))
-
+using RLESCAS #requires RLESCAS.json_to_csv 
 using RLESUtils, FileUtils, DataFrameSets
 
 #read a directory of jsons and output csvs

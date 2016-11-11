@@ -65,7 +65,7 @@ function circuit_fg(;
     Dlabels = dataset(labelsname, labelfile)
     @assert length(Dfeats) == nrow(Dlabels) #sanity check, num examples should be same
 
-    data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
+    data_set = TFDataset(Dfeats, Dlabels[Symbol(labelfield)])
 
     # Construct model
     (n_examples, n_steps, n_feats) = size(Dfeats)
@@ -156,7 +156,7 @@ function circuit_fg(;
 
         if b_debug
             #reload data_set to recover original order
-            data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
+            data_set = TFDataset(Dfeats, Dlabels[Symbol(labelfield)])
             db_x = data_set.X 
             db_labels = data_set.Y
             db_xmux = run(sess, x_muxout, fd)

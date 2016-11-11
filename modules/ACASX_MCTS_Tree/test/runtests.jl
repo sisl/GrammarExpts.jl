@@ -33,9 +33,9 @@
 # *****************************************************************************
 
 using GrammarExpts
-using ACASX_MCTS2_Tree
+using ACASX_MCTS_Tree
 
-const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_MCTS2_Tree")
+const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_MCTS_Tree")
 
 mkpath(TESTDIR)
-acasx_mcts2_tree(outdir=TESTDIR)
+acasx_mcts_tree(outdir=TESTDIR)

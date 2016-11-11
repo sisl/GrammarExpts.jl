@@ -59,23 +59,26 @@ function symbolic_mcts(;outdir::AbstractString="./Symbolic_MCTS",
                         logfileroot::AbstractString="symbolic_mcts_log",
 
                         gt_file::AbstractString="gt_easy.jl",
-                        maxsteps::Int64=25,
 
                         n_iters::Int64=200,
                         searchdepth::Int64=20,
                         explorationconst::Float64=2000.0,
                         q0::Float64=-1000.0,
+                        maxsteps::Int64=25,
                         max_neg_reward::Float64=-1000.0,
                         step_reward::Float64=0.0,
+                        maxmod::Bool=false,
 
                         loginterval::Int64=100,
                         vis::Bool=true,
                         mctstreevis::Bool=false,
-                        treevis_interval::Int64=50,
-                        observer::Observer=Observer())
+                        treevis_interval::Int64=50)
   mkpath(outdir)
 
   problem = Symbolic(gt_file)
+
+  observer=Observer()
+  mcts_observer = Observer()
 
   logs = default_logs(observer, loginterval)
   default_console!(observer)
@@ -85,11 +88,8 @@ function symbolic_mcts(;outdir::AbstractString="./Symbolic_MCTS",
     add_observer(observer, "mcts_tree", viewstep)
   end
 
-  mcts_observer = Observer()
-  #add_observer(mcts_observer, "terminal_reward", x -> println("r=", x[1], " state=", x[2].past_actions))
-
   mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
-                             explorationconst, q0, seed, mcts_observer,
+                             explorationconst, maxmod, q0, seed, mcts_observer,
                              observer)
 
   result = exprsearch(mcts_params, problem)
@@ -107,7 +107,7 @@ function symbolic_mcts(;outdir::AbstractString="./Symbolic_MCTS",
   end
 
   textfile(joinpath(outdir, "summary.txt"), "mcts", seed=seed, n_iters=n_iters,
-           reward=result.reward, expr=string(result.expr))
+           fitness=result.fitness, expr=string(result.expr))
 
   if vis
     derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))

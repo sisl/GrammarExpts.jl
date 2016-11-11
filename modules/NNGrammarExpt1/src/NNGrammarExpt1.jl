@@ -59,7 +59,7 @@ function circuit_andor(;
     n_feats = ncol(Dfeats)
     @assert nrow(Dfeats) == nrow(Dlabels)
 
-    data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
+    data_set = TFDataset(Dfeats, Dlabels[Symbol(labelfield)])
 
     # Construct model
 
@@ -148,7 +148,7 @@ function circuit_andor(;
 
         if b_debug
             #reload data_set to recover original order
-            data_set = TFDataset(Dfeats, Dlabels[symbol(labelfield)])
+            data_set = TFDataset(Dfeats, Dlabels[Symbol(labelfield)])
             db_x = data_set.X 
             db_labels = data_set.Y
             db_xmux = run(sess, x_muxout, fd)

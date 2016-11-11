@@ -63,7 +63,7 @@ function acasx_ref(; outdir::AbstractString="./ACASX_Ref",
                    clusterdataname::AbstractString="josh1",
                    maxsteps::Int64=20,
 
-                   actions::Vector{Int64}=Int64[2, 2, 7, 11, 7, 7, 5, 3, 10], #action seq to be replayed
+                   actions::Vector{Int64}=Int64[2, 2, 7, 10, 7, 7, 5, 3, 10], #action seq to be replayed
                    n_samples::Int64=200, #for emulated logs
 
                    loginterval::Int64=100,

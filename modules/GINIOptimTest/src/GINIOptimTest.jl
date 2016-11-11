@@ -64,7 +64,7 @@ function gini_optim_loop(ntrials=100)
   end
 
   for sym in fs
-    results[symbol(sym, :_ismin)] = map(eachrow(results[:, fs])) do r
+    results[Symbol(sym, :_ismin)] = map(eachrow(results[:, fs])) do r
       a = convert(Array, r)
       Int64(all(r[sym] .<= a))
     end

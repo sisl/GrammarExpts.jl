@@ -59,7 +59,9 @@ function symbolic_ge(;outdir::AbstractString="./Symbolic_GE",
                      genome_size::Int64=20,
                      pop_size::Int64=50,
                      maxwraps::Int64=0,
-                     top_percent::Float64=0.5,
+                     top_keep::Float64=0.25,
+                     top_seed::Float64=0.5,
+                     rand_frac::Float64=0.25,
                      prob_mutation::Float64=0.2,
                      mutation_rate::Float64=0.2,
                      defaultcode::Any=0.0,
@@ -88,8 +90,8 @@ function symbolic_ge(;outdir::AbstractString="./Symbolic_GE",
   ge_observer = Observer()
 
   ge_params = GEESParams(genome_size, pop_size, maxwraps,
-                         top_percent, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, ge_observer, observer)
+                         top_keep, top_seed, rand_frac, prob_mutation, mutation_rate, defaultcode,
+                         maxiterations, observer)
 
   result = exprsearch(ge_params, problem)
 

@@ -74,8 +74,6 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
                   maxsteps::Int64=20,
                   n_samples::Int64=50,
                   n_threads::Int64=1,
-                  earlystop::Bool=true,
-                  earlystop_div::Int64=10,
 
                   loginterval::Int64=100,
                   vis::Bool=true)
@@ -90,7 +88,7 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
   logs = default_logs(par_observer)
   default_console!(observer, loginterval)
 
-  mc_params = MCESParams(maxsteps, n_samples, earlystop, earlystop_div, observer)
+  mc_params = MCESParams(maxsteps, n_samples, observer)
   pmc_params = PMCESParams(n_threads, mc_params, par_observer)
 
   result = exprsearch(pmc_params, problem)
