@@ -39,6 +39,7 @@ module FakeDataGen
 
 export generate_fake_data
 
+import Compat.ASCIIString
 using RLESUtils, DataFrameSets
 using DataFrames
 using Datasets

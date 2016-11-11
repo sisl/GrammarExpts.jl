@@ -40,6 +40,7 @@ module ACASX_Ref
 
 export configure, acasx_ref, setup, playsequence
 
+import Compat.ASCIIString
 using ExprSearch.Ref
 using Reexport
 

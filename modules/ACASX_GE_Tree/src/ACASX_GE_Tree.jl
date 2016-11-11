@@ -40,6 +40,7 @@ module ACASX_GE_Tree
 
 export configure, acasx_ge_tree
 
+import Compat.ASCIIString
 using DecisionTrees
 using ExprSearch.GE
 using Datasets

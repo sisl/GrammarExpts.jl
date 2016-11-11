@@ -40,6 +40,7 @@ module NNGrammarExpt4
 
 export circuit4, restarts
 
+import Compat.ASCIIString
 using TFTools
 using Datasets
 using TensorFlow
@@ -60,8 +61,7 @@ function restarts(f::Function, N::Int64; kwargs...)
    [f(; kwargs...) for i = 1:N]
 end
 
-using Debug
-@debug function circuit4(;
+function circuit4(;
     dataname::AbstractString="vhdist3",
     labelfield::AbstractString="nmac", #"F_x1_lt_100_and_x2_lt_500",
     learning_rate::Float64=0.001,
@@ -196,7 +196,6 @@ using Debug
 
     #optimizer
     #optimizer = minimize(AdamOptimizer(learning_rate), cost) 
-    #@bp
     opt = Optimizer(tf.train[:GradientDescentOptimizer](learning_rate))
     gvs = opt.x[:compute_gradients](cost.x) 
     capped_gvs = [(tf.nn[:l2_normalize](tf.clip_by_value(grad, -1.0, 1.0), 0), var) for (grad, var) in gvs]
@@ -260,7 +259,6 @@ using Debug
             #softsel = softselect_by_example(sess, ckt, fd)
             #grads = run(sess, Tensor([f1_grad, v1_grad, f2_grad, v2_grad, a1_grad, a2_grad, l1_grad, t1_grad]), fd)
             #conv1_out = run(sess, conv1, fd)
-            #@bp 
             #@show run(sess, pred, fd)
             #@show run(sess, pred - labels, fd)
             #@show run(sess, muxselect, fd)
@@ -280,7 +278,6 @@ using Debug
             #println(softsel)
             #println(capped_gvs)
             #grads = Tensor([grad for (grad, var) in capped_gvs])
-            #@bp 
             println("Epoch $(epoch)  cost=$(avg_cost)")
             #println("Norm=$(norm(grads))")
             if avg_cost < Float32(target_cost)
@@ -320,7 +317,6 @@ using Debug
     println("Hard Accuracy:", acc_hard)
     println(top5)
     d=Dict{ASCIIString,Any}()
-    @bp 
 
     top5, acc_hard
 end

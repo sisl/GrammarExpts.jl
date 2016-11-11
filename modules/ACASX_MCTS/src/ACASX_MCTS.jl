@@ -40,6 +40,7 @@ module ACASX_MCTS
 
 export configure, acasx_mcts
 
+import Compat.ASCIIString
 using ExprSearch.MCTS
 using Datasets
 using Reexport

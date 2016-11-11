@@ -40,6 +40,7 @@ module ACASX_SA_Tree
 
 export configure, acasx_sa_tree
 
+import Compat.ASCIIString
 using DecisionTrees
 using ExprSearch.SA
 using Datasets

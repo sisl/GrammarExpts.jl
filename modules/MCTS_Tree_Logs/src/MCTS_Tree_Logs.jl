@@ -39,6 +39,7 @@ module MCTS_Tree_Logs
 
 export default_logs, set_observers!
 
+import Compat.ASCIIString
 using DataFrames #nrow
 using ExprSearch, DerivationTrees #get_expr
 using Reexport

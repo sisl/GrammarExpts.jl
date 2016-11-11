@@ -39,6 +39,7 @@ module GINIOptimTest
 
 export gini_optim_test, gini_optim_loop
 
+import Compat.ASCIIString
 using Distributions #mode
 using Reexport
 @reexport using DataFrames

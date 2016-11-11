@@ -49,6 +49,7 @@ module PipelineTest
 
 export pipelinetest, cleanup
 
+import Compat.ASCIIString
 using GrammarExpts, CASJson2DataFrame, FilterRecords
 using DataFrameSets
 using DataFrames

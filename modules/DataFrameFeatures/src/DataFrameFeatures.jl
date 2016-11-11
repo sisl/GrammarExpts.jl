@@ -40,6 +40,7 @@ module DataFrameFeatures
 
 export add_features!, transform, transform!
 
+import Compat.ASCIIString
 using DataFrames
 using Iterators
 using RLESUtils, FileUtils, LookupCallbacks

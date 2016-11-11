@@ -45,6 +45,7 @@ export combine_sweep_logs, combine_ref_logs, combine_mc_full_logs, combine_mcts_
     combine_ge_logs
 export master_log, master_plot
 
+import Compat: ASCIIString, UTF8String
 using GrammarExpts
 using Sweeper
 using ExprSearch: Ref, SA, MC, MCTS, GE

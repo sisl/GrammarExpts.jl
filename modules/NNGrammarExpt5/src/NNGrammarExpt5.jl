@@ -40,6 +40,7 @@ module NNGrammarExpt5
 
 export circuit5, restarts
 
+import Compat.ASCIIString
 using TFTools
 using Datasets
 using TensorFlow
@@ -60,8 +61,7 @@ function restarts(f::Function, N::Int64; kwargs...)
    [f(; kwargs...) for i = 1:N]
 end
 
-using Debug
-@debug function circuit5(;
+function circuit5(;
     dataname::AbstractString="vdist1",
     labelfield::AbstractString="nmac", #"F_x1_lt_100",
     learning_rate::Float64=0.001,
@@ -163,12 +163,10 @@ using Debug
 
     #optimizer
     #optimizer = minimize(GradientDescentOptimizer(learning_rate), cost) 
-    #@bp
     opt = Optimizer(tf.train[:GradientDescentOptimizer](learning_rate))
     gvs = opt.x[:compute_gradients](cost.x) 
     capped_gvs = [(tf.nn[:l2_normalize](tf.clip_by_value(grad, -1.0, 1.0), 0), var) for (grad, var) in gvs]
     optimizer = Operation(opt.x[:apply_gradients](capped_gvs))
-    #@bp
     #conv_vars = [filt_weights] 
     #fv1_vars = vcat(get_variables(f1_mux), get_variables(v1_mux))
     #a1_vars = get_variables(a1_blk)
@@ -253,7 +251,6 @@ using Debug
             #softsel = softselect_by_example(sess, ckt, fd)
             #grads = run(sess, Tensor([f1_grad, v1_grad, f2_grad, v2_grad, a1_grad, a2_grad, l1_grad, t1_grad]), fd)
             #conv1_out = run(sess, conv1, fd)
-            #@bp 
             #@show run(sess, pred, fd)
             #@show run(sess, pred - labels, fd)
             #@show run(sess, muxselect, fd)
@@ -280,7 +277,6 @@ using Debug
             #println("t1_sel=", softsel[1][4])
             #println("t1_grad=",t1_grad[1])
 
-            #@bp 
 
             println("Epoch $(epoch)  cost=$(avg_cost)")
             #println("Norm=$(norm(grads))")
@@ -321,7 +317,6 @@ using Debug
     println("Hard Accuracy:", acc_hard)
     println(top5)
     d=Dict{ASCIIString,Any}()
-    @bp 
 
     top5, acc_hard
 end

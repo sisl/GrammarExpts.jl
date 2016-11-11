@@ -42,6 +42,7 @@ module LogJoiner
 
 export logjoin
 
+import Compat.ASCIIString
 using RLESUtils, Loggers, FileUtils
 using DataFrames
 

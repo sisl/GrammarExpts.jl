@@ -40,6 +40,7 @@ module NNGrammarExpt3
 
 export circuit_fgandor, restarts
 
+import Compat.ASCIIString
 using TFTools
 using Datasets
 using TensorFlow
@@ -57,8 +58,7 @@ function restarts(f::Function, N::Int64; kwargs...)
    [f(; kwargs...) for i = 1:N]
 end
 
-using Debug
-@debug function circuit_fgandor(;
+function circuit_fgandor(;
     dataname::AbstractString="bin_ts_synth",
     labelfield::AbstractString="F_x1_and_x3",
     learning_rate::Float64=0.001,
@@ -198,7 +198,6 @@ using Debug
             println("a1_grad=",a1_grad[1])
             println("t1_sel=", softsel[1][4])
             println("t1_grad=",t1_grad[1])
-            @bp
             println("Epoch $(epoch)  cost=$(avg_cost)")
             if avg_cost < target_cost
                 break;
@@ -236,7 +235,6 @@ using Debug
     println("Hard Accuracy:", acc_hard)
     println(top5)
     d=Dict{ASCIIString,Any}()
-    @bp 
 
     top5, acc_hard
 end

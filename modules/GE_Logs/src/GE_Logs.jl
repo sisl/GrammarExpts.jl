@@ -39,6 +39,7 @@ module GE_Logs
 
 export default_logs, default_console!
 
+import Compat.ASCIIString
 using Reexport
 using RLESUtils
 @reexport using Observers, Loggers

@@ -39,6 +39,7 @@ module MCTS_Logs
 
 export default_logs, default_console!
 
+import Compat.ASCIIString
 using ExprSearch, DerivationTrees
 using Reexport
 using RLESUtils

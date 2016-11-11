@@ -121,8 +121,18 @@ function ACASXClustering(dataname::AbstractString,
     return ACASXClustering(Dl, w_metric, w_len, labelset, grammar)
 end
 
-ExprSearch.get_grammar{T}(problem::ACASXClustering{T}) = get_grammar(problem)
-ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr) = get_fitness(problem, expr)
+ExprSearch.get_grammar{T}(problem::ACASXClustering{T}) = problem.grammar 
+function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr)
+  Dl = problem.Dl
+  codelen = length(string(expr))
+
+  predicts = get_predicts(problem, expr)
+
+  #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
+  _, _, metric = gini_metrics(predicts, Dl.labels)
+  return problem.w_metric * metric + problem.w_len * codelen
+end
+
 
 function create_grammar()
   @grammar grammar begin
@@ -594,19 +604,6 @@ const SYMTABLE = SymbolTable(
 function eval_expr(problem::ACASXClustering, expr, D)
   SYMTABLE[:D] = D
   return interpret(SYMTABLE, expr)
-end
-
-get_grammar{T}(problem::ACASXClustering{T}) = problem.grammar
-
-function get_fitness{T}(problem::ACASXClustering{T}, expr)
-  Dl = problem.Dl
-  codelen = length(string(expr))
-
-  predicts = get_predicts(problem, expr)
-
-  #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
-  _, _, metric = gini_metrics(predicts, Dl.labels)
-  return problem.w_metric * metric + problem.w_len * codelen
 end
 
 function get_predicts{T}(problem::ACASXClustering{T}, expr)

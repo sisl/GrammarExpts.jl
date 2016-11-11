@@ -32,6 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+import Compat.ASCIIString
 using DerivationTrees
 
 #note: tds columns are not used, but left in the data

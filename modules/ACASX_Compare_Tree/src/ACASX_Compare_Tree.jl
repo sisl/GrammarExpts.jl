@@ -36,6 +36,7 @@ module ACASX_Compare_Tree
 
 export combine_mc_logs, combine_mcts_logs, combine_ge_logs, master_log, master_plot, run_main
 
+import Compat: ASCIIString, UTF8String
 using LogJoiner
 using RLESUtils, Loggers, MathUtils, Configure, LatexUtils
 using DataFrames

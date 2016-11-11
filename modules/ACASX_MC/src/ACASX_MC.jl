@@ -40,6 +40,7 @@ module ACASX_MC
 
 export configure, acasx_mc, acasx_mc1
 
+import Compat.ASCIIString
 using ExprSearch.MC
 using Reexport
 

@@ -39,6 +39,7 @@ module MC_Logs
 
 export default_logs, default_console!, default_logs1
 
+import Compat.ASCIIString
 using Reexport
 using RLESUtils
 @reexport using Observers, Loggers

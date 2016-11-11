@@ -40,6 +40,7 @@ module ACASX_SA
 
 export configure, acasx_sa, acasx_sa1, acasx_temp_params
 
+import Compat.ASCIIString
 using ExprSearch.SA
 using Reexport
 
