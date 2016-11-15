@@ -1,0 +1,5 @@
+mcts
+seed=1
+n_iters=200
+fitness=13.309902740937233
+expr=F(g(D,23))

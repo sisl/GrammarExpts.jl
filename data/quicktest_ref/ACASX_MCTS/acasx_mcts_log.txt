@@ -1,0 +1,8 @@
+__type__=TaggedDFLogger
+current_best=acasx_mcts_log_current_best.csv.gz
+parameters=acasx_mcts_log_parameters.csv.gz
+expression=acasx_mcts_log_expression.csv.gz
+elapsed_cpu_s=acasx_mcts_log_elapsed_cpu_s.csv.gz
+computeinfo=acasx_mcts_log_computeinfo.csv.gz
+members=acasx_mcts_log_members.csv.gz
+result=acasx_mcts_log_result.csv.gz

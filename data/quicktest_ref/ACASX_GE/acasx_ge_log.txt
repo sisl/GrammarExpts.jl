@@ -1,0 +1,11 @@
+__type__=TaggedDFLogger
+current_best=acasx_ge_log_current_best.csv.gz
+fitness=acasx_ge_log_fitness.csv.gz
+parameters=acasx_ge_log_parameters.csv.gz
+pop_distr=acasx_ge_log_pop_distr.csv.gz
+elapsed_cpu_s=acasx_ge_log_elapsed_cpu_s.csv.gz
+computeinfo=acasx_ge_log_computeinfo.csv.gz
+fitness5=acasx_ge_log_fitness5.csv.gz
+code=acasx_ge_log_code.csv.gz
+pop_diversity=acasx_ge_log_pop_diversity.csv.gz
+result=acasx_ge_log_result.csv.gz
