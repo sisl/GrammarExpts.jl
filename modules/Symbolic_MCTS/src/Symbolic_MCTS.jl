@@ -110,7 +110,7 @@ function symbolic_mcts(;outdir::AbstractString="./Symbolic_MCTS",
            fitness=result.fitness, expr=string(result.expr))
 
   if vis
-    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
+    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
 
   return result

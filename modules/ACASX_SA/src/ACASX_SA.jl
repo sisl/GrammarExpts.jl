@@ -99,7 +99,7 @@ function acasx_sa(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_SA"),
   save_log(outfile, logs)
 
   if vis
-    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
+    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
 
   return result
@@ -142,7 +142,7 @@ function acasx_sa1(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_SA1"),
   save_log(outfile, logs)
 
   if vis
-    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
+    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
 
   return result
