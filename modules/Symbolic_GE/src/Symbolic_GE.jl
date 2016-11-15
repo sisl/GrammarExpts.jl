@@ -99,7 +99,7 @@ function symbolic_ge(;outdir::AbstractString="./Symbolic_GE",
   save_log(outfile, logs)
 
   if vis
-    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
+    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
 
   return result

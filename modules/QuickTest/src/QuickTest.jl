@@ -33,81 +33,67 @@
 # *****************************************************************************
 
 """
-Simulated Annealing for the Symbolic regression problem.
-Example usage: config=configure(Symbolic_SA,"normal","nvn_dasc"); symbolic_sa(;config...)
+Performs a quick test using ACAS X DASC data set and compares
+the results to a reference set.
+This is primarily used to see if refactoring has changed results
+inadvertantly.
 """
-module Symbolic_SA
+module QuickTest
 
-export configure, symbolic_sa, symbolic_temp_params
+export quicktest
 
-using ExprSearch.SA
-using Reexport
+using GrammarExpts, ACASX_MC, ACASX_GE, ACASX_MCTS 
+using RLESUtils, FileUtils
+using Base.Test
 
-using GrammarExpts
-using SymbolicProblem, DerivTreeVis, SA_Logs
-using RLESUtils, Configure
-import Configure.configure
+const DIR = dirname(@__FILE__)
+const SRCROOT = joinpath(DIR, "..", "..", "..", "data", "quicktest_ref")
+const DSTROOT = joinpath(DIR, "..", "..", "..", "results")
+const FILES = ["ACASX_MC1/acasx_mc_log_current_best.csv.gz",
+            "ACASX_MC1/acasx_mc_log_derivtreevis.json",
+            "ACASX_MC1/acasx_mc_log_derivtreevis.tex",
+            "ACASX_MC1/acasx_mc_log_members.csv.gz",
+            "ACASX_MC1/acasx_mc_log_parameters.csv.gz",
+            "ACASX_MC1/acasx_mc_log_result.csv.gz",
+            "ACASX_GE/acasx_ge_log_code.csv.gz",
+            "ACASX_GE/acasx_ge_log_current_best.csv.gz",
+            "ACASX_GE/acasx_ge_log_derivtreevis.json",
+            "ACASX_GE/acasx_ge_log_derivtreevis.tex",
+            "ACASX_GE/acasx_ge_log_parameters.csv.gz",
+            "ACASX_GE/acasx_ge_log_result.csv.gz",
+            "ACASX_MCTS/acasx_mcts_log_current_best.csv.gz",
+            "ACASX_MCTS/acasx_mcts_log_derivtreevis.json",
+            "ACASX_MCTS/acasx_mcts_log_derivtreevis.tex",
+            "ACASX_MCTS/acasx_mcts_log_expression.csv.gz",
+            "ACASX_MCTS/acasx_mcts_log_members.csv.gz",
+            "ACASX_MCTS/acasx_mcts_log_parameters.csv.gz",
+            "ACASX_MCTS/acasx_mcts_log_result.csv.gz"]
 
-const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
+function quicktest{T<:AbstractString}(b_run=true;
+    srcroot::AbstractString=SRCROOT, 
+    dstroot::AbstractString=DSTROOT,
+    files::AbstractVector{T}=FILES)
 
-configure(::Type{Val{:Symbolic_SA}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+    if b_run
+        acasx_mc1()
+        acasx_ge()
+        acasx_mcts()
+    end
 
-function symbolic_sa(;outdir::AbstractString="./Symbolic_SA",
-                     seed=1,
-                     logfileroot::AbstractString="symbolic_sa_log",
-
-                     gt_file::AbstractString="gt_easy.jl",
-                     maxsteps::Int64=25,
-                     T1::Float64=50.0,
-                     alpha::Float64=0.8,
-                     n_epochs::Int64=100,
-                     n_starts::Int64=1,
-                     n_threads::Int64=1,
-
-                     loginterval::Int64=100,
-                     vis::Bool=true)
-
-  srand(seed)
-  mkpath(outdir)
-
-  problem = Symbolic(gt_file)
-
-  observer = Observer()
-  par_observer = Observer()
-
-  logs = default_logs(par_observer)
-  default_console!(observer, loginterval)
-
-  sa_params = SAESParams(maxsteps, T1, alpha, n_epochs, n_starts, observer)
-  psa_params = PSAESParams(n_threads, sa_params, par_observer)
-
-  result = exprsearch(psa_params, problem)
-
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
-
-  if vis
-    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
-  end
-
-  return result
-end
-
-
-function symbolic_temp_params(P1::Float64=0.8; seed=1,
-                     gt_file::AbstractString=GT_FILE,
-                     n_epochs::Int64=N_EPOCHS,
-                     Tfinal::Float64=0.1,
-                     maxsteps::Int64=MAXSTEPS,
-                     N::Int64=500,
-                     ntrials::Int64=10)
-
-  srand(seed)
-
-  problem = Symbolic(gt_file)
-  T1, alpha, n_epochs = estimate_temp_params(problem, P1, n_epochs, Tfinal, maxsteps, N, ntrials)
-
-  return T1, alpha, n_epochs
+    nfailed = 0
+    for f in files
+        src = joinpath(srcroot, f)
+        dst = joinpath(dstroot, f)
+        b = isidentical(src, dst)
+        s = b ? "[pass]" : ">FAIL<"
+        if !b 
+            nfailed += 1
+        end
+        println("$s $f")
+    end
+    println("$nfailed files failed")
+    nfailed
 end
 
 end #module
+

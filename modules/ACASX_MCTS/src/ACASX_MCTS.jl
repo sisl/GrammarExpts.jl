@@ -119,7 +119,7 @@ function acasx_mcts(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MCTS"),
   save_log(outfile, logs)
 
   if vis
-    derivtreevis(result.tree, joinpath(outdir, "$(logfileroot)_derivtreevis"))
+    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
   end
 
   #save mcts tree
