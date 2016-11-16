@@ -57,7 +57,7 @@ using DataFrames
 using PGFPlots, TikzPictures
 import Configure.configure
 
-const CONFIG = "nvn_dasc"
+const CONFIG = "nvn_libcas098smallfilt"
 const STUDYNAME = "ACASX_Compare"
 const REF_NAME = "ACASX_Ref"
 const SA_NAME = "ACASX_SA"
