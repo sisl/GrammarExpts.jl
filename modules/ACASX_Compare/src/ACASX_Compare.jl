@@ -47,12 +47,11 @@ export master_log, master_plot
 
 import Compat: ASCIIString, UTF8String
 using GrammarExpts
-using Sweeper
 using ExprSearch: Ref, SA, MC, MCTS, GE
 using ACASX_Ref, ACASX_SA, ACASX_MC, ACASX_MCTS, ACASX_GE
 using LogJoiner
 
-using RLESUtils, Loggers, MathUtils, Configure, LatexUtils
+using RLESUtils, Loggers, MathUtils, Configure, LatexUtils, Sweeper
 using DataFrames
 using PGFPlots, TikzPictures
 import Configure.configure
