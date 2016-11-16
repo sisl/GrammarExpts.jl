@@ -36,6 +36,6 @@
 const RANGE = 1:5
 
 using GrammarExpts, ACASX_Compare
-run_mc(; seed=RANGE)
+run_mc_full(; seed=RANGE)
 @show RANGE
 sendifttt(;value1="run_mc_compare", value2="$RANGE")
