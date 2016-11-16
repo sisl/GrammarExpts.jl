@@ -33,15 +33,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 16:20
+const RANGE = 1:5
 
-for i in RANGE 
-    expr = 
-    """
-    using GrammarExpts, ACASX_Compare
-    run_ge(; seed=$i)
-    """
-    run(`julia -e $expr`)
-end
+using GrammarExpts, ACASX_Compare
+run_ge(; seed=RANGE)
 @show RANGE
-notify(;value1="run_ge_compare", value2="$RANGE")
+sendifttt(;value1="run_ge_compare", value2="$RANGE")

@@ -33,15 +33,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 16:20
+const RANGE = 1:5
 
-for i in RANGE
-    expr = 
-    """
-    using GrammarExpts, ACASX_Compare
-    run_mcts(; seed=$i)
-    """
-    run(`julia -e $expr`)
-end
+using GrammarExpts, ACASX_Compare
+run_mcts(; seed=RANGE)
 @show RANGE
-notify(;value1="run_mcts_compare", value2="$RANGE")
+sendifttt(;value1="run_mcts_compare", value2="$RANGE")
