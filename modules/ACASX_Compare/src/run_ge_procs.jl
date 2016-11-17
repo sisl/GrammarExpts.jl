@@ -33,7 +33,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 1:5
+const RANGE = 6:10
 
 using GrammarExpts, ACASX_Compare
 run_ge(; seed=RANGE)
