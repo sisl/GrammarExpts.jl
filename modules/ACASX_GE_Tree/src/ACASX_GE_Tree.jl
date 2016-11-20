@@ -181,7 +181,8 @@ function acasx_ge_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE_T
   TreeIterators.get_children(node::DerivTreeNode) = node.children
   for node in nodes
     if node.split_rule != nothing
-        derivnodes = collect(tree_iter(node.split_rule.tree.root))
+        root = get_derivtree(node.split_rule.tree).root
+        derivnodes = collect(tree_iter(root))
         push!(logs, "rule_metrics", [string(node.split_rule.expr), length(derivnodes), count(DerivationTrees.isleaf, derivnodes)])
     end
   end

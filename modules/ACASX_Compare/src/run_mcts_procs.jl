@@ -33,9 +33,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const RANGE = 6:10
+const RANGE = 7:10
 
 using GrammarExpts, ACASX_Compare
+using RLESUtils, IFTTTUtils
 run_mcts(; seed=RANGE)
 @show RANGE
-sendifttt(;value1="run_mcts_compare", value2="$RANGE")
+sendifttt(KEYFILE; value1="run_mcts_compare", value2="$RANGE")
