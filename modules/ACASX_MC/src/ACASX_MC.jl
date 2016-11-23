@@ -45,8 +45,8 @@ using ExprSearch.MC
 using Reexport
 
 using GrammarExpts
-using ACASXProblem, DerivTreeVis, MC_Logs
-using RLESUtils, Configure
+using ACASXProblem, DerivTreeVis
+using RLESUtils, Configure, Loggers, LogSystems
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
@@ -78,30 +78,44 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
                   loginterval::Int64=100,
                   vis::Bool=true)
 
-  srand(seed)
-  mkpath(outdir)
+    srand(seed)
+    mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
+    problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-  observer = Observer()
-  par_observer = Observer()
-  logs = default_logs(par_observer)
-  default_console!(observer, loginterval)
+    logsys = get_logsys()
+    empty_listeners!(logsys)
+    send_to!(STDOUT, logsys, ["verbose1", "result"])
+    send_to!(STDOUT, logsys, "current_best_print"; interval=loginterval)
+    logs = TaggedDFLogger()
+    send_to!(logs, logsys, ["computeinfo", "parameters", "result"])
+    send_to!(logs, logsys,  "current_best"; interval=loginterval)
+    send_to!(logs, logsys,  "elapsed_cpu_s"; interval=loginterval)
 
-  mc_params = MCESParams(maxsteps, n_samples, observer)
-  pmc_params = PMCESParams(n_threads, mc_params, par_observer)
+    mc_params = MCESParams(maxsteps, n_samples)
+    pmc_params = PMCESParams(n_threads, mc_params)
 
-  result = exprsearch(pmc_params, problem)
+    result = exprsearch(pmc_params, problem)
 
-  add_members_to_log!(logs, problem, result.expr)
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
+    #manually push! extra info to log
+    add_members_to_log!(logs, problem, result.expr)
+    push!(logs, "parameters", ["seed", seed])
+    push!(logs, "parameters", ["runtype", runtype])
+    push!(logs, "parameters", ["data", data])
+    add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString],
+        ["raw", "pretty", "natural"]) 
+    push!(logs, "expression", [string(result.expr), pretty_string(result.tree, FMT_PRETTY),
+        pretty_string(result.tree, FMT_NATURAL, true)])
 
-  if vis
-    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
-  end
+    #save log
+    outfile = joinpath(outdir, "$(logfileroot).txt")
+    save_log(outfile, logs)
 
-  return result
+    if vis
+        derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
+    end
+
+    result
 end
 
 #TODO: combine these two versions
@@ -116,33 +130,47 @@ function acasx_mc1(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC1"),
                    clusterdataname::AbstractString="josh1",
 
                    maxsteps::Int64=20,
-                   n_samples::Int64=50,
+                   n_samples::Int64=1000,
 
                    loginterval::Int64=100,
                    vis::Bool=true)
 
-  srand(seed)
-  mkpath(outdir)
+    srand(seed)
+    mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
+    problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-  observer = Observer()
+    logsys = get_logsys()
+    empty_listeners!(logsys)
+    send_to!(STDOUT, logsys, ["verbose1", "result"])
+    send_to!(STDOUT, logsys, "current_best_print"; interval=loginterval)
+    logs = TaggedDFLogger()
+    send_to!(logs, logsys, ["computeinfo", "parameters", "result"])
+    send_to!(logs, logsys,  "current_best"; interval=loginterval)
+    send_to!(logs, logsys,  "elapsed_cpu_s"; interval=loginterval)
 
-  logs = default_logs1(observer, loginterval)
-  default_console!(observer, loginterval)
+    mc_params = MCESParams(maxsteps, n_samples)
+    result = exprsearch(mc_params, problem)
 
-  mc_params = MCESParams(maxsteps, n_samples, observer)
-  result = exprsearch(mc_params, problem)
+    #manually push! extra info to log
+    add_members_to_log!(logs, problem, result.expr)
+    push!(logs, "parameters", ["seed", seed])
+    push!(logs, "parameters", ["runtype", runtype])
+    push!(logs, "parameters", ["data", data])
+    add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString],
+        ["raw", "pretty", "natural"]) 
+    push!(logs, "expression", [string(result.expr), pretty_string(result.tree, FMT_PRETTY),
+        pretty_string(result.tree, FMT_NATURAL, true)])
 
-  add_members_to_log!(logs, problem, result.expr)
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
+    #save log
+    outfile = joinpath(outdir, "$(logfileroot).txt")
+    save_log(outfile, logs)
 
-  if vis
-    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
-  end
+    if vis
+        derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
+    end
 
-  return result
+    return result
 end
 
 function add_members_to_log!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)

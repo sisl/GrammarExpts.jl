@@ -45,10 +45,10 @@ using ExprSearch.MCTS
 using Datasets
 using Reexport
 using JSON, GZip
-using RLESUtils, FileUtils, Configure
+using RLESUtils, FileUtils, Configure, Observers, Loggers, LogSystems
 
 using GrammarExpts
-using ACASXProblem, MCTS_Logs
+using ACASXProblem
 using DerivTreeVis, MCTSTreeView
 import Configure.configure
 
@@ -84,55 +84,58 @@ function acasx_mcts(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MCTS"),
                     vis::Bool=true,
                     mctstreevis::Bool=false,
                     treevis_interval::Int64=50)
-  mkpath(outdir)
+    mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
+    problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-  observer = Observer() #TODO: remove one of these...
-  mcts_observer = Observer()
+    logsys = get_logsys()
+    empty_listeners!(logsys)
+    send_to!(STDOUT, logsys, ["verbose1", "result"])
+    send_to!(STDOUT, logsys, "current_best"; interval=loginterval)
+    logs = TaggedDFLogger()
+    send_to!(logs, logsys, ["computeinfo", "parameters", "result"])
+    send_to!(logs, logsys,  "current_best"; interval=loginterval)
+    send_to!(logs, logsys,  "elapsed_cpu_s"; interval=loginterval)
 
-  logs = default_logs(observer, loginterval)
-  default_console!(observer)
+    #if mctstreevis
+        #view, viewstep = viewstep_f(treevis_interval)
+        #add_observer(observer, "mcts_tree", viewstep)
+    #end
 
-  if mctstreevis
-    view, viewstep = viewstep_f(treevis_interval)
-    add_observer(observer, "mcts_tree", viewstep)
-  end
+    mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
+                             explorationconst, maxmod, q0, seed)
 
-  mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
-                             explorationconst, maxmod, q0, seed, mcts_observer,
-                             observer)
+    result = exprsearch(mcts_params, problem)
 
-  result = exprsearch(mcts_params, problem)
+    #manually push! extra info to log
+    add_members_to_log!(logs, problem, result.expr)
+    push!(logs, "parameters", ["seed", seed])
+    push!(logs, "parameters", ["runtype", runtype])
+    push!(logs, "parameters", ["data", data])
+    add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString],
+        ["raw", "pretty", "natural"]) 
+    push!(logs, "expression", [string(result.expr), pretty_string(result.tree, FMT_PRETTY),
+        pretty_string(result.tree, FMT_NATURAL, true)])
 
-  @notify_observer(observer, "parameters", ["seed", seed])
-  @notify_observer(observer, "parameters", ["runtype", runtype])
-  @notify_observer(observer, "parameters", ["clusterdataname", clusterdataname])
-  @notify_observer(observer, "parameters", ["vis", vis])
-  @notify_observer(observer, "parameters", ["mctstreevis", mctstreevis])
-  @notify_observer(observer, "expression", [string(result.expr),
-                                             pretty_string(result.tree, FMT_PRETTY),
-                                             pretty_string(result.tree, FMT_NATURAL, true)])
+    #save log
+    outfile = joinpath(outdir, "$(logfileroot).txt")
+    save_log(outfile, logs)
 
-  add_members_to_log!(logs, problem, result.expr)
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
-
-  if vis
-    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
-  end
-
-  #save mcts tree
-  if mctstreevis
-    GZip.open(joinpath(outdir, "mctstreevis.json.gz"), "w") do f
-      JSON.print(f, view.steps)
+    if vis
+        derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
     end
-  end
 
-  textfile(joinpath(outdir, "summary.txt"), "mcts", seed=seed, n_iters=n_iters,
+    #save mcts tree
+    if mctstreevis
+        GZip.open(joinpath(outdir, "mctstreevis.json.gz"), "w") do f
+            JSON.print(f, view.steps)
+        end
+    end
+
+    textfile(joinpath(outdir, "summary.txt"), "mcts", seed=seed, n_iters=n_iters,
            fitness=result.fitness, expr=string(result.expr))
 
-  return result
+    result
 end
 
 function add_members_to_log!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)

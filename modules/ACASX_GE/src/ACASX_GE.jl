@@ -40,13 +40,14 @@ module ACASX_GE
 
 export configure, acasx_ge
 
+import Compat.ASCIIString
 using ExprSearch.GE
 using Datasets
-using RLESUtils, ArrayUtils, Configure
+using RLESUtils, ArrayUtils, Configure, LogSystems, Loggers
 using Reexport
 
 using GrammarExpts
-using ACASXProblem, GE_Logs, DerivTreeVis
+using ACASXProblem, DerivTreeVis
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
@@ -85,29 +86,42 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
                   hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
                   hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
                   vis::Bool=true)
-  srand(seed)
-  mkpath(outdir)
+    srand(seed)
+    mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
+    problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-  observer = Observer()
-  logs = default_logs(observer, hist_edges, hist_mids)
-  default_console!(observer)
+    logsys = get_logsys()
+    empty_listeners!(logsys)
+    send_to!(STDOUT, logsys, ["verbose1", "current_best_print", "result"])
+    logs = TaggedDFLogger()
+    send_to!(logs, logsys, ["code", "computeinfo", "current_best", "elapsed_cpu_s", "fitness",
+        "fitness5", "parameters", "result"])
 
-  ge_params = GEESParams(genome_size, pop_size, maxwraps,
+    ge_params = GEESParams(genome_size, pop_size, maxwraps,
                          top_keep, top_seed, rand_frac, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, observer)
+                         maxiterations)
 
-  result = exprsearch(ge_params, problem)
+    result = exprsearch(ge_params, problem)
 
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
+    #manually push! extra info to log
+    push!(logs, "parameters", ["seed", seed])
+    push!(logs, "parameters", ["runtype", runtype])
+    push!(logs, "parameters", ["data", data])
+    add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString],
+        ["raw", "pretty", "natural"]) 
+    push!(logs, "expression", [string(result.expr), pretty_string(result.tree, FMT_PRETTY),
+        pretty_string(result.tree, FMT_NATURAL, true)])
 
-  if vis
-    derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
-  end
+    #save log
+    outfile = joinpath(outdir, "$(logfileroot).txt")
+    save_log(outfile, logs)
 
-  return result
+    if vis
+        derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
+    end
+
+    result
 end
 
 end #module
