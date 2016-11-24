@@ -32,17 +32,15 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#tree
+#genetic programming
 [
-  (:maxsteps, 25),
-
-  #SA
-  (:T1, 1.48e30),
-  (:alpha, 0.99956),
-  (:n_epochs, 5000),
-  (:n_starts, 5),
-  (:n_threads, 15),
-
-  #log
-  (:gt_file, "gt_easy.jl")
+  (:pop_size, 5000),
+  (:maxdepth, 10),
+  (:iterations, 100),
+  (:tournament_size, 500),
+  (:top_keep, 0.01),
+  (:crossover_frac, 0.3),
+  (:mutate_frac, 0.2),
+  (:rand_frac, 0.4),
+  (:default_code, :(eval(false)))
 ]

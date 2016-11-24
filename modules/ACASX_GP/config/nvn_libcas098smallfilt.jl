@@ -32,7 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using GE_Logs
+#nmacs vs nonnmacs
+[(:runtype, :nmacs_vs_nonnmacs),
+(:data, "libcas098smallfilt"),
+(:manuals, ""),
+(:clusterdataname, "")]
 
 

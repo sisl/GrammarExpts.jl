@@ -33,11 +33,9 @@
 # *****************************************************************************
 
 using GrammarExpts
-using Symbolic_MCTS
+using ACASX_GP
 
-const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "Symbolic_MCTS")
+const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_GP")
 
 mkpath(TESTDIR)
-symbolic_mcts(outdir=TESTDIR)
-
-
+acasx_gp(outdir=TESTDIR)

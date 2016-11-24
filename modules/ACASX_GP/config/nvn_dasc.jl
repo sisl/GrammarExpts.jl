@@ -32,7 +32,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using MCTS_Logs
+#nmacs vs nonnmacs
+[(:runtype, :nmacs_vs_nonnmacs),
+(:data, "dasc"),
+(:manuals, ""),
+(:clusterdataname, "")]
 
 
