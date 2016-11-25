@@ -83,7 +83,7 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
 
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-    logsys = get_logsys()
+    logsys = MC.logsystem()
     empty_listeners!(logsys)
     send_to!(STDOUT, logsys, ["verbose1", "result"])
     send_to!(STDOUT, logsys, "current_best_print"; interval=loginterval)
@@ -92,7 +92,7 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
     send_to!(logs, logsys,  "current_best"; interval=loginterval)
     send_to!(logs, logsys,  "elapsed_cpu_s"; interval=loginterval)
 
-    mc_params = MCESParams(maxsteps, n_samples)
+    mc_params = MCESParams(maxsteps, n_samples, logsys)
     pmc_params = PMCESParams(n_threads, mc_params)
 
     result = exprsearch(pmc_params, problem)
@@ -140,7 +140,7 @@ function acasx_mc1(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC1"),
 
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-    logsys = get_logsys()
+    logsys = MC.logsystem()
     empty_listeners!(logsys)
     send_to!(STDOUT, logsys, ["verbose1", "result"])
     send_to!(STDOUT, logsys, "current_best_print"; interval=loginterval)
@@ -149,7 +149,7 @@ function acasx_mc1(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC1"),
     send_to!(logs, logsys,  "current_best"; interval=loginterval)
     send_to!(logs, logsys,  "elapsed_cpu_s"; interval=loginterval)
 
-    mc_params = MCESParams(maxsteps, n_samples)
+    mc_params = MCESParams(maxsteps, n_samples, logsys)
     result = exprsearch(mc_params, problem)
 
     #manually push! extra info to log
