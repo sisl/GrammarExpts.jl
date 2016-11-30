@@ -51,15 +51,14 @@ end
 function DecisionTrees.get_splitter{T}(members::Vector{Int64},
                                        Dl::DFSetLabeled{T}, problem::ACASXClustering,
                                        ge_params::GEESParams, logs::TaggedDFLogger,
-                                       hist_edges::Range{Float64}, 
-                                       hist_mids::Vector{Float64}) #userargs...
-  set_observers!(ge_params.observer, logs, hist_edges, hist_mids)
+                                       ) #userargs...
+  set_observers!(ge_params.logsys.observer, logs)
 
   problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
   result = exprsearch(ge_params, problem)
 
   push_members!(logs, problem, result.expr)
-  @notify_observer(ge_params.observer, "expression",
+  @notify_observer(ge_params.logsys.observer, "expression",
                    [string(result.expr),
                     pretty_string(result.tree, FMT_PRETTY),
                     pretty_string(result.tree, FMT_NATURAL, true)])

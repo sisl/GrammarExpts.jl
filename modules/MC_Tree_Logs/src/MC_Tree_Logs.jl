@@ -57,8 +57,7 @@ function default_logs()
   return logs
 end
 
-function set_observers!(par_observer::Observer, observer::Observer, logs::TaggedDFLogger, loginterval::Int64)
-  empty!(par_observer)
+function set_observers!(observer::Observer, logs::TaggedDFLogger, loginterval::Int64)
   empty!(observer)
   ####################
   #print out observers
@@ -75,10 +74,10 @@ function set_observers!(par_observer::Observer, observer::Observer, logs::Tagged
   #log observers
   decision_id = nrow(logs["result"]) > 0 ?
     maximum(logs["result"][:decision_id]) + 1 : 1
-  add_observer(par_observer, "parameters", append_push!_f(logs, "parameters", decision_id))
-  add_observer(par_observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
-  add_observer(par_observer, "result", append_push!_f(logs, "result", decision_id))
-  add_observer(par_observer, "expression", append_push!_f(logs, "expression", decision_id))
+  add_observer(observer, "parameters", append_push!_f(logs, "parameters", decision_id))
+  add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
+  add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
+  add_observer(observer, "expression", append_push!_f(logs, "expression", decision_id))
 end
 
 

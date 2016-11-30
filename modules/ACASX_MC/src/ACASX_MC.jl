@@ -41,7 +41,7 @@ module ACASX_MC
 export configure, acasx_mc, acasx_mc1
 
 import Compat.ASCIIString
-using ExprSearch.MC
+using ExprSearch.MC, ExprSearch.PMC
 using Reexport
 
 using GrammarExpts
@@ -83,17 +83,15 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
 
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-    logsys = MC.logsystem()
+    logsys = PMC.logsystem()
     empty_listeners!(logsys)
     send_to!(STDOUT, logsys, ["verbose1", "result"])
-    send_to!(STDOUT, logsys, "current_best_print"; interval=loginterval)
     logs = TaggedDFLogger()
     send_to!(logs, logsys, ["computeinfo", "parameters", "result"])
-    send_to!(logs, logsys,  "current_best"; interval=loginterval)
-    send_to!(logs, logsys,  "elapsed_cpu_s"; interval=loginterval)
+    #TODO: need to set up additional logs here
 
-    mc_params = MCESParams(maxsteps, n_samples, logsys)
-    pmc_params = PMCESParams(n_threads, mc_params)
+    mc_params = MCESParams(maxsteps, n_samples)
+    pmc_params = PMCESParams(n_threads, mc_params, logsys)
 
     result = exprsearch(pmc_params, problem)
 

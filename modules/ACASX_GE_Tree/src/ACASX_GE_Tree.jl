@@ -32,6 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+### These tree modules need a refactor
 """
 Create a decision tree to recursively split encounters in the ACASX Problem. GE algorithm.
 Example usage: config=configure(ACASX_GE_Tree,"normal","nvn_dasc"); acasx_ge_tree(;config...)
@@ -44,7 +45,7 @@ import Compat.ASCIIString
 using DecisionTrees
 using ExprSearch.GE
 using Datasets
-using RLESUtils, Obj2Dict, Configure, Confusion, TreeIterators
+using RLESUtils, Obj2Dict, Configure, Confusion, TreeIterators, LogSystems
 using Reexport
 using JLD
 
@@ -66,9 +67,7 @@ configure(::Type{Val{:ACASX_GE_Tree}}, configs::AbstractString...) = configure_p
 function train_dtree{T}(ge_params::GEESParams, 
     problem::ACASXClustering, 
     Dl::DFSetLabeled{T},
-    maxdepth::Int64,
-    hist_edges::Range{Float64}, 
-    hist_mids::Vector{Float64}) #userargs...
+    maxdepth::Int64)
 
     logs = default_logs()
     add_folder!(logs, "members", [ASCIIString, ASCIIString, Int64], 
@@ -79,7 +78,7 @@ function train_dtree{T}(ge_params::GEESParams,
     p = DTParams(num_data, maxdepth, T1, T2)
 
     dtree = build_tree(p,
-        Dl, problem, ge_params, logs, hist_edges, hist_mids) #userargs...
+        Dl, problem, ge_params, logs) #userargs... #FIXME: don't do userargs this way...
 
   return dtree, logs
 end
@@ -133,19 +132,20 @@ function acasx_ge_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE_T
 
   problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-  observer = Observer()
+  logsys = GE.logsystem()
+  observer = get_observer(logsys)
   ge_params = GEESParams(genome_size, pop_size, maxwraps,
                          top_keep, top_seed, rand_frac, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, observer)
+                         maxiterations, logsys)
 
   Dl = problem.Dl
-  dtree, logs = train_dtree(ge_params, problem, Dl, maxdepth, hist_edges, hist_mids)
+  dtree, logs = train_dtree(ge_params, problem, Dl, maxdepth)
 
   ##################################
   #add many items to log
   push!(logs, "parameters", ["seed", seed, 0])
   push!(logs, "parameters", ["runtype", runtype, 0])
-  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
+  push!(logs, "parameters", ["data", data, 0])
 
   #classifier performance
   members = DecisionTrees.get_members(dtree)

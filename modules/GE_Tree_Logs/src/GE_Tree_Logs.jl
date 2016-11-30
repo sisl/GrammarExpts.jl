@@ -62,14 +62,14 @@ function default_logs()
               ["nevals", "elapsed_cpu_s", "decision_id"])
   add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
   add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], ["fitness", "expr", "best_at_eval", "total_evals", "decision_id"])
+  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64, Int64], 
+    ["fitness", "expr", "best_at_eval", "total_evals", "decision_id"])
   add_folder!(logs, "current_best", [Int64, Float64, ASCIIString, Int64], ["nevals", "fitness", "expr", "decision_id"])
 
   return logs
 end
 
-function set_observers!(observer::Observer, logs::TaggedDFLogger, hist_edges::Range{Float64}, 
-    hist_mids::Vector{Float64})
+function set_observers!(observer::Observer, logs::TaggedDFLogger)
     empty!(observer)
     ####################
     #print out observers
@@ -96,46 +96,18 @@ function set_observers!(observer::Observer, logs::TaggedDFLogger, hist_edges::Ra
                     end
                 end)
     add_observer(observer, "code", append_push!_f(logs, "code", decision_id))
-    add_observer(observer, "population", x -> begin
-                    iter, pop = x
-                    fitness_vec = Float64[pop[i].fitness  for i = 1:length(pop)]
-                    h = fit(Histogram, fitness_vec, hist_edges)
-                    edges = h.edges
-                    counts = h.weights
-                    uniq_fitness = Int64[]
-                    uniq_code = Int64[]
-                    for (e1, e2) in partition(hist_edges, 2, 1)
-                        subids = filter(i -> e1 <= pop[i].fitness < e2, 1:length(pop))
-                        subpop = pop[subids]
-                        n_fit = length(unique(imap(i -> string(subpop[i].fitness), 
-                            1:length(subpop))))
-                        n_code = length(unique(imap(i -> string(subpop[i].code), 1:length(subpop))))
-                        push!(uniq_fitness, n_fit)
-                        push!(uniq_code, n_code)
-                    end
-                    for (m, c, uf, uc) in zip(hist_mids, counts, uniq_fitness, uniq_code)
-                        push!(logs, "pop_distr", [iter, m, c, uf, uc, decision_id])
-                    end
+    add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
+    add_observer(observer, "parameters", append_push!_f(logs, "parameters", decision_id))
+    add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
+    add_observer(observer, "current_best", x -> begin
+                    nevals, fitness, expr = x
+                    push!(logs, "current_best", [nevals, fitness, string(expr), decision_id])
                 end)
-    add_observer(observer, "population", x -> begin
-                    iter, pop = x
-                    n_fit = length(unique(imap(i -> string(pop[i].fitness), 1:length(pop))))
-                 n_code = length(unique(imap(i -> string(pop[i].code), 1:length(pop))))
-                 push!(logs, "pop_diversity", [iter, n_fit, n_code, decision_id])
-               end)
-  add_observer(observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
-  add_observer(observer, "parameters", append_push!_f(logs, "parameters", decision_id))
-  add_observer(observer, "result", append_push!_f(logs, "result", decision_id))
-  add_observer(observer, "current_best", x -> begin
-                 nevals, fitness, expr = x
-                 push!(logs, "current_best", [nevals, fitness, string(expr), decision_id])
-               end)
-  add_observer(observer, "elapsed_cpu_s", x -> begin
-                 nevals, elapsed_cpu_s = x[1], x[2]
-                 push!(logs, "elapsed_cpu_s", [nevals, elapsed_cpu_s, decision_id])
-               end)
+    add_observer(observer, "elapsed_cpu_s", x -> begin
+                    nevals, elapsed_cpu_s = x[1], x[2]
+                    push!(logs, "elapsed_cpu_s", [nevals, elapsed_cpu_s, decision_id])
+                end)
 end
-
 
 
 end #module

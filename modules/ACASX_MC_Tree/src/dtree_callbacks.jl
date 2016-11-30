@@ -50,14 +50,14 @@ end
 
 function DecisionTrees.get_splitter{T}(members::Vector{Int64},
                                        Dl::DFSetLabeled{T}, problem::ACASXClustering,
-                                       pmc_params::PMCESParams, logs::TaggedDFLogger, loginterval::Int64) #userargs...
-  set_observers!(pmc_params.observer, pmc_params.mc_params.observer, logs, loginterval)
+                                       mc_params::MCESParams, logs::TaggedDFLogger, loginterval::Int64) #userargs...
+  set_observers!(mc_params.logsys.observer, logs, loginterval)
 
   problem.Dl = Dl_sub = Dl[members] #fitness function uses problem.Dl
-  result = exprsearch(pmc_params, problem)
+  result = exprsearch(mc_params, problem)
 
   push_members!(logs, problem, result.expr)
-  @notify_observer(pmc_params.observer, "expression",
+  @notify_observer(mc_params.logsys.observer, "expression",
                    [string(result.expr),
                     pretty_string(result.tree, FMT_PRETTY),
                     pretty_string(result.tree, FMT_NATURAL, true)])

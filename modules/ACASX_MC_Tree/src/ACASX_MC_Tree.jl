@@ -32,6 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+### These tree modules need a refactor
 """
 Create a decision tree to recursively split encounters in the ACASX Problem. MC algorithm.
 Example usage: config=configure(ACASX_MC_Tree,"normal","nvn_dasc"); acasx_mc_tree(;config...)
@@ -45,7 +46,7 @@ import Compat.ASCIIString
 using DecisionTrees
 using ExprSearch.MC
 using Datasets
-using RLESUtils, Obj2Dict, Configure, Confusion, TreeIterators
+using RLESUtils, Obj2Dict, Configure, Confusion, TreeIterators, LogSystems
 using Reexport
 using JLD
 
@@ -63,8 +64,8 @@ const T2 = Int64 #label_type
 
 configure(::Type{Val{:ACASX_MC_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
-function train_dtree{T}(pmc_params::PMCESParams, problem::ACASXClustering, Dl::DFSetLabeled{T},
-                        maxdepth::Int64, loginterval::Int64)
+function train_dtree{T}(problem::ACASXClustering, Dl::DFSetLabeled{T},
+                        mc_params::MCESParams, maxdepth::Int64, loginterval::Int64)
 
   logs = default_logs()
   add_folder!(logs, "members", [ASCIIString, ASCIIString, Int64], ["members_true", "members_false", "decision_id"])
@@ -74,7 +75,7 @@ function train_dtree{T}(pmc_params::PMCESParams, problem::ACASXClustering, Dl::D
   p = DTParams(num_data, maxdepth, T1, T2)
 
   dtree = build_tree(p,
-                     Dl, problem, pmc_params, logs, loginterval) #userargs...
+                     Dl, problem, mc_params, logs, loginterval) #userargs...
 
   return dtree, logs
 end
@@ -107,14 +108,13 @@ function acasx_mc_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC_Tre
 
   problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-  observer = Observer()
-  par_observer = Observer()
+  logsys = MC.logsystem()
+  observer = get_observer(logsys)
 
-  mc_params = MCESParams(maxsteps, n_samples, observer)
-  pmc_params = PMCESParams(n_threads, mc_params, par_observer)
+  mc_params = MCESParams(maxsteps, n_samples, logsys)
 
   Dl = problem.Dl
-  dtree, logs = train_dtree(pmc_params, problem, Dl, maxdepth, loginterval)
+  dtree, logs = train_dtree(problem, Dl, mc_params, maxdepth, loginterval)
 
   ##################################
   #add many items to log
@@ -156,7 +156,7 @@ function acasx_mc_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC_Tre
   TreeIterators.get_children(node::DerivTreeNode) = node.children
   for node in nodes
     if node.split_rule != nothing
-        derivnodes = collect(tree_iter(node.split_rule.tree.root))
+        derivnodes = collect(tree_iter(get_derivtree(node.split_rule.tree).root))
         push!(logs, "rule_metrics", [string(node.split_rule.expr), length(derivnodes), count(DerivationTrees.isleaf, derivnodes)])
     end
   end
