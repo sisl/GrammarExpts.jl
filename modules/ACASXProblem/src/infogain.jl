@@ -36,23 +36,23 @@ using Distributions
 using RLESUtils, MathUtils
 
 function entropy_metrics{T}(predicts::Vector{Bool}, truth::Vector{T}, entbase::Float64=2.0)
-  ntrues = count(identity, predicts)
-  nfalses = count(!, predicts)
-  ent_pre = entropy(proportions(truth), entbase)
-  ent_true = ntrues != 0 ?
-    entropy(proportions(truth[predicts]), entbase) : 0.0 #truth[predicts] is expensive...
-  ent_false = nfalses != 0 ?
-    entropy(proportions(truth[!predicts]), entbase) : 0.0
-  w1 = ntrues / length(truth)
-  w2 = nfalses / length(truth)
-  ent_post = w1 .* ent_true + w2 .* ent_false #entropy after split
-  info_gain = ent_pre - ent_post
-  return (info_gain, ent_pre, ent_post) #entropy pre/post split
+    ntrues = count(identity, predicts)
+    nfalses = count(!, predicts)
+    ent_pre = entropy(proportions(truth), entbase)
+    ent_true = ntrues != 0 ?
+        entropy(proportions(truth[predicts]), entbase) : 0.0 #truth[predicts] is expensive...
+    ent_false = nfalses != 0 ?
+        entropy(proportions(truth[!predicts]), entbase) : 0.0
+    w1 = ntrues / length(truth)
+    w2 = nfalses / length(truth)
+    ent_post = w1 .* ent_true + w2 .* ent_false #entropy after split
+    info_gain = ent_pre - ent_post
+    return (info_gain, ent_pre, ent_post) #entropy pre/post split
 end
 
-function gini_metrics{T}(predicts::Vector{Bool}, truth::Vector{T})
-  imp_pre = gini_impurity(truth)
-  imp_post = gini_impurity(truth[predicts], truth[!predicts]) #truth[predicts] is expensive...
-  imp_gain = imp_pre - imp_post #reduction in impurity, higher is better
-  return (imp_gain, imp_pre, imp_post) #impurity pre/post split
+function gini_metrics{T}(predicts::AbstractVector{Bool}, truth::AbstractVector{T})
+    imp_pre = gini_impurity(truth)
+    imp_post = gini_impurity(truth[predicts], truth[!predicts]) #truth[predicts] is expensive...
+    imp_gain = imp_pre - imp_post #reduction in impurity, higher is better
+    return (imp_gain, imp_pre, imp_post) #impurity pre/post split
 end

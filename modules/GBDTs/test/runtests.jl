@@ -32,55 +32,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-"""
-Default logs for SA_Tree
-"""
-module SA_Tree_Logs
+using GrammarExpts
+using GBDTs
 
-export default_logs, set_observers!
-
-import Compat.ASCIIString
-using DataFrames #nrow
-using ExprSearch, DerivationTrees #get_expr
-using Reexport
-using RLESUtils
-@reexport using Observers, Loggers
-
-function default_logs()
-  logs = TaggedDFLogger()
-
-  add_folder!(logs, "parameters", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
-  add_folder!(logs, "computeinfo", [ASCIIString, Any, Int64], ["parameter", "value", "decision_id"])
-  add_folder!(logs, "result", [Float64, ASCIIString, Int64, Int64], ["fitness", "expr", "total_evals", "decision_id"])
-  add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString, Int64], ["raw", "pretty", "natural", "decision_id"])
-
-  return logs
-end
-
-function set_observers!(par_observer::Observer, observer::Observer, logs::TaggedDFLogger, loginterval::Int64)
-  empty!(par_observer)
-  empty!(observer)
-  ####################
-  #print out observers
-
-  add_observer(observer, "verbose1", x -> println(x...))
-  add_observer(observer, "current_best", x -> begin
-                 starti, iter, fitness, expr = x
-                 if rem(iter, loginterval) == 0
-                   println("start=$starti, i=$iter, fitness=$fitness, expr=$expr")
-                 end
-               end)
-
-  ###################
-  #log observers
-  decision_id = nrow(logs["result"]) > 0 ?
-    maximum(logs["result"][:decision_id]) + 1 : 1
-  add_observer(par_observer, "parameters", append_push!_f(logs, "parameters", decision_id))
-  add_observer(par_observer, "computeinfo", append_push!_f(logs, "computeinfo", decision_id))
-  add_observer(par_observer, "result", append_push!_f(logs, "result", decision_id))
-  add_observer(par_observer, "expression", append_push!_f(logs, "expression", decision_id))
-end
-
-
-
-end #module

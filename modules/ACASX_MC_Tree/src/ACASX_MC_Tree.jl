@@ -32,7 +32,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-### These tree modules need a refactor
 """
 Create a decision tree to recursively split encounters in the ACASX Problem. MC algorithm.
 Example usage: config=configure(ACASX_MC_Tree,"normal","nvn_dasc"); acasx_mc_tree(;config...)
@@ -43,19 +42,13 @@ export configure, acasx_mc_tree
 
 import Compat.ASCIIString
 
-using DecisionTrees
 using ExprSearch.MC
 using Datasets
-using RLESUtils, Obj2Dict, Configure, Confusion, TreeIterators, LogSystems
-using Reexport
+using RLESUtils, Configure, Loggers, LogSystems
 using JLD
 
-using GrammarExpts
-using ACASXProblem
-using DerivTreeVis, DecisionTreeVis, MC_Tree_Logs
+using GrammarExpts, GBDTs, ACASXProblem, DecisionTreeVis
 import Configure.configure
-
-include("dtree_callbacks.jl")
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
@@ -63,22 +56,6 @@ const T1 = Bool #predict_type
 const T2 = Int64 #label_type
 
 configure(::Type{Val{:ACASX_MC_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
-
-function train_dtree{T}(problem::ACASXClustering, Dl::DFSetLabeled{T},
-                        mc_params::MCESParams, maxdepth::Int64, loginterval::Int64)
-
-  logs = default_logs()
-  add_folder!(logs, "members", [ASCIIString, ASCIIString, Int64], ["members_true", "members_false", "decision_id"])
-
-  num_data = length(Dl)
-
-  p = DTParams(num_data, maxdepth, T1, T2)
-
-  dtree = build_tree(p,
-                     Dl, problem, mc_params, logs, loginterval) #userargs...
-
-  return dtree, logs
-end
 
 function acasx_mc_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC_Tree"),
                        seed=1,
@@ -103,84 +80,46 @@ function acasx_mc_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC_Tre
                        b_jldsave::Bool=true
                        )
 
-  srand(seed)
-  mkpath(outdir)
+    srand(seed)
+    mkpath(outdir)
 
-  problem = ACASXClustering(runtype, data, manuals, clusterdataname)
+    problem = ACASXClustering(runtype, data, manuals, clusterdataname)
+    
+    mc_logsys = MC.logsystem()
+    mc_params = MCESParams(maxsteps, n_samples, mc_logsys)
+    gbdt_logsys = GBDTs.logsystem()
+    send_to!(STDOUT, gbdt_logsys, ["verbose1", "split_result_print"])
+    logs = TaggedDFLogger()
+    send_to!(logs, gbdt_logsys, ["computeinfo", "parameters", "elapsed_cpu_s", 
+        "members", "classifier_metrics", "interpretability_metrics", "split_result"])
 
-  logsys = MC.logsystem()
-  observer = get_observer(logsys)
+    gbdt_params = GBDTParams(problem, length(problem.Dl), mc_params, maxdepth, 
+        T1, T2, gbdt_logsys)
+  
+    result = induce_tree(gbdt_params)
 
-  mc_params = MCESParams(maxsteps, n_samples, logsys)
+    ##################################
+    #add local items to log
+    push!(logs, "parameters", ["seed", seed])
+    push!(logs, "parameters", ["runtype", runtype])
+    push!(logs, "parameters", ["data", data])
 
-  Dl = problem.Dl
-  dtree, logs = train_dtree(problem, Dl, mc_params, maxdepth, loginterval)
+    outfile = joinpath(outdir, "$(logfileroot).txt")
+    save_log(outfile, logs)
+    ##################################
 
-  ##################################
-  #add many items to log
-  push!(logs, "parameters", ["seed", seed, 0])
-  push!(logs, "parameters", ["runtype", runtype, 0])
-  push!(logs, "parameters", ["clusterdataname", clusterdataname, 0])
-
-  #classifier performance
-  members = DecisionTrees.get_members(dtree)
-  p = DTParams(length(members), maxdepth, T1, T2)
-  pred = map(x -> classify(p, dtree, x, Dl, problem), members)
-  pred = pred .== 1 
-  truth = get_truth(members, Dl)
-  truth = truth .== 1
-  conf_mat = ConfusionMat(pred, truth)
-  add_varlist!(logs, "classifier_metrics")
-  push!(logs, "classifier_metrics", ["truepos", conf_mat.truepos]) 
-  push!(logs, "classifier_metrics", ["trueneg", conf_mat.trueneg])
-  push!(logs, "classifier_metrics", ["falsepos", conf_mat.falsepos])
-  push!(logs, "classifier_metrics", ["falseneg", conf_mat.falseneg])
-  push!(logs, "classifier_metrics", ["precision", precision(conf_mat)])
-  push!(logs, "classifier_metrics", ["recall", recall(conf_mat)])
-  push!(logs, "classifier_metrics", ["accuracy", accuracy(conf_mat)])
-  push!(logs, "classifier_metrics", ["f1_score", f1_score(conf_mat)])
-
-  #interpretability metrics
-  add_varlist!(logs, "interpretability_metrics")
-  num_rules = nrow(logs["result"])
-  rules = logs["result"][:expr]
-  avg_rule_length = mean(map(length, rules))
-  TreeIterators.get_children(node::DTNode) = collect(values(node.children))
-  nodes = collect(tree_iter(dtree.root))
-  push!(logs, "interpretability_metrics", ["num_rules", num_rules]) 
-  push!(logs, "interpretability_metrics", ["avg_rule_length", avg_rule_length]) 
-  push!(logs, "interpretability_metrics", ["num_nodes", length(nodes)]) 
-  push!(logs, "interpretability_metrics", ["num_leaf", count(DecisionTrees.isleaf, nodes)]) 
-
-  add_folder!(logs, "rule_metrics", [ASCIIString, Int64, Int64], ["expr", "deriv_tree_num_nodes", "deriv_tree_num_leafs" ])
-  TreeIterators.get_children(node::DerivTreeNode) = node.children
-  for node in nodes
-    if node.split_rule != nothing
-        derivnodes = collect(tree_iter(get_derivtree(node.split_rule.tree).root))
-        push!(logs, "rule_metrics", [string(node.split_rule.expr), length(derivnodes), count(DerivationTrees.isleaf, derivnodes)])
+    #visualize
+    if vis
+        decisiontreevis(result.decision_tree, problem.Dl, 
+            joinpath(outdir, "$(logfileroot)_vis"), limit_members, FMT_PRETTY, 
+            FMT_NATURAL; plotpdf=plotpdf)
     end
-  end
-  avg_deriv_num_nodes = mean(logs["rule_metrics"][:deriv_tree_num_nodes])
-  avg_deriv_num_leafs = mean(logs["rule_metrics"][:deriv_tree_num_leafs])
-  push!(logs, "interpretability_metrics", ["avg_deriv_tree_num_nodes", avg_deriv_num_nodes])
-  push!(logs, "interpretability_metrics", ["avg_deriv_tree_num_leafs", avg_deriv_num_leafs])
-
-  outfile = joinpath(outdir, "$(logfileroot).txt")
-  save_log(outfile, logs)
-  ##################################
-
-  #visualize
-  if vis
-    decisiontreevis(dtree, Dl, joinpath(outdir, "$(logfileroot)_vis"), limit_members,
-                    FMT_PRETTY, FMT_NATURAL; plotpdf=plotpdf)
-  end
-
-  if b_jldsave
-      jldfile = joinpath(outdir, "save.jld")
-      save(jldfile, "dtree", dtree)
-  end
-
-  return dtree, logs
+    
+    if b_jldsave
+        jldfile = joinpath(outdir, "save.jld")
+        save(jldfile, "dtree", result.decision_tree)
+    end
+    result
 end
 
 end #module
