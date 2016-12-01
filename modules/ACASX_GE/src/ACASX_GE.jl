@@ -44,7 +44,7 @@ import Compat.ASCIIString
 using ExprSearch.GE
 using Datasets
 using RLESUtils, ArrayUtils, Configure, LogSystems, Loggers
-using Reexport
+import RLESTypes.SymbolTable
 
 using GrammarExpts
 using ACASXProblem, DerivTreeVis
@@ -98,9 +98,9 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
     send_to!(logs, logsys, ["code", "computeinfo", "current_best", "elapsed_cpu_s", "fitness",
         "fitness5", "parameters", "result"])
 
-    ge_params = GEESParams(genome_size, pop_size, maxwraps,
-                         top_keep, top_seed, rand_frac, prob_mutation, mutation_rate, defaultcode,
-                         maxiterations, logsys)
+    ge_params = GEESParams(genome_size, pop_size, maxwraps, top_keep, top_seed, rand_frac, 
+        prob_mutation, mutation_rate, defaultcode, maxiterations, logsys; 
+        userargs=SymbolTable(:ids=>collect(1:length(problem.Dl))))
 
     result = exprsearch(ge_params, problem)
 

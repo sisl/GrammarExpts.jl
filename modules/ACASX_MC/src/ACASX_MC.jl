@@ -47,6 +47,7 @@ using Reexport
 using GrammarExpts
 using ACASXProblem, DerivTreeVis
 using RLESUtils, Configure, Loggers, LogSystems
+import RLESTypes.SymbolTable
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
@@ -88,9 +89,9 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
     send_to!(STDOUT, logsys, ["verbose1", "result"])
     logs = TaggedDFLogger()
     send_to!(logs, logsys, ["computeinfo", "parameters", "result"])
-    #TODO: need to set up additional logs here
 
-    mc_params = MCESParams(maxsteps, n_samples)
+    mc_params = MCESParams(maxsteps, n_samples; 
+        userargs=SymbolTable(:ids=>collect(1:length(problem.Dl))))
     pmc_params = PMCESParams(n_threads, mc_params, logsys)
 
     result = exprsearch(pmc_params, problem)
@@ -147,7 +148,8 @@ function acasx_mc1(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC1"),
     send_to!(logs, logsys,  "current_best"; interval=loginterval)
     send_to!(logs, logsys,  "elapsed_cpu_s"; interval=loginterval)
 
-    mc_params = MCESParams(maxsteps, n_samples, logsys)
+    mc_params = MCESParams(maxsteps, n_samples; 
+        userargs=SymbolTable(:ids=>collect(1:length(problem.Dl))))
     result = exprsearch(mc_params, problem)
 
     #manually push! extra info to log

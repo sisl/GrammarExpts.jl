@@ -33,89 +33,110 @@
 # *****************************************************************************
 
 """
-(Tree-based) Genetic programming for the ACASX problem.
-Example usage: config=configure(ACASX_GP,"normal","nvn_dasc"); acasx_gp(;config...)
+Create a decision tree to recursively split encounters in the ACASX Problem. GP algorithm.
+Example usage: config=configure(ACASX_GP_Tree,"normal","nvn_dasc"); acasx_gp_tree(;config...)
 """
-module ACASX_GP
+module ACASX_GP_Tree
 
-export configure, acasx_gp
+export configure, acasx_gp_tree
 
 import Compat.ASCIIString
+
 using ExprSearch.GP
 using Datasets
-using RLESUtils, Configure, LogSystems, Loggers
+using RLESUtils, Configure, Loggers, LogSystems
 import RLESTypes.SymbolTable
+using JLD
 
-using GrammarExpts
-using ACASXProblem, DerivTreeVis
+using GrammarExpts, GBDTs, ACASXProblem, DecisionTreeVis
 import Configure.configure
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
+const T1 = Bool #predict_type
+const T2 = Int64 #label_type
 
-configure(::Type{Val{:ACASX_GP}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_GP_Tree}}, configs::AbstractString...) = 
+    configure_path(CONFIGDIR, configs...)
 
-#nmacs vs nonnmacs
 """
 Example call:
-config=configure(ACASX_GP, "nvn_dasc", "normal")
-acasx_ge(; config...)
+config=configure(ACASX_GP_Tree, "nvn_dasc", "normal")
+acasx_gp_tree(; config...)
 """
-function acasx_gp(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GP"),
-                  seed=1,
-                  logfileroot::AbstractString="acasx_gp_log",
+function acasx_gp_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GP_Tree"),
+                        seed=1,
+                        logfileroot::AbstractString="acasx_gp_tree_log",
 
-                  runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dascfilt",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
+                        #dataset
+                        runtype::Symbol=:nmacs_vs_nonnmacs,
+                        data::AbstractString="dasc",
+                        manuals::AbstractString="dasc_manual",
+                        clusterdataname::AbstractString="josh1",
 
-                  pop_size::Int64=100,
-                  maxdepth::Int64=10,
-                  iterations::Int64=10,
-                  tournament_size::Int64=20,
-                  top_keep::Float64=0.1,
-                  crossover_frac::Float64=0.3,
-                  mutate_frac::Float64=0.3,
-                  rand_frac::Float64=0.2,
-                  default_code::Any=:(eval(false)),
+                        #decision tree
+                        dt_maxdepth::Int64=1,
 
-                  vis::Bool=true)
+                        #GP
+                        pop_size::Int64=100,
+                        gp_maxdepth::Int64=10,
+                        iterations::Int64=10,
+                        tournament_size::Int64=20,
+                        top_keep::Float64=0.1,
+                        crossover_frac::Float64=0.3,
+                        mutate_frac::Float64=0.3,
+                        rand_frac::Float64=0.2,
+                        default_code::Any=:(eval(false)),
+        
+                        #DT vis
+                        vis::Bool=true,
+                        plotpdf::Bool=true,
+                        limit_members::Int64=10,
+
+                        #save tree
+                        b_jldsave::Bool=true
+                        )
+
     srand(seed)
     mkpath(outdir)
 
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-    logsys = GP.logsystem()
-    empty_listeners!(logsys)
-    send_to!(STDOUT, logsys, ["verbose1", "current_best_print", "result"])
+    gp_logsys = GP.logsystem()
+    gp_params = GPESParams(pop_size, gp_maxdepth, iterations, tournament_size, top_keep,
+        crossover_frac, mutate_frac, rand_frac, default_code, gp_logsys)
+    gbdt_logsys = GBDTs.logsystem()
+    send_to!(STDOUT, gbdt_logsys, ["verbose1", "split_result_print"])
     logs = TaggedDFLogger()
-    send_to!(logs, logsys, ["code", "computeinfo", "current_best", "elapsed_cpu_s", "fitness",
-        "fitness5", "parameters", "result"])
+    send_to!(logs, gbdt_logsys, ["computeinfo", "parameters", "elapsed_cpu_s", 
+        "members", "classifier_metrics", "interpretability_metrics", "split_result"])
 
-    gp_params = GPESParams(pop_size, maxdepth, iterations, tournament_size, top_keep,
-        crossover_frac, mutate_frac, rand_frac, default_code, logsys;
-        userargs=SymbolTable(:ids=>collect(1:length(problem.Dl))))
+    gbdt_params = GBDTParams(problem, length(problem.Dl), gp_params, dt_maxdepth, 
+        T1, T2, gbdt_logsys)
+  
+    result = induce_tree(gbdt_params)
 
-    result = exprsearch(gp_params, problem)
-
-    #manually push! extra info to log
+    ##################################
+    #add local items to log
     push!(logs, "parameters", ["seed", seed])
     push!(logs, "parameters", ["runtype", runtype])
     push!(logs, "parameters", ["data", data])
-    add_folder!(logs, "expression", [ASCIIString, ASCIIString, ASCIIString],
-        ["raw", "pretty", "natural"]) 
-    push!(logs, "expression", [string(result.expr), pretty_string(result.tree, FMT_PRETTY),
-        pretty_string(result.tree, FMT_NATURAL, true)])
 
-    #save log
     outfile = joinpath(outdir, "$(logfileroot).txt")
     save_log(outfile, logs)
+    ##################################
 
+    #visualize
     if vis
-        derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
+        decisiontreevis(result.decision_tree, problem.Dl, 
+            joinpath(outdir, "$(logfileroot)_vis"), limit_members, FMT_PRETTY, 
+            FMT_NATURAL; plotpdf=plotpdf)
     end
-
+    
+    if b_jldsave
+        jldfile = joinpath(outdir, "save.jld")
+        save(jldfile, "dtree", result.decision_tree)
+    end
     result
 end
 

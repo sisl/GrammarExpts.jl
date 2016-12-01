@@ -46,6 +46,7 @@ using Datasets
 using Reexport
 using JSON, GZip
 using RLESUtils, FileUtils, Configure, Observers, Loggers, LogSystems
+import RLESTypes.SymbolTable
 
 using GrammarExpts
 using ACASXProblem
@@ -103,7 +104,8 @@ function acasx_mcts(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MCTS"),
     #end
 
     mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth,
-                             explorationconst, maxmod, q0, seed, logsys)
+                             explorationconst, maxmod, q0, seed, logsys;
+                             userargs=SymbolTable(:ids=>collect(1:length(problem.Dl))))
 
     result = exprsearch(mcts_params, problem)
 

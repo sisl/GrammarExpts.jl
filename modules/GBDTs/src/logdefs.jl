@@ -85,9 +85,9 @@ function logsystem()
             num_derivleafs = Int64[]
             for node in tree_iter(result.decision_tree.root)
                 if node.split_rule != nothing
-                    push!(num_derivnodes, length(get_derivtree(node.split_rule.tree)))
+                    push!(num_derivnodes, length(get_derivtree(node.split_rule)))
                     push!(num_derivleafs, DerivationTrees.count_leafs(
-                        get_derivtree(node.split_rule.tree)))
+                        get_derivtree(node.split_rule)))
                 end
             end
             avg_deriv_num_nodes = mean(num_derivnodes)

@@ -130,7 +130,6 @@ function acasx_mcts_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MCTS
         save(jldfile, "dtree", result.decision_tree)
     end
     result
-
 end
 
 end #module

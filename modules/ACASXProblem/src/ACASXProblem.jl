@@ -611,7 +611,7 @@ end
 
 function apply_expr{T}(problem::ACASXClustering{T}, ids::Vector{Int64}, expr)
     expr_labels = map(i->eval_expr(problem, expr, getrecords(problem.Dl, i)), ids) 
-    expr_labels
+    expr_labels::AbstractVector{Bool}
 end
 
 function get_members{T}(problem::ACASXClustering{T}, ids::Vector{Int64}, 
