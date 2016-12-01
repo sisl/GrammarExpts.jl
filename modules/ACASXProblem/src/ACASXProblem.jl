@@ -63,14 +63,14 @@ include("format.jl")
 
 #weights for fitness function
 const W_METRIC = 100.0 #entropy
-const W_LEN = 0.05 #length of expression
+const W_NUM_NODES = 0.1 #length of expression
 
 typealias RealVec Union{DataArray{Float64,1}, Vector{Float64}}
 
 type ACASXClustering{T} <: ExprProblem
   Dl::DFSetLabeled{T}
   w_metric::Float64
-  w_len::Float64
+  w_num_nodes::Float64
   labelset::Vector{T}
   grammar::Grammar
 end
@@ -78,16 +78,15 @@ end
 """
 Example: problem = ACASXClustering(:nmacs_vs_nonnmacs, "dasc", "", "")
 """
-function ACASXClustering(runtype::Symbol, dataname::AbstractString, 
-                         manuals::AbstractString, clustername::AbstractString,
-                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
+function ACASXClustering(runtype::Symbol, dataname::AbstractString, manuals::AbstractString, 
+    clustername::AbstractString, w_metric::Float64=W_METRIC, w_num_nodes::Float64=W_NUM_NODES)
     if runtype == :nmacs_vs_nonnmacs
-        out = ACASXClustering(dataname, w_metric, w_len)
+        out = ACASXClustering(dataname, w_metric, w_num_nodes)
     elseif runtype == :nmac_clusters
-        out = ACASXClustering(dataname, manuals, clustername, w_metric, w_len; 
+        out = ACASXClustering(dataname, manuals, clustername, w_metric, w_num_nodes; 
             incl_nonnmacs=false)
     elseif runtype == :nonnmacs_extra_cluster
-        out = ACASXClustering(dataname, manuals, clustername, w_metric, w_len; 
+        out = ACASXClustering(dataname, manuals, clustername, w_metric, w_num_nodes; 
             incl_nonnmacs=true)
     else
         error("Runtype not defined ($runtype)")
@@ -97,19 +96,19 @@ end
 
 #nmacs vs non-nmacs
 function ACASXClustering(dataname::AbstractString,
-                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN)
+                         w_metric::Float64=W_METRIC, w_num_nodes::Float64=W_NUM_NODES)
     data = dataset(dataname)
     Dl = nmacs_vs_nonnmacs(data)
     labelset = unique(labels(Dl))
     grammar = create_grammar()
-    return ACASXClustering(Dl, w_metric, w_len, labelset, grammar)
+    return ACASXClustering(Dl, w_metric, w_num_nodes, labelset, grammar)
 end
 
 #with manual clustering
 function ACASXClustering(dataname::AbstractString,
                          manuals::AbstractString,
                          clustername::AbstractString,
-                         w_metric::Float64=W_METRIC, w_len::Float64=W_LEN;
+                         w_metric::Float64=W_METRIC, w_num_nodes::Float64=W_NUM_NODES;
                          incl_nonnmacs::Bool=true)
 
     data = dataset(dataname)
@@ -121,19 +120,21 @@ function ACASXClustering(dataname::AbstractString,
         Dl = nmac_clusters(clustering, data)
     end
     labelset = unique(labels(Dl))
-    return ACASXClustering(Dl, w_metric, w_len, labelset, grammar)
+    return ACASXClustering(Dl, w_metric, w_num_nodes, labelset, grammar)
 end
 
 ExprSearch.get_grammar{T}(problem::ACASXClustering{T}) = problem.grammar 
-function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, expr, userargs::SymbolTable)
+function ExprSearch.get_fitness{T}(problem::ACASXClustering{T}, derivtree::DerivationTree, 
+    userargs::SymbolTable)
     ids = userargs[:ids]
 
+    expr = get_expr(derivtree)
     induced_labels = apply_expr(problem, ids, expr)
-    codelen = length(string(expr))
+    num_nodes = count_nodes(derivtree.root)
 
     #_, _, metric = entropy_metrics(predicts, Dl.labels, Float64(problem.nlabels))
     _, _, metric = gini_metrics(induced_labels, view(problem.Dl.labels, ids))
-    return problem.w_metric * metric + problem.w_len * codelen
+    return problem.w_metric * metric + problem.w_num_nodes * num_nodes
 end
 
 
