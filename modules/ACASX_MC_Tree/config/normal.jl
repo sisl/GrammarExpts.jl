@@ -37,9 +37,10 @@
   (:maxsteps, 20),
 
   #MC
-  (:n_samples, 125000),
-  (:n_threads, 4),
+  (:n_samples, 500000),
 
   #decision tree
-  (:maxdepth, 3)
+  (:maxdepth, 4),
+
+  (:loginterval, 5000)
 ]

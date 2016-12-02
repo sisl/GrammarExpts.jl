@@ -32,7 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const N_ITERS = 10000
+const N_ITERS = 500000
 
 #mdp
 [

@@ -86,6 +86,8 @@ function acasx_mc_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC_Tre
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
     
     mc_logsys = MC.logsystem()
+    send_to!(STDOUT, mc_logsys, "verbose1")
+    send_to!(STDOUT, mc_logsys, "current_best_print"; interval=loginterval)
     mc_params = MCESParams(maxsteps, n_samples, mc_logsys)
     gbdt_logsys = GBDTs.logsystem()
     send_to!(STDOUT, gbdt_logsys, ["verbose1", "split_result_print"])

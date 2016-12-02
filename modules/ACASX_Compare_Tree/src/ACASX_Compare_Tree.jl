@@ -32,48 +32,106 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+"""
+ACASX Study comparing performance of GP, MC, MCTS, GE Trees.
+Single-threaded versions are used for more stable comparison.
+Main entry: study_main()
+"""
 module ACASX_Compare_Tree
 
+export run_mc_tree, run_mcts_tree, run_ge_tree, run_gp_tree
 export combine_mc_logs, combine_mcts_logs, combine_ge_logs, master_log, master_plot, run_main
 
 import Compat: ASCIIString, UTF8String
+using GrammarExpts, GBDTs
+using ExprSearch: GP, MC, MCTS, GE
+using ACASX_GP_Tree, ACASX_GE_Tree, ACASX_MC_Tree, ACASX_MCTS_Tree
 using LogJoiner
-using RLESUtils, Loggers, MathUtils, Configure, LatexUtils
+using RLESUtils, Loggers, MathUtils, Configure, LatexUtils, Sweeper
 using DataFrames
 using PGFPlots, TikzPictures
+import Configure.configure
 
+#const CONFIG = "nvn_libcas098smallfilt"
+const CONFIG = "nvn_dascfilt"
 const STUDYNAME = "ACASX_Compare_Tree"
 const MC_NAME = "ACASX_MC_Tree"
 const MCTS_NAME = "ACASX_MCTS_Tree"
 const GE_NAME = "ACASX_GE_Tree"
+const GP_NAME = "ACASX_GP_Tree"
 
+const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 
 const MASTERLOG_FILE = joinpath(RESULTDIR, STUDYNAME, "masterlog.csv.gz")
 const PLOTLOG_FILE =  joinpath(RESULTDIR, STUDYNAME, "plotlog.csv.gz")
 const PLOTFILEROOT = joinpath(RESULTDIR, STUDYNAME, "plots")
 
+configure(::Type{Val{:ACASX_Compare_Tree}}, configs::AbstractString...) = 
+    configure_path(CONFIGDIR, configs...)
+
 resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)
 
+function run_mc_tree(; seed=1:5, n_samples=500000)
+    baseconfig = configure(ACASX_MC_Tree, "normal", CONFIG)
+    baseconfig[:outdir] = "./"
+    baseconfig[:n_samples] = n_samples
+    sweep_cfg = configure(ACASX_Compare_Tree, "mc")
+    sweep_cfg[:outdir] = studypath(MC_NAME)
+    sweep_cfg[:seed] = seed
+    result = sweeper(acasx_mc_tree, GBDTResult, baseconfig; sweep_cfg...)
+    result
+end
+function run_mcts_tree(; seed=1:5, n_iters=500000)
+    baseconfig = configure(ACASX_MCTS_Tree, "normal", CONFIG)
+    baseconfig[:outdir] = "./"
+    baseconfig[:maxmod] = false
+    baseconfig[:n_iters] = n_iters
+    sweep_cfg = configure(ACASX_Compare_Tree, "mcts")
+    sweep_cfg[:outdir] = studypath(MCTS_NAME)
+    sweep_cfg[:seed] = seed
+    result = sweeper(acasx_mcts_tree, GBDTResult, baseconfig; sweep_cfg...)
+    result
+end
+function run_ge_tree(; seed=1:5, n_iters=100)
+    baseconfig = configure(ACASX_GE_Tree, "normal", CONFIG)
+    baseconfig[:outdir] = "./"
+    baseconfig[:maxiterations] = n_iters
+    sweep_cfg = configure(ACASX_Compare_Tree, "ge")
+    sweep_cfg[:outdir] = studypath(GE_NAME)
+    sweep_cfg[:seed] = seed
+    result = sweeper(acasx_ge_tree, GBDTResult, baseconfig; sweep_cfg...)
+    result
+end
+function run_gp_tree(; seed=1:5, n_iters=100)
+    baseconfig = configure(ACASX_GP_Tree, "normal", CONFIG)
+    baseconfig[:outdir] = "./"
+    baseconfig[:iterations] = n_iters
+    sweep_cfg = configure(ACASX_Compare_Tree, "gp")
+    sweep_cfg[:outdir] = studypath(GP_NAME)
+    sweep_cfg[:seed] = seed
+    result = sweeper(acasx_gp_tree, GBDTResult, baseconfig; sweep_cfg...)
+    result
+end
 function combine_mc_logs()
     dir = studypath(MC_NAME)
-    logjoin(dir, "acasx_mc_tree_log.txt", ["classifier_metrics", "interpretability_metrics", "result"], 
-        joinpath(dir, "subdirjoined"))
+    logjoin(dir, "acasx_mc_tree_log.txt", ["classifier_metrics", 
+        "interpretability_metrics", "result"], joinpath(dir, "subdirjoined"))
 end
 function combine_mcts_logs()
     dir = studypath(MCTS_NAME)
-    logjoin(dir, "acasx_mcts_tree_log.txt", ["classifier_metrics", "interpretability_metrics", "result"], 
-        joinpath(dir, "subdirjoined"))
+    logjoin(dir, "acasx_mcts_tree_log.txt", ["classifier_metrics", 
+        "interpretability_metrics", "result"], joinpath(dir, "subdirjoined"))
 end
 function combine_ge_logs()
     dir = studypath(GE_NAME)
-    logjoin(dir, "acasx_ge_tree_log.txt", ["classifier_metrics", "interpretability_metrics", "result"], 
-        joinpath(dir, "subdirjoined"))
+    logjoin(dir, "acasx_ge_tree_log.txt", ["classifier_metrics", 
+        "interpretability_metrics", "result"], joinpath(dir, "subdirjoined"))
 end
 
 #TODO: clean this up...
-function master_log(; b_mc=true, b_mcts=true, b_ge=true)
+function master_log(; b_mc=true, b_mcts=true, b_ge=true, b_gp=true)
     masterlog = DataFrame([UTF8String, Float64, Float64, Float64, Float64, Float64, Float64, 
         Float64, ASCIIString], 
         [:name, :avg_deriv_tree_num_leafs, :avg_deriv_tree_num_nodes, :avg_rule_length, 
@@ -121,6 +179,18 @@ function master_log(; b_mc=true, b_mcts=true, b_ge=true)
         append!(masterlog, D)
     end
 
+    #GP
+    if b_gp
+        dir = studypath(GP_NAME)
+        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+        D = logs["interpretability_metrics"]
+        D = unstack(D, :variable, :value)
+        D1 = logs["result"]
+        D1 = aggregate(D1[[:fitness, :name]], [:name], [sum])
+        D = join(D, D1, on=[:name])
+        D[:algorithm] = fill("GP", nrow(D))
+        append!(masterlog, D)
+    end
     writetable(MASTERLOG_FILE, masterlog)
     masterlog
 end
@@ -153,6 +223,7 @@ end
 function run_main(; 
     b_mc::Bool=true,
     b_mcts::Bool=true,
+    b_gp::Bool=true,
     b_ge::Bool=true
     )
 
@@ -167,8 +238,12 @@ function run_main(;
     if b_ge
         combine_ge_logs()
     end
-    master_log(; b_mc=b_mc, b_mcts=b_mcts, b_ge=b_ge)
-    master_plot()
+
+    if b_gp
+        combine_gp_logs()
+    end
+    ml = master_log(; b_mc=b_mc, b_mcts=b_mcts, b_ge=b_ge, b_gp=gp)
+    master_plot(ml)
 end
 
 

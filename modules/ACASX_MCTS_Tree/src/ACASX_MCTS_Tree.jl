@@ -95,6 +95,8 @@ function acasx_mcts_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MCTS
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
     mcts_logsys = MCTS.logsystem()
+    send_to!(STDOUT, mcts_logsys, "verbose1")
+    send_to!(STDOUT, mcts_logsys, "current_best"; interval=loginterval)
     mcts_params = MCTSESParams(maxsteps, max_neg_reward, step_reward, n_iters, searchdepth, 
         explorationconst, maxmod, q0, seed, mcts_logsys)
     gbdt_logsys = GBDTs.logsystem()

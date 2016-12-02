@@ -102,6 +102,7 @@ function acasx_ge_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE_T
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
     ge_logsys = GE.logsystem()
+    send_to!(STDOUT, ge_logsys, ["verbose1", "current_best_print"])
     ge_params = GEESParams(genome_size, pop_size, maxwraps, top_keep, top_seed, 
         rand_frac, prob_mutation, mutation_rate, defaultcode, maxiterations, ge_logsys)
     gbdt_logsys = GBDTs.logsystem()

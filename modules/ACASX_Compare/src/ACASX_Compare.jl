@@ -71,7 +71,8 @@ const MASTERLOG_FILE = joinpath(RESULTDIR, STUDYNAME, "masterlog.csv.gz")
 const PLOTLOG_FILE =  joinpath(RESULTDIR, STUDYNAME, "plotlog.csv.gz")
 const PLOTFILEROOT = joinpath(RESULTDIR, STUDYNAME, "plots")
 
-configure(::Type{Val{:ACASX_Compare}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_Compare}}, configs::AbstractString...) = 
+    configure_path(CONFIGDIR, configs...)
 
 resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)

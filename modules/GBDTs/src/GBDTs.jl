@@ -34,7 +34,7 @@
 
 module GBDTs
 
-export GBDTParams, GPDTResult, induce_tree, apply_expr
+export GBDTParams, GBDTResult, induce_tree, apply_expr
 
 using GrammarExpts, DecisionTrees
 using ExprSearch

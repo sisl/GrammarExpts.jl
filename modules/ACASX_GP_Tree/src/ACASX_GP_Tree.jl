@@ -103,6 +103,7 @@ function acasx_gp_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GP_T
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
     gp_logsys = GP.logsystem()
+    send_to!(STDOUT, gp_logsys, ["verbose1", "current_best_print"])
     gp_params = GPESParams(pop_size, gp_maxdepth, iterations, tournament_size, top_keep,
         crossover_frac, mutate_frac, rand_frac, default_code, gp_logsys)
     gbdt_logsys = GBDTs.logsystem()
