@@ -32,15 +32,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#genetic programming
 [
-  (:pop_size, 5000),
-  (:gp_maxdepth, 10),
-  (:iterations, 100),
-  (:tournament_size, 500),
-  (:top_keep, 0.01),
-  (:crossover_frac, 0.3),
-  (:mutate_frac, 0.2),
-  (:rand_frac, 0.4),
-  (:default_code, :(eval(false)))
+    #genetic programming
+    (:pop_size, 5000),
+    (:gp_maxdepth, 10),
+    (:iterations, 100),
+    (:tournament_size, 500),
+    (:top_keep, 0.01),
+    (:crossover_frac, 0.3),
+    (:mutate_frac, 0.2),
+    (:rand_frac, 0.4),
+    (:default_code, :(eval(false))),
+    
+    #vis
+    (:limit_members, 10),
+
+    #decision tree
+    (:dt_maxdepth, 4)
 ]

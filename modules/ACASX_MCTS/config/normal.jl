@@ -48,5 +48,6 @@ const N_ITERS = 10000
   (:step_reward, 0.0),
 
   #vis
+  (:loginterval, 5000),
   (:treevis_interval, Int(N_ITERS / 5))
 ]

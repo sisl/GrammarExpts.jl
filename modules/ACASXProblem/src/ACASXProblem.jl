@@ -53,7 +53,7 @@ import Compat.view
 using Datasets
 using ExprSearch
 using Devectorize
-using RLESUtils, LogicUtils, Interpreter
+using RLESUtils, LogicUtils, Interpreter, TreeUtils
 import ExprSearch: ExprProblem, get_fitness, get_grammar
 import GBDTs.apply_expr
 

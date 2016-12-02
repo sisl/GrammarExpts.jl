@@ -43,7 +43,7 @@ export configure, acasx_ge
 import Compat.ASCIIString
 using ExprSearch.GE
 using Datasets
-using RLESUtils, ArrayUtils, Configure, LogSystems, Loggers
+using RLESUtils, FileUtils, ArrayUtils, Configure, LogSystems, Loggers
 import RLESTypes.SymbolTable
 
 using GrammarExpts
@@ -82,9 +82,6 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
                   maxiterations::Int64=3,
 
                   limit_members::Int64=30,
-                  hist_nbins::Int64=40,
-                  hist_edges::Range{Float64}=linspace(0.0, 200.0, hist_nbins + 1),
-                  hist_mids::Vector{Float64}=collect(Base.midpoints(hist_edges)),
                   vis::Bool=true)
     srand(seed)
     mkpath(outdir)
@@ -120,6 +117,9 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
     if vis
         derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
     end
+
+    textfile(joinpath(outdir, "summary.txt"), "mcts", seed=seed, maxiterations=maxiterations,
+           fitness=result.fitness, expr=string(result.expr))
 
     result
 end

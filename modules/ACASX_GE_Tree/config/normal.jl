@@ -32,29 +32,22 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const HIST_NBINS = 40
-const HIST_EDGES = linspace(0.0, 200.0, HIST_NBINS + 1)
-const HIST_MIDS = Base.midpoints(HIST_EDGES) |> collect
 [
-  #GE
-  (:genome_size, 20),
-  (:maxwraps, 0),
-  (:defaultcode, :(eval(false))),
-  (:top_keep, 0.25),
-  (:top_seed, 0.5),
-  (:rand_frac, 0.25),
-  (:prob_mutation, 0.2),
-  (:mutation_rate, 0.2),
-  (:pop_size, 5000),
-  (:maxiterations, 100),
-  
-  #vis
-  (:limit_members, 10),
-
-  (:hist_nbins, HIST_NBINS),
-  (:hist_edges, HIST_EDGES),
-  (:hist_mids, HIST_MIDS),
-
-  #decision tree
-  (:maxdepth, 3)
+    #GE
+    (:genome_size, 20),
+    (:maxwraps, 0),
+    (:defaultcode, :(eval(false))),
+    (:top_keep, 0.25),
+    (:top_seed, 0.5),
+    (:rand_frac, 0.25),
+    (:prob_mutation, 0.2),
+    (:mutation_rate, 0.2),
+    (:pop_size, 5000),
+    (:maxiterations, 100),
+    
+    #vis
+    (:limit_members, 10),
+    
+    #decision tree
+    (:maxdepth, 4)
 ]

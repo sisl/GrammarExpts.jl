@@ -46,7 +46,8 @@ using Reexport
 
 using GrammarExpts
 using ACASXProblem, DerivTreeVis
-using RLESUtils, Configure, Loggers, LogSystems
+using RLESUtils, FileUtils, Configure, Loggers, LogSystems
+
 import RLESTypes.SymbolTable
 import Configure.configure
 
@@ -153,7 +154,6 @@ function acasx_mc1(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC1"),
     result = exprsearch(mc_params, problem)
 
     #manually push! extra info to log
-    add_members_to_log!(logs, problem, result.expr)
     push!(logs, "parameters", ["seed", seed])
     push!(logs, "parameters", ["runtype", runtype])
     push!(logs, "parameters", ["data", data])
@@ -170,13 +170,10 @@ function acasx_mc1(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC1"),
         derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
     end
 
-    return result
-end
+    textfile(joinpath(outdir, "summary.txt"), "mc", seed=seed, n_samples=n_samples,
+           fitness=result.fitness, expr=string(result.expr))
 
-function add_members_to_log!{T}(logs::TaggedDFLogger, problem::ACASXClustering{T}, expr)
-  add_folder!(logs, "members", [ASCIIString, ASCIIString], ["members_true", "members_false"])
-  members_true, members_false = get_members(problem, expr)
-  push!(logs, "members", [join(members_true, ","), join(members_false, ",")])
+    result
 end
 
 end #module

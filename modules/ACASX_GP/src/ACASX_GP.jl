@@ -43,7 +43,7 @@ export configure, acasx_gp
 import Compat.ASCIIString
 using ExprSearch.GP
 using Datasets
-using RLESUtils, Configure, LogSystems, Loggers
+using RLESUtils, FileUtils, Configure, LogSystems, Loggers
 import RLESTypes.SymbolTable
 
 using GrammarExpts
@@ -116,6 +116,8 @@ function acasx_gp(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GP"),
         derivtreevis(get_derivtree(result), joinpath(outdir, "$(logfileroot)_derivtreevis"))
     end
 
+    textfile(joinpath(outdir, "summary.txt"), "gp", seed=seed, iteration=iterations,
+           fitness=result.fitness, expr=string(result.expr))
     result
 end
 

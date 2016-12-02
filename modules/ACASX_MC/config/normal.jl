@@ -38,5 +38,8 @@
 
   #MC
   (:n_samples, 125000),
-  (:n_threads, 4)
+  (:n_threads, 4),
+
+  #logfiles
+  (:loginterval, 5000)
 ]
