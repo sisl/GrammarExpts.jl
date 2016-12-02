@@ -42,7 +42,7 @@ module ACASX_Compare
 export run_main, plot_main
 export run_mc, run_mcts, run_ge, run_gp
 export combine_sweep_logs, combine_mc_logs, combine_mcts_logs, 
-    combine_ge_logs, combine_gp_logsj, combine_logs
+    combine_ge_logs, combine_gp_logs, combine_logs
 export master_log, master_plot
 
 import Compat: ASCIIString, UTF8String
@@ -77,7 +77,7 @@ resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)
 
 function run_mc(; seed=1:5, n_samples=500000)
-    baseconfig = configure(ACASX_MC, "singlethread", CONFIG)
+    baseconfig = configure(ACASX_MC, "normal", CONFIG)
     baseconfig[:outdir] = "./"
     baseconfig[:n_samples] = n_samples
     sweep_cfg = configure(ACASX_Compare, "mc")
@@ -217,7 +217,8 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
     plotarray = Plots.Plot[]
     for i = 1:n_algos 
         D1 = D[D[:algorithm].==algo_names[i], [:nevals, :fitness_mean, :fitness_SEM]]
-        push!(plotarray, Plots.ErrorBars(D1[:nevals], D1[:fitness_mean], D1[:fitness_SEM],   
+        push!(plotarray, Plots.Linear(D1[:nevals], D1[:fitness_mean], 
+            errorBars=ErrorBars(; y=D1[:fitness_SEM]),   
             legendentry=escape_latex(algo_names[i])))
     end
     tp = PGFPlots.plot(Axis(plotarray, xlabel="Number of Evaluations", ylabel="Fitness",
@@ -229,12 +230,13 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
     for i = 1:n_algos
         D1 = D[D[:algorithm].==algo_names[i], [:nevals, :elapsed_cpu_s_mean, 
             :elapsed_cpu_s_SEM]]
-        push!(plotarray, Plots.ErrorBars(D1[:nevals], D1[:elapsed_cpu_s_mean], 
-            D1[:elapsed_cpu_s_SEM], legendentry=escape_latex(algo_names[i])))
+        push!(plotarray, Plots.Linear(D1[:nevals], D1[:elapsed_cpu_s_mean], 
+            errorBars=ErrorBars(;y=D1[:elapsed_cpu_s_SEM]), 
+            legendentry=escape_latex(algo_names[i])))
     end
-    tp = PGFPlots.plot(Axis(plotarray, xlabel="CPU Time (s)", ylabel="Fitness",
-        title="Fitness vs. Number of CPU Time", legendPos="north east"))
-    push!(td, tp) 
+    tp = PGFPlots.plot(Axis(plotarray, xlabel="Number of Evaluations", ylabel="Elapsed CPU Time (s)",
+        title="Elapsed CPU Time vs. Number of Evaluations", legendPos="north east"))
+    push!(td, tp)
 
     save(PDF(PLOTFILEROOT * ".pdf"), td)
     save(TEX(PLOTFILEROOT * ".tex"), td)

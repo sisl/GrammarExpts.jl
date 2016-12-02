@@ -149,7 +149,7 @@ function acasx_mc1(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC1"),
     send_to!(logs, logsys,  "current_best"; interval=loginterval)
     send_to!(logs, logsys,  "elapsed_cpu_s"; interval=loginterval)
 
-    mc_params = MCESParams(maxsteps, n_samples; 
+    mc_params = MCESParams(maxsteps, n_samples, logsys; 
         userargs=SymbolTable(:ids=>collect(1:length(problem.Dl))))
     result = exprsearch(mc_params, problem)
 
