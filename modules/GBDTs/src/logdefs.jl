@@ -67,7 +67,7 @@ function logsystem()
                 f1_score(conf_mat)]
         end)
     register_log!(logsys, "interpretability_metrics", ["num_rules", "avg_rule_length",
-        "num_nodes", "num_leaf", "deriv_tree_num_nodes", "deriv_tree_num_leafs"], 
+        "num_nodes", "num_leaf", "avg_deriv_tree_num_nodes", "avg_deriv_tree_num_leafs"], 
         [Int64, Float64, Int64, Int64, Float64, Float64], "result",
         x->begin
             result = x[1]

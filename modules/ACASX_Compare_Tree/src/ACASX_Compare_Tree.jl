@@ -40,7 +40,8 @@ Main entry: study_main()
 module ACASX_Compare_Tree
 
 export run_mc_tree, run_mcts_tree, run_ge_tree, run_gp_tree
-export combine_mc_logs, combine_mcts_logs, combine_ge_logs, master_log, master_plot, run_main
+export combine_mc_logs, combine_mcts_logs, combine_ge_logs, combine_gp_logs,
+    master_log, master_plot, run_main
 
 import Compat: ASCIIString, UTF8String
 using GrammarExpts, GBDTs
@@ -52,8 +53,8 @@ using DataFrames
 using PGFPlots, TikzPictures
 import Configure.configure
 
-#const CONFIG = "nvn_libcas098smallfilt"
-const CONFIG = "nvn_dascfilt"
+const CONFIG = "nvn_libcas098smallfilt"
+#const CONFIG = "nvn_dascfilt"
 const STUDYNAME = "ACASX_Compare_Tree"
 const MC_NAME = "ACASX_MC_Tree"
 const MCTS_NAME = "ACASX_MCTS_Tree"
@@ -117,51 +118,47 @@ end
 function combine_mc_logs()
     dir = studypath(MC_NAME)
     logjoin(dir, "acasx_mc_tree_log.txt", ["classifier_metrics", 
-        "interpretability_metrics", "result"], joinpath(dir, "subdirjoined"))
+        "interpretability_metrics"], joinpath(dir, "subdirjoined"))
 end
 function combine_mcts_logs()
     dir = studypath(MCTS_NAME)
     logjoin(dir, "acasx_mcts_tree_log.txt", ["classifier_metrics", 
-        "interpretability_metrics", "result"], joinpath(dir, "subdirjoined"))
+        "interpretability_metrics"], joinpath(dir, "subdirjoined"))
 end
 function combine_ge_logs()
     dir = studypath(GE_NAME)
     logjoin(dir, "acasx_ge_tree_log.txt", ["classifier_metrics", 
-        "interpretability_metrics", "result"], joinpath(dir, "subdirjoined"))
+        "interpretability_metrics"], joinpath(dir, "subdirjoined"))
+end
+function combine_gp_logs()
+    dir = studypath(GP_NAME)
+    logjoin(dir, "acasx_gp_tree_log.txt", ["classifier_metrics", 
+        "interpretability_metrics"], joinpath(dir, "subdirjoined"))
 end
 
 #TODO: clean this up...
 function master_log(; b_mc=true, b_mcts=true, b_ge=true, b_gp=true)
-    masterlog = DataFrame([UTF8String, Float64, Float64, Float64, Float64, Float64, Float64, 
+    masterlog = DataFrame([Int64, Float64, Int64, Int64, Float64, Float64, 
+        UTF8String, Int64, Int64, Int64, Int64, Float64, Float64, Float64,
         Float64, ASCIIString], 
-        [:name, :avg_deriv_tree_num_leafs, :avg_deriv_tree_num_nodes, :avg_rule_length, 
-        :num_leaf, :num_nodes, :num_rules, :fitness_sum, :algorithm], 0)
+        [:num_rules, :avg_rule_length, :num_nodes, :num_leaf, :avg_deriv_tree_num_nodes, 
+            :avg_deriv_tree_num_leafs, :name, :truepos, :trueneg, :falsepos, :falseneg, 
+            :precision, :recall, :accuracy, :f1_score, :algorithm], 0)
 
     #MC
     if b_mc
         dir = studypath(MC_NAME)
         logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-        D = logs["interpretability_metrics"]
-        D = unstack(D, :variable, :value)
-        D1 = logs["result"]
-        D1 = aggregate(D1[[:fitness, :name]], [:name], [sum])
-        D = join(D, D1, on=[:name])
+        D = join(logs["interpretability_metrics"], logs["classifier_metrics"], on=[:name])
         D[:algorithm] = fill("MC", nrow(D))
         append!(masterlog, D)
     end
-        #= D = aggregate(D[[:num_rules, :avg_rule_length, :num_nodes, :num_leaf,  =#
-        #=     :avg_deriv_tree_num_nodes, :avg_deriv_tree_num_leafs, :name]], [:name],  =#
-        #=     [mean, std, SEM]) =#
 
     #MCTS
     if b_mcts
         dir = studypath(MCTS_NAME)
         logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-        D = logs["interpretability_metrics"]
-        D = unstack(D, :variable, :value)
-        D1 = logs["result"]
-        D1 = aggregate(D1[[:fitness, :name]], [:name], [sum])
-        D = join(D, D1, on=[:name])
+        D = join(logs["interpretability_metrics"], logs["classifier_metrics"], on=[:name])
         D[:algorithm] = fill("MCTS", nrow(D))
         append!(masterlog, D)
     end
@@ -170,11 +167,7 @@ function master_log(; b_mc=true, b_mcts=true, b_ge=true, b_gp=true)
     if b_ge
         dir = studypath(GE_NAME)
         logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-        D = logs["interpretability_metrics"]
-        D = unstack(D, :variable, :value)
-        D1 = logs["result"]
-        D1 = aggregate(D1[[:fitness, :name]], [:name], [sum])
-        D = join(D, D1, on=[:name])
+        D = join(logs["interpretability_metrics"], logs["classifier_metrics"], on=[:name])
         D[:algorithm] = fill("GE", nrow(D))
         append!(masterlog, D)
     end
@@ -183,11 +176,7 @@ function master_log(; b_mc=true, b_mcts=true, b_ge=true, b_gp=true)
     if b_gp
         dir = studypath(GP_NAME)
         logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-        D = logs["interpretability_metrics"]
-        D = unstack(D, :variable, :value)
-        D1 = logs["result"]
-        D1 = aggregate(D1[[:fitness, :name]], [:name], [sum])
-        D = join(D, D1, on=[:name])
+        D = join(logs["interpretability_metrics"], logs["classifier_metrics"], on=[:name])
         D[:algorithm] = fill("GP", nrow(D))
         append!(masterlog, D)
     end
