@@ -98,7 +98,6 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
     result = exprsearch(pmc_params, problem)
 
     #manually push! extra info to log
-    add_members_to_log!(logs, problem, result.expr)
     push!(logs, "parameters", ["seed", seed])
     push!(logs, "parameters", ["runtype", runtype])
     push!(logs, "parameters", ["data", data])
