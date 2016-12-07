@@ -44,7 +44,7 @@ function logsystem()
     logsys = LogSystem()
 
     register_log!(logsys, "parameters", ["parameter", "value"], [ASCIIString, Any])
-    register_log!(logsys, "computeinfo", ["starttime", "endtime"], 
+    register_log!(logsys, "computeinfo", ["parameter", "value"], 
         [ASCIIString, ASCIIString]) 
     register_log!(logsys, "elapsed_cpu_s", ["decision_id", "CPUtime_s"], 
         [Int64, Float64]) 
