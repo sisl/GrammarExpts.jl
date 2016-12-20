@@ -43,7 +43,7 @@ export setup, runtest, acasx_prunecheck
 
 using ACASXProblem, DerivationTrees
 
-function setup(;data::AbstractString="libcas098small",
+function setup(;data::AbstractString="libcas098small_10K",
                maxsteps::Int64=20)
 
   problem = ACASXClustering(data)

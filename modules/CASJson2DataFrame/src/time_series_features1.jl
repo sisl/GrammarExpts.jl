@@ -173,6 +173,7 @@ function get_id(filename::AbstractString)
     s = replace(s, "trajSaveMCTS_ACASX_Multi_", "")
     s = replace(s, "trajSaveMCTS_ACASX_GM_", "")
     s = replace(s, "_dataframe", "")
+    s = replace(s, "_filled", "")
     encounter_id = parse(Int64, s) #encounter number
     encounter_id
 end

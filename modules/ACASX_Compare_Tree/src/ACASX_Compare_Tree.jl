@@ -53,7 +53,7 @@ using DataFrames
 using PGFPlots, TikzPictures
 import Configure.configure
 
-const CONFIG = "nvn_libcas098smallfilt"
+const CONFIG = "nvn_libcas098smallfilt_10K"
 #const CONFIG = "nvn_dascfilt"
 const STUDYNAME = "ACASX_Compare_Tree"
 const MC_NAME = "ACASX_MC_Tree"

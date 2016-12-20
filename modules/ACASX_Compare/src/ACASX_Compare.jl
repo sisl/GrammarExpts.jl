@@ -44,6 +44,7 @@ export run_mc, run_mcts, run_ge, run_gp
 export combine_sweep_logs, combine_mc_logs, combine_mcts_logs, 
     combine_ge_logs, combine_gp_logs, combine_logs
 export master_log, master_plot
+export combine_and_plot
 
 import Compat: ASCIIString, UTF8String
 using GrammarExpts
@@ -56,8 +57,8 @@ using DataFrames
 using PGFPlots, TikzPictures
 import Configure.configure
 
-#const CONFIG = "nvn_libcas098smallfilt"
-const CONFIG = "nvn_dasc"
+const CONFIG = "nvn_libcas098smallfilt_10K"
+#const CONFIG = "nvn_dasc"
 const STUDYNAME = "ACASX_Compare"
 const MC_NAME = "ACASX_MC"
 const MCTS_NAME = "ACASX_MCTS"
@@ -288,6 +289,15 @@ function plot_main(;
 
     #plot
     master_plot(masterlog)
+end
+
+function combine_and_plot()
+    combine_ge_logs()
+    combine_gp_logs()
+    combine_mc_logs()
+    combine_mcts_logs()
+    ml = master_log()
+    master_plot(ml)
 end
 
 end #module
