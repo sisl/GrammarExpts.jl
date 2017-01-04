@@ -39,8 +39,7 @@ Main entry: study_main()
 """
 module ACASX_Compare_Tree
 
-export run_mc_tree, run_mcts_tree, run_ge_tree, run_gp_tree
-export combine_mc_logs, combine_mcts_logs, combine_ge_logs, combine_gp_logs,
+export combine_and_plot, combine_mc_logs, combine_mcts_logs, combine_ge_logs, combine_gp_logs,
     master_log, master_plot, run_main
 
 import Compat: ASCIIString, UTF8String
@@ -74,47 +73,6 @@ configure(::Type{Val{:ACASX_Compare_Tree}}, configs::AbstractString...) =
 resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)
 
-function run_mc_tree(; seed=1:5, n_samples=500000)
-    baseconfig = configure(ACASX_MC_Tree, "normal", CONFIG)
-    baseconfig[:outdir] = "./"
-    baseconfig[:n_samples] = n_samples
-    sweep_cfg = configure(ACASX_Compare_Tree, "mc")
-    sweep_cfg[:outdir] = studypath(MC_NAME)
-    sweep_cfg[:seed] = seed
-    result = sweeper(acasx_mc_tree, GBDTResult, baseconfig; sweep_cfg...)
-    result
-end
-function run_mcts_tree(; seed=1:5, n_iters=500000)
-    baseconfig = configure(ACASX_MCTS_Tree, "normal", CONFIG)
-    baseconfig[:outdir] = "./"
-    baseconfig[:maxmod] = false
-    baseconfig[:n_iters] = n_iters
-    sweep_cfg = configure(ACASX_Compare_Tree, "mcts")
-    sweep_cfg[:outdir] = studypath(MCTS_NAME)
-    sweep_cfg[:seed] = seed
-    result = sweeper(acasx_mcts_tree, GBDTResult, baseconfig; sweep_cfg...)
-    result
-end
-function run_ge_tree(; seed=1:5, n_iters=100)
-    baseconfig = configure(ACASX_GE_Tree, "normal", CONFIG)
-    baseconfig[:outdir] = "./"
-    baseconfig[:maxiterations] = n_iters
-    sweep_cfg = configure(ACASX_Compare_Tree, "ge")
-    sweep_cfg[:outdir] = studypath(GE_NAME)
-    sweep_cfg[:seed] = seed
-    result = sweeper(acasx_ge_tree, GBDTResult, baseconfig; sweep_cfg...)
-    result
-end
-function run_gp_tree(; seed=1:5, n_iters=100)
-    baseconfig = configure(ACASX_GP_Tree, "normal", CONFIG)
-    baseconfig[:outdir] = "./"
-    baseconfig[:iterations] = n_iters
-    sweep_cfg = configure(ACASX_Compare_Tree, "gp")
-    sweep_cfg[:outdir] = studypath(GP_NAME)
-    sweep_cfg[:seed] = seed
-    result = sweeper(acasx_gp_tree, GBDTResult, baseconfig; sweep_cfg...)
-    result
-end
 function combine_mc_logs()
     dir = studypath(MC_NAME)
     logjoin(dir, "acasx_mc_tree_log.txt", ["classifier_metrics", 
@@ -209,32 +167,14 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
     writetable(PLOTLOG_FILE, D)
 end
 
-function run_main(; 
-    b_mc::Bool=true,
-    b_mcts::Bool=true,
-    b_gp::Bool=true,
-    b_ge::Bool=true
-    )
-
-    if b_mc
-        combine_mc_logs()
-    end
-
-    if b_mcts
-        combine_mcts_logs()
-    end
-
-    if b_ge
-        combine_ge_logs()
-    end
-
-    if b_gp
-        combine_gp_logs()
-    end
-    ml = master_log(; b_mc=b_mc, b_mcts=b_mcts, b_ge=b_ge, b_gp=gp)
+function combine_and_plot()
+    combine_mc_logs()
+    combine_mcts_logs()
+    combine_ge_logs()
+    combine_gp_logs()
+    ml = master_log()
     master_plot(ml)
 end
-
 
 end #module
 

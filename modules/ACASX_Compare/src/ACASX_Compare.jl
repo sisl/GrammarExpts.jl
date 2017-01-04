@@ -39,8 +39,6 @@ Main entry: study_main()
 """
 module ACASX_Compare
 
-export run_main, plot_main
-export run_mc, run_mcts, run_ge, run_gp
 export combine_sweep_logs, combine_mc_logs, combine_mcts_logs, 
     combine_ge_logs, combine_gp_logs, combine_logs
 export master_log, master_plot
@@ -77,48 +75,6 @@ configure(::Type{Val{:ACASX_Compare}}, configs::AbstractString...) =
 
 resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)
-
-function run_mc(; seed=1:5, n_samples=500000)
-    baseconfig = configure(ACASX_MC, "normal", CONFIG)
-    baseconfig[:outdir] = "./"
-    baseconfig[:n_samples] = n_samples
-    sweep_cfg = configure(ACASX_Compare, "mc")
-    sweep_cfg[:outdir] = studypath(MC_NAME)
-    sweep_cfg[:seed] = seed
-    result = sweeper(acasx_mc1, MCESResult, baseconfig; sweep_cfg...)
-    result
-end
-function run_mcts(; seed=1:5, n_iters=500000)
-    baseconfig = configure(ACASX_MCTS, "normal", CONFIG)
-    baseconfig[:outdir] = "./"
-    baseconfig[:maxmod] = false
-    baseconfig[:n_iters] = n_iters
-    sweep_cfg = configure(ACASX_Compare, "mcts")
-    sweep_cfg[:outdir] = studypath(MCTS_NAME)
-    sweep_cfg[:seed] = seed
-    result = sweeper(acasx_mcts, MCTSESResult, baseconfig; sweep_cfg...)
-    result
-end
-function run_ge(; seed=1:5, n_iters=100)
-    baseconfig = configure(ACASX_GE, "normal", CONFIG)
-    baseconfig[:outdir] = "./"
-    baseconfig[:maxiterations] = n_iters
-    sweep_cfg = configure(ACASX_Compare, "ge")
-    sweep_cfg[:outdir] = studypath(GE_NAME)
-    sweep_cfg[:seed] = seed
-    result = sweeper(acasx_ge, GEESResult, baseconfig; sweep_cfg...)
-    result
-end
-function run_gp(; seed=1:5, n_iters=100)
-    baseconfig = configure(ACASX_GP, "normal", CONFIG)
-    baseconfig[:outdir] = "./"
-    baseconfig[:iterations] = n_iters
-    sweep_cfg = configure(ACASX_Compare, "gp")
-    sweep_cfg[:outdir] = studypath(GP_NAME)
-    sweep_cfg[:seed] = seed
-    result = sweeper(acasx_gp, GPESResult, baseconfig; sweep_cfg...)
-    result
-end
 
 function combine_mc_logs()
     dir = studypath(MC_NAME)
@@ -244,53 +200,6 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
     save(TEX(PLOTFILEROOT * ".tex"), td)
 end
 
-#Configured for single-thread at the moment...
-#Start separate sessions manually to parallelize...
-function run_main(; 
-    b_mc::Bool=false,
-    b_mcts::Bool=false,
-    b_ge::Bool=false,
-    b_gp::Bool=false
-    )
-
-    #do runs
-    if b_mc
-        mc = run_mc()
-        combine_mc_logs()
-    end
-
-    if b_mcts
-        mcts = run_mcts()
-        combine_mcts_logs()
-    end
-
-    if b_ge
-        ge = run_ge()
-        combine_ge_logs()
-    end
-
-    if b_gp
-        gp = run_gp()
-        combine_gp_logs()
-    end
-end
-
-function plot_main(;
-    b_mc::Bool=true,
-    b_mcts::Bool=true,
-    b_gp::Bool=true,
-    b_ge::Bool=true)
-
-    #meta info logs
-    combine_sweep_logs()
-
-    #create master log
-    masterlog = master_log(; b_mc=b_mc, b_mcts=b_mcts, b_gp=b_gp, b_ge=b_ge)
-
-    #plot
-    master_plot(masterlog)
-end
-
 function combine_and_plot()
     combine_ge_logs()
     combine_gp_logs()
@@ -302,15 +211,3 @@ end
 
 end #module
 
-    #= #elapsed_cpu_vs_fitness =#
-    #= empty!(plotarray) =#
-    #= for i = 1:n_algos =#
-    #=     D1 = D[D[:algorithm].==algo_names[i], [:elapsed_cpu_s_mean, :fitness_mean,  =#
-    #=         :fitness_SEM]] =#
-    #=     push!(plotarray, Plots.ErrorBars(D1[:elapsed_cpu_s_mean], D1[:fitness_mean],  =#
-    #=         D1[:fitness_SEM], legendentry=escape_latex(algo_names[i]))) =#
-    #= end =#
-    #= tp = PGFPlots.plot(Axis(plotarray, xlabel="CPU Time (s)", ylabel="Fitness", =#
-    #=     title="Fitness vs. Number of CPU Time", legendPos="north east")) =#
-    #= push!(td, tp)  =#
-    #=  =#
