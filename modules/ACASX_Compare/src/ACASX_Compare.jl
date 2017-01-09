@@ -193,7 +193,7 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
             legendentry=escape_latex(algo_names[i])))
     end
     tp = PGFPlots.plot(Axis(plotarray, xlabel="Number of Evaluations", ylabel="Elapsed CPU Time (s)",
-        title="Elapsed CPU Time vs. Number of Evaluations", legendPos="north east"))
+        title="Elapsed CPU Time vs. Number of Evaluations", legendPos="north west"))
     push!(td, tp)
 
     save(PDF(PLOTFILEROOT * ".pdf"), td)
