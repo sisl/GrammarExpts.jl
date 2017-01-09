@@ -40,11 +40,11 @@ const MEMBERFILE = joinpath(DIR, "../../../results/ACASX_Compare_Tree/ACASX_GP_T
 const JSONDIR = "D:/backup/josh/testBatchFrom.0.9.8" 
 const JSONROOT = "trajSaveMCTS_ACASX_Multi_"
 const OUTDIR = joinpath(DIR, "../../../results/Clusters")
-const METAFILE = Pkg.dir("Datasets/data/libcas098smallfilt_10K/_META.csv.gz")
+const DATASET = "libcas098smallfilt_10K"
 const N = 5
 
 function test1()
-    extract_members(MEMBERFILE, JSONDIR, JSONROOT, METAFILE, OUTDIR, N)
+    extract_members(MEMBERFILE, JSONDIR, JSONROOT, DATASET, OUTDIR, N)
 end
 
 

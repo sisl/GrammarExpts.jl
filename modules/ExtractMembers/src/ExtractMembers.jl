@@ -44,11 +44,15 @@ export extract_members
 
 using DataFrames
 
+const DATADIR = Pkg.dir("Datasets/data")
+const METAFILE = "_META.csv.gz"
+
 #TODO: remove depedence on metafile
 function extract_members(memberfile::AbstractString, jsondir::AbstractString, 
-    jsonroot::AbstractString, metafile::AbstractString, outdir::AbstractString, 
+    jsonroot::AbstractString, dataset::AbstractString, outdir::AbstractString, 
     N::Int64; jsonext::AbstractString="json.gz")
 
+    metafile = joinpath(DATADIR, dataset, METAFILE)
     meta = readtable(metafile)
     D = readtable(memberfile)
     for i = 1:nrow(D)
