@@ -1,4 +1,4 @@
-using RLESUtils,RunUtils
+using RLESUtils,RunUtils,IFTTTUtils
 
 const COMP = gethostname()
 const DATA = "098filt_10K"
@@ -35,10 +35,13 @@ acasx_mcts(;seed=$i, outdir=Pkg.dir("GrammarExpts/results/ACASX_Compare_Tree/ACA
 sendifttt(;value1="mcts_tree,$i", value2=$COMP, value3=$DATA)
 """
 
+notifydone() = sendifttt(;value1="$COMP done")
+
 A = JuliaSource[]
-append!(A, [JuliaSource(template_ge(i)) for i=1:3])
-append!(A, [JuliaSource(template_gp(i)) for i=1:3])
-append!(A, [JuliaSource(template_mc(i)) for i=1:3])
+append!(A, [JuliaSource(template_ge(i)) for i=11:13])
+append!(A, [JuliaSource(template_gp(i)) for i=11:13])
+append!(A, [JuliaSource(template_mc(i)) for i=11:13])
 append!(A, [JuliaSource(template_mcts(i)) for i=1:3])
+append!(A, [JuliaSource(template_mcts(i)) for i=11:13])
 
 
