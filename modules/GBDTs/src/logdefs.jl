@@ -36,9 +36,7 @@ import Compat.ASCIIString
 
 using ExprSearch, DerivationTrees, LinearDerivTrees
 using RLESUtils, Confusion, TreeIterators, TreeUtils
-import TreeIterators.get_children
-            
-get_children(node::DTNode) = collect(values(node.children))
+using DecisionTrees
 
 function logsystem()
     logsys = LogSystem()

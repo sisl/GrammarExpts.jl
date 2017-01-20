@@ -38,7 +38,8 @@ export GBDTParams, GBDTResult, induce_tree, apply_expr
 
 using GrammarExpts, DecisionTrees
 using ExprSearch
-using RLESUtils, DataFrameSets, GitUtils, CPUTimeUtils, LogSystems, Observers
+using RLESUtils, DataFrameSets, GitUtils, CPUTimeUtils, LogSystems, Observers, 
+    TreeIterators
 import RLESTypes.SymbolTable
 import DecisionTrees: get_truth, get_splitter, get_split_labels
 
@@ -80,6 +81,10 @@ function induce_tree(p::GBDTParams)
     
     @notify_observer(p.logsys.observer, "result", [result])
 
+    for node in tree_iter(dtree.root)
+        @notify_observer(p.logsys.observer, "members", [node.id, string(node.members)])
+    end
+
     #meta info
     @notify_observer(p.logsys.observer, "computeinfo", ["endtime",  string(now())])
     @notify_observer(p.logsys.observer, "computeinfo", ["hostname", gethostname()])
@@ -105,8 +110,6 @@ function get_splitter(members::Vector{Int64}, dt_userargs::SymbolTable)
     p = dt_userargs[:params]
     dt_userargs[:decision_id] += 1
     decision_id = dt_userargs[:decision_id]
-
-    @notify_observer(p.logsys.observer, "members", [decision_id, string(members)])
 
     p.split_params.userargs[:ids] = members
     split_result = exprsearch(p.split_params, p.problem)

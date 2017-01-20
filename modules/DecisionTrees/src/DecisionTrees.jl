@@ -42,9 +42,10 @@ export DTParams, DecisionTree, DTNode, build_tree, classify, isleaf, get_max_dep
 export get_truth, get_splitter, get_split_labels #to be overridden
 
 using StatsBase
-using RLESUtils, TreeUtils
+using RLESUtils, TreeUtils, TreeIterators
 import RLESTypes: SymbolTable
 import Base: length
+import TreeIterators.get_children
 
 type DTParams
     num_data::Int64 #number of datapoints in training set
@@ -52,9 +53,15 @@ type DTParams
     predict_type::Type #T1
     label_type::Type #T2
     userargs::SymbolTable #additional variables in callabacks
+    id::Int64 #hack, use this to store state of node id's assigned, init to 0
+
+    DTParams(num_data::Int64, maxdepth::Int64, predict_type::Type, label_type::Type,
+        userargs::SymbolTable) = new(num_data, maxdepth, predict_type, label_type,
+        userargs, 0) #initialize id=0
 end
 
 type DTNode{T1,T2}
+    id::Int64
     depth::Int64
     members::Vector{Int64} #indices into data starting at 1
     split_rule::Any #object used in callback for split rule
@@ -72,6 +79,8 @@ get_truth() = error("get_truth not defined")
 get_splitter() = error("get_splitter not defined")
 get_split_labels() = error("get_split_labels not defined")
 
+get_children(node::DTNode) = collect(values(node.children))
+
 function build_tree(p::DTParams)
     members = collect(1:p.num_data)
     depth = 0
@@ -80,6 +89,8 @@ function build_tree(p::DTParams)
 end
 
 function process_child(p::DTParams, members::Vector{Int64}, depth::Int64)
+    p.id += 1 #node id's are ordered depth-first
+    id = p.id
     members_copy = deepcopy(members)
     labels = get_truth(members, p.userargs)
     label = mode(labels)
@@ -95,8 +106,9 @@ function process_child(p::DTParams, members::Vector{Int64}, depth::Int64)
         if split_rule != nothing #get_splitter returns nothing if can't find a good split
             predict_labels = get_split_labels(split_rule, members, p.userargs)
             @assert issubtype(eltype(predict_labels), T1)
-            predict_set = unique(predict_labels)
-            child_nodes = map(predict_set) do label_class #TODO: parallelize, pmap crashes due to missing callbacks
+            predict_set = sort(unique(predict_labels))
+            child_nodes = map(predict_set) do label_class 
+                #TODO: parallelize, pmap crashes due to missing callbacks
                 child_members = members[find(x -> x == label_class, predict_labels)]
                 child = process_child(p, child_members, depth + 1)
                 return child
@@ -106,7 +118,7 @@ function process_child(p::DTParams, members::Vector{Int64}, depth::Int64)
             end
         end
     end
-    DTNode{T1,T2}(depth, members_copy, split_rule, children, label, confidence)
+    DTNode{T1,T2}(id, depth, members_copy, split_rule, children, label, confidence)
 end
 
 classify{T1,T2}(p::DTParams, tree::DecisionTree{T1,T2}, x) = 

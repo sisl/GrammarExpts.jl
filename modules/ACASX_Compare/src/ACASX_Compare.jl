@@ -50,10 +50,9 @@ using ExprSearch: GP, MC, MCTS, GE
 using ACASX_GP, ACASX_GE, ACASX_MC, ACASX_MCTS
 using LogJoiner
 
-using RLESUtils, Loggers, MathUtils, Configure, LatexUtils, Sweeper
+using RLESUtils, Loggers, MathUtils, LatexUtils, Sweeper
 using DataFrames
 using PGFPlots, TikzPictures
-import Configure.configure
 
 const CONFIG = "nvn_libcas098smallfilt_10K"
 #const CONFIG = "nvn_dasc"
@@ -69,9 +68,6 @@ const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 const MASTERLOG_FILE = joinpath(RESULTDIR, STUDYNAME, "masterlog.csv.gz")
 const PLOTLOG_FILE =  joinpath(RESULTDIR, STUDYNAME, "plotlog.csv.gz")
 const PLOTFILEROOT = joinpath(RESULTDIR, STUDYNAME, "plots")
-
-configure(::Type{Val{:ACASX_Compare}}, configs::AbstractString...) = 
-    configure_path(CONFIGDIR, configs...)
 
 resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)

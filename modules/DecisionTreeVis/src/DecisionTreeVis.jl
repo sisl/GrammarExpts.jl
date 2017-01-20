@@ -61,7 +61,8 @@ function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::
 
     get_name(tree::DecisionTree) = get_name(tree.root)
     function get_name(node::DTNode)
-        members = getmeta(Dl, node.members)[:encounter_id]
+        id_text = "node id=" * string(node.id)
+        members = getmeta(Dl, node.members)[:encounter_id] #show encounter numbers
         sort!(members)
         if length(members) <= limit_members
             members_text = "members=" * join(members, ",")
@@ -77,9 +78,10 @@ function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::
             pretty = string("\\bf{", pretty_string(tree, fmt_pretty), "}")
             natural = pretty_string(tree, fmt_natural, true)
             score = "fitness (lower is better)=" * string(signif(get_metric(node.split_rule), 4))
-            text = join([members_text, label, confidence, expr, pretty, natural, score], "\\\\")
+            text = join([id_text, members_text, label, confidence, expr, 
+                pretty, natural, score], "\\\\")
         else
-            text = join([members_text, label, confidence], "\\\\")
+            text = join([id_text, members_text, label, confidence], "\\\\")
         end
         text
     end

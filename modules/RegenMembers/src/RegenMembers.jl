@@ -32,6 +32,68 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-[
-  (:seed, 1:5)
-]
+"""
+Fixes problem where members of leaf nodes are not included in members log.
+This tool is used to update old results to new format using the tree
+saved in save.jld
+"""
+module RegenMembers
+
+export regen_members, regen_members_recursive, DecisionTrees
+
+using Compat
+import Compat.ASCIIString
+
+using GrammarExpts
+using RLESUtils, TreeIterators
+import TreeIterators.get_children
+using JLD, DataFrames
+
+#################
+#recreate for loading JLD, real got updated and breaks JLD
+module DecisionTrees
+
+export DTNode, DecisionTree
+
+type DTNode{T1,T2}
+    depth::Int64
+    members::Vector{Int64} #indices into data starting at 1
+    split_rule::Any #object used in callback for split rule
+    children::Dict{T1,DTNode{T1,T2}} #key=split_rule predicts, value=child node, T1=predict label type
+    label::T2 #T2=label type
+    confidence::Float64
+end
+type DecisionTree{T1,T2}
+    root::DTNode{T1,T2}
+end
+end #module
+######################
+
+using .DecisionTrees
+
+get_children(node::DTNode) = collect(values(node.children))
+
+function regen_members(jldfile::AbstractString, memberfile::AbstractString)
+    dtree = load(jldfile, "dtree") 
+    D = DataFrame([Int64,ASCIIString], [:decision_id,:members], 0) 
+    node_id = 1
+    for node in tree_iter(dtree.root)
+        push!(D, [node_id, string(node.members)])
+        node_id += 1
+    end
+    writetable(memberfile, D)
+    D
+end
+
+function regen_members_recursive(topdir::AbstractString, jldfile::AbstractString,
+    memberfile::AbstractString)
+    for (root, dirs, files) in walkdir(topdir)
+        fin = joinpath(root, jldfile) 
+        if isfile(fin)
+            fout = joinpath(root, memberfile)
+            regen_members(fin, fout)
+        end
+    end
+end
+
+end #module

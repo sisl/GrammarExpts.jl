@@ -35,7 +35,7 @@
 """
 ACASX Study comparing performance of GP, MC, MCTS, GE Trees.
 Single-threaded versions are used for more stable comparison.
-Main entry: study_main()
+combine_and_plot()
 """
 module ACASX_Compare_Tree
 
@@ -47,10 +47,9 @@ using GrammarExpts, GBDTs
 using ExprSearch: GP, MC, MCTS, GE
 using ACASX_GP_Tree, ACASX_GE_Tree, ACASX_MC_Tree, ACASX_MCTS_Tree
 using LogJoiner
-using RLESUtils, Loggers, MathUtils, Configure, LatexUtils, Sweeper
+using RLESUtils, Loggers, MathUtils, LatexUtils, Sweeper
 using DataFrames
 using PGFPlots, TikzPictures
-import Configure.configure
 
 const CONFIG = "nvn_libcas098smallfilt_10K"
 #const CONFIG = "nvn_dascfilt"
@@ -66,9 +65,6 @@ const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 const MASTERLOG_FILE = joinpath(RESULTDIR, STUDYNAME, "masterlog.csv.gz")
 const PLOTLOG_FILE =  joinpath(RESULTDIR, STUDYNAME, "plotlog.csv.gz")
 const PLOTFILEROOT = joinpath(RESULTDIR, STUDYNAME, "plots")
-
-configure(::Type{Val{:ACASX_Compare_Tree}}, configs::AbstractString...) = 
-    configure_path(CONFIGDIR, configs...)
 
 resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)

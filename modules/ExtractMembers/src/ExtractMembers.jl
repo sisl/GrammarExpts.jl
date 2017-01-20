@@ -37,6 +37,13 @@ Extract and organize json files into subdirectories according to decision id and
 members from clustering results.
 Use RLESCAS json_update_recur (if needed) and recursive_plot to generate the plots
 recursively on the subdirectories.
+Example:
+using GrammarExpts,ExtractMembers
+extract_members(...)
+using RLESCAS
+include_visualize()
+json_update1_recur("Clusters") #if needed to update format
+recursive_plot("Clusters")
 """
 module ExtractMembers
 
@@ -47,7 +54,10 @@ using DataFrames
 const DATADIR = Pkg.dir("Datasets/data")
 const METAFILE = "_META.csv.gz"
 
-#TODO: remove depedence on metafile
+#TODO: don't access meta file directly
+"""
+N is number of members to extract for each node
+"""
 function extract_members(memberfile::AbstractString, jsondir::AbstractString, 
     jsonroot::AbstractString, dataset::AbstractString, outdir::AbstractString, 
     N::Int64; jsonext::AbstractString="json.gz")
@@ -60,7 +70,8 @@ function extract_members(memberfile::AbstractString, jsondir::AbstractString,
         members = string2array(D[i, 2])
         subdir = joinpath(outdir, string(id))
         mkpath(subdir)
-        for j = 1:N
+        NN = min(N, length(members))
+        for j = 1:NN
             m = members[j]
             enc = meta[m, :encounter_id]
             fname = "$jsonroot$enc.$jsonext"
