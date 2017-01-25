@@ -59,7 +59,6 @@ const MCTS_NAME = "ACASX_MCTS_Tree"
 const GE_NAME = "ACASX_GE_Tree"
 const GP_NAME = "ACASX_GP_Tree"
 
-const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 
 const MASTERLOG_FILE = joinpath(RESULTDIR, STUDYNAME, "masterlog.csv.gz")
@@ -69,70 +68,44 @@ const PLOTFILEROOT = joinpath(RESULTDIR, STUDYNAME, "plots")
 resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)
 
-function combine_mc_logs()
-    dir = studypath(MC_NAME)
+function combine_mc_logs(dir::AbstractString=studypath(MC_NAME))
     logjoin(dir, "acasx_mc_tree_log.txt", ["classifier_metrics", 
-        "interpretability_metrics"], joinpath(dir, "subdirjoined"))
+        "interpretability_metrics", "computeinfo"], joinpath(dir, "subdirjoined"))
 end
-function combine_mcts_logs()
-    dir = studypath(MCTS_NAME)
+function combine_mcts_logs(dir::AbstractString=studypath(MCTS_NAME))
     logjoin(dir, "acasx_mcts_tree_log.txt", ["classifier_metrics", 
-        "interpretability_metrics"], joinpath(dir, "subdirjoined"))
+        "interpretability_metrics", "computeinfo"], joinpath(dir, "subdirjoined"))
 end
-function combine_ge_logs()
-    dir = studypath(GE_NAME)
+function combine_ge_logs(dir::AbstractString=studypath(GE_NAME))
     logjoin(dir, "acasx_ge_tree_log.txt", ["classifier_metrics", 
-        "interpretability_metrics"], joinpath(dir, "subdirjoined"))
+        "interpretability_metrics", "computeinfo"], joinpath(dir, "subdirjoined"))
 end
-function combine_gp_logs()
-    dir = studypath(GP_NAME)
+function combine_gp_logs(dir::AbstractString=studypath(GP_NAME))
     logjoin(dir, "acasx_gp_tree_log.txt", ["classifier_metrics", 
-        "interpretability_metrics"], joinpath(dir, "subdirjoined"))
+        "interpretability_metrics", "computeinfo"], joinpath(dir, "subdirjoined"))
 end
 
-#TODO: clean this up...
-function master_log(; b_mc=true, b_mcts=true, b_ge=true, b_gp=true)
-    masterlog = DataFrame([Int64, Float64, Int64, Int64, Float64, Float64, 
-        UTF8String, Int64, Int64, Int64, Int64, Float64, Float64, Float64,
-        Float64, ASCIIString], 
-        [:num_rules, :avg_rule_length, :num_nodes, :num_leaf, :avg_deriv_tree_num_nodes, 
-            :avg_deriv_tree_num_leafs, :name, :truepos, :trueneg, :falsepos, :falseneg, 
-            :precision, :recall, :accuracy, :f1_score, :algorithm], 0)
+function master_log(namedirs::Vector{Pair{Symbol,ASCIIString}}=[:MC=>studypath(MC_NAME), 
+    :MCTS=>studypath(MCTS_NAME), :GE=>studypath(GE_NAME), :GP=>studypath(GP_NAME)])
 
-    #MC
-    if b_mc
-        dir = studypath(MC_NAME)
+    masterlog = nothing 
+    for (name, dir) in namedirs
         logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-        D = join(logs["interpretability_metrics"], logs["classifier_metrics"], on=[:name])
-        D[:algorithm] = fill("MC", nrow(D))
-        append!(masterlog, D)
-    end
 
-    #MCTS
-    if b_mcts
-        dir = studypath(MCTS_NAME)
-        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-        D = join(logs["interpretability_metrics"], logs["classifier_metrics"], on=[:name])
-        D[:algorithm] = fill("MCTS", nrow(D))
-        append!(masterlog, D)
-    end
+        #handle cpu time
+        Dcpu = logs["computeinfo"]
+        Dcpu = Dcpu[Dcpu[:parameter].=="cpu_time", [:value,:name]]
+        rename!(Dcpu, :value, :cpu_time)
+        Dcpu[:cpu_time] = map(x->parse(Float64,x), Dcpu[:cpu_time])
 
-    #GE
-    if b_ge
-        dir = studypath(GE_NAME)
-        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-        D = join(logs["interpretability_metrics"], logs["classifier_metrics"], on=[:name])
-        D[:algorithm] = fill("GE", nrow(D))
-        append!(masterlog, D)
-    end
-
-    #GP
-    if b_gp
-        dir = studypath(GP_NAME)
-        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
-        D = join(logs["interpretability_metrics"], logs["classifier_metrics"], on=[:name])
-        D[:algorithm] = fill("GP", nrow(D))
-        append!(masterlog, D)
+        D = join(logs["interpretability_metrics"], logs["classifier_metrics"]; on=[:name])
+        D = join(D, Dcpu; on=[:name])
+        D[:algorithm] = fill(name, nrow(D))
+        if masterlog == nothing
+            masterlog = D
+        else
+            append!(masterlog, D)
+        end
     end
     writetable(MASTERLOG_FILE, masterlog)
     masterlog
