@@ -32,65 +32,22 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-"""
-Extract and organize json files into subdirectories according to decision id and 
-members from clustering results.
-Use RLESCAS json_update_recur (if needed) and recursive_plot to generate the plots
-recursively on the subdirectories.
-Example:
-using GrammarExpts,ExtractMembers
-extract_members(...)
-using RLESCAS
-include_visualize()
-json_update1_recur("Clusters") #if needed to update format
-recursive_plot("Clusters")
-"""
-module ExtractMembers
+using GrammarExpts, ExtractMembers, RLESCAS
 
-export extract_members
+const RESULTDIR = Pkg.dir("GrammarExpts/results")
+const SEEDDIR = joinpath(RESULTDIR, "ACASX_Compare_Tree/ACASX_GP_Tree/seed1")
+const MEMBERFILE = joinpath(SEEDDIR, "acasx_gp_tree_log_members.csv.gz")
+const TREEPDF = joinpath(SEEDDIR, "acasx_gp_tree_log_vis_decisiontree.pdf")
+const JSONDIR = "D:/backup/josh/testBatchFrom.0.9.8" 
+const JSONROOT = "trajSaveMCTS_ACASX_Multi_"
+const DATASET = "libcas098smallfilt_10K"
+const OUTDIR = joinpath(RESULTDIR, "Clusters-GPseed1")
+const N = 5
+const JSONUPDATE = true
 
-using DataFrames
-using RLESCAS #this is a big dependency, for is_nmac() only
-
-const DATADIR = Pkg.dir("Datasets/data")
-const METAFILE = "_META.csv.gz"
-
-#TODO: don't access meta file directly
-"""
-N is number of members to extract for each node
-"""
-function extract_members(memberfile::AbstractString, jsondir::AbstractString, 
-    jsonroot::AbstractString, dataset::AbstractString, outdir::AbstractString, 
-    N::Int64; jsonext::AbstractString="json.gz")
-
-    metafile = joinpath(DATADIR, dataset, METAFILE)
-    meta = readtable(metafile)
-    D = readtable(memberfile)
-    for i = 1:nrow(D)
-        id = D[i, 1]
-        members = string2array(D[i, 2])
-        subdir = joinpath(outdir, string(id))
-        mkpath(subdir)
-        NN = 0 #track number of members copied
-        for m in members
-            enc = meta[m, :encounter_id]
-            fname = "$jsonroot$enc.$jsonext"
-            srcpath = joinpath(jsondir, fname)
-            if is_nmac(srcpath) #only copy nmacs
-                cp(srcpath, joinpath(subdir, fname))
-                NN += 1
-                NN >= N && break #only process first N of each cluster
-            end
-        end
-    end
+extract_members(MEMBERFILE, JSONDIR, JSONROOT, DATASET, OUTDIR, N)
+if JSONUPDATE
+    json_update1_recur(OUTDIR)
 end
-
-function string2array(str_array::AbstractString; T::Type=Int64)
-    str = replace(str_array, "[", "")
-    str = replace(str, "]", "")
-    A = split(str, ',')
-    A = map(s->parse(T, s), A)
-    A
-end
-
-end
+recursive_plot(OUTDIR)
+cp(TREEPDF, OUTDIR)
