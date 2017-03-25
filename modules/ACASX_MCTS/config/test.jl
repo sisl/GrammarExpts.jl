@@ -32,7 +32,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-const N_ITERS = 100
+const N_ITERS = 5000
 
 #mdp
 [
@@ -48,5 +48,6 @@ const N_ITERS = 100
   (:step_reward, 0.0),
 
   #vis
+  (:loginterval, 5000),
   (:treevis_interval, Int(N_ITERS / 5))
 ]

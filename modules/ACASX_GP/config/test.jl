@@ -32,13 +32,15 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+#genetic programming
 [
-  #tree
-  (:maxsteps, 20),
-
-  #MC
-  (:n_samples, 5000),
-
-  #logfiles
-  (:loginterval, 5000)
+  (:pop_size, 500),
+  (:maxdepth, 10),
+  (:iterations, 10),
+  (:tournament_size, 500),
+  (:top_keep, 0.01),
+  (:crossover_frac, 0.3),
+  (:mutate_frac, 0.2),
+  (:rand_frac, 0.4),
+  (:default_code, :(eval(false)))
 ]

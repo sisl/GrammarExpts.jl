@@ -32,13 +32,13 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
+#cross-entropy method optimization
 [
-  #tree
+  (:num_samples, 500),
+  (:iterations, 10),
+  (:elite_frac, 0.2),
+  (:w_new, 0.2),
+  (:w_prior, 0.05),
   (:maxsteps, 20),
-
-  #MC
-  (:n_samples, 5000),
-
-  #logfiles
-  (:loginterval, 5000)
+  (:default_code, :(eval(false)))
 ]

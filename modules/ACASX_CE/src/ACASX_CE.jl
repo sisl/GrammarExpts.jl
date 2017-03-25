@@ -74,7 +74,8 @@ function acasx_ce(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_CE"),
                   num_samples::Int64=100,
                   iterations::Int64=10,
                   elite_frac::Float64=0.2,
-                  alpha::Float64=0.2,
+                  w_new::Float64=0.2,
+                  w_prior::Float64=0.1,
                   maxsteps::Int64=20,
                   default_code::Any=:(eval(false)),
 
@@ -91,7 +92,7 @@ function acasx_ce(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_CE"),
     send_to!(logs, logsys, ["code", "computeinfo", "current_best", "elapsed_cpu_s", "fitness",
         "fitness5", "parameters", "result"])
 
-    ce_params = CEESParams(num_samples, iterations, elite_frac, alpha, maxsteps, 
+    ce_params = CEESParams(num_samples, iterations, elite_frac, w_new, w_prior, maxsteps, 
         default_code, logsys; userargs=SymbolTable(:ids=>collect(1:length(problem.Dl))))
 
     result = exprsearch(ce_params, problem)

@@ -37,12 +37,14 @@
   (:genome_size, 20),
   (:maxwraps, 0),
   (:defaultcode, :(eval(false))),
-  (:top_percent, 0.5),
+  (:top_keep, 0.25),
+  (:top_seed, 0.5),
+  (:rand_frac, 0.25),
   (:prob_mutation, 0.2),
   (:mutation_rate, 0.2),
 
-  (:pop_size, 50),
-  (:maxiterations, 5),
+  (:pop_size, 500),
+  (:maxiterations, 10),
 
   #vis
   (:limit_members, 30)

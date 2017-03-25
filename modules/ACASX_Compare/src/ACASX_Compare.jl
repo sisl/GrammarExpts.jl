@@ -33,34 +33,33 @@
 # *****************************************************************************
 
 """
-ACASX Study comparing performance of GP, MC, MCTS, GE.
+ACASX Study comparing performance of GP, MC, MCTS, GE, CE.
 Single-threaded versions are used for more stable comparison.
 Main entry: study_main()
 """
 module ACASX_Compare
 
 export combine_sweep_logs, combine_mc_logs, combine_mcts_logs, 
-    combine_ge_logs, combine_gp_logs, combine_logs
+    combine_ge_logs, combine_gp_logs, combine_ce_logs, combine_logs
 export master_log, master_plot
 export combine_and_plot
 
 import Compat: ASCIIString, UTF8String
 using GrammarExpts
-using ExprSearch: GP, MC, MCTS, GE
-using ACASX_GP, ACASX_GE, ACASX_MC, ACASX_MCTS
+using ExprSearch: GP, MC, MCTS, GE, CE
+using ACASX_GP, ACASX_GE, ACASX_MC, ACASX_MCTS, ACASX_CE
 using LogJoiner
 
 using RLESUtils, Loggers, MathUtils, LatexUtils, Sweeper
 using DataFrames
 using PGFPlots, TikzPictures
 
-const CONFIG = "nvn_libcas098smallfilt_10K"
-#const CONFIG = "nvn_dasc"
 const STUDYNAME = "ACASX_Compare"
 const MC_NAME = "ACASX_MC"
 const MCTS_NAME = "ACASX_MCTS"
 const GE_NAME = "ACASX_GE"
 const GP_NAME = "ACASX_GP"
+const CE_NAME = "ACASX_CE"
 
 const CONFIGDIR = joinpath(dirname(@__FILE__), "..", "config")
 const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
@@ -92,13 +91,18 @@ function combine_gp_logs()
     logjoin(dir, "acasx_gp_log.txt", ["current_best", "elapsed_cpu_s"], 
         joinpath(dir, "subdirjoined"))
 end
+function combine_ce_logs()
+    dir = studypath(CE_NAME)
+    logjoin(dir, "acasx_ce_log.txt", ["current_best", "elapsed_cpu_s"], 
+        joinpath(dir, "subdirjoined"))
+end
 function combine_sweep_logs()
     dir = studypath()
     logjoin(dir, "sweeper_log.txt", ["result"], joinpath(dir, "sweepjoined"))
 end
 
 #TODO: clean this up...
-function master_log(; b_mc=true, b_mcts=true, b_ge=true, b_gp=true)
+function master_log(; b_mc=true, b_mcts=true, b_ge=true, b_gp=true, b_ce=true)
     masterlog = DataFrame([Int64, Float64, Float64, UTF8String, ASCIIString, UTF8String], 
         [:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name], 0)
 
@@ -137,6 +141,15 @@ function master_log(; b_mc=true, b_mcts=true, b_ge=true, b_gp=true)
         logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
         D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:nevals, :name])
         D[:algorithm] = fill("GP", nrow(D))
+        append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
+    end
+
+    #CE
+    if b_ce
+        dir = studypath(CE_NAME)
+        logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt"))
+        D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:nevals, :name])
+        D[:algorithm] = fill("CE", nrow(D))
         append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]])
     end
 
@@ -196,13 +209,14 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
     save(TEX(PLOTFILEROOT * ".tex"), td)
 end
 
-function combine_and_plot()
+function combine_and_plot(; subsample=25000)
     combine_ge_logs()
     combine_gp_logs()
     combine_mc_logs()
     combine_mcts_logs()
+    combine_ce_logs()
     ml = master_log()
-    master_plot(ml)
+    master_plot(ml; subsample=subsample)
 end
 
 end #module
