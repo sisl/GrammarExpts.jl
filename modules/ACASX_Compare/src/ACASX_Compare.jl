@@ -48,9 +48,8 @@ import Compat: ASCIIString, UTF8String
 using GrammarExpts
 using ExprSearch: GP, MC, MCTS, GE, CE
 using ACASX_GP, ACASX_GE, ACASX_MC, ACASX_MCTS, ACASX_CE
-using LogJoiner
 
-using RLESUtils, Loggers, MathUtils, LatexUtils, Sweeper
+using RLESUtils, Loggers, MathUtils, LatexUtils, Sweeper, LogJoiner
 using DataFrames
 using PGFPlots, TikzPictures
 
