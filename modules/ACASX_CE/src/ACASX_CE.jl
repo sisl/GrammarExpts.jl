@@ -76,7 +76,7 @@ function acasx_ce(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_CE"),
                   elite_frac::Float64=0.2,
                   w_new::Float64=0.2,
                   w_prior::Float64=0.05,
-                  maxsteps::Int64=20,
+                  maxsteps::Int64=40,
                   default_code::Any=:(eval(false)),
 
                   vis::Bool=true)
