@@ -36,9 +36,9 @@
 [
   (:num_samples, 5000),
   (:iterations, 100),
-  (:elite_frac, 0.2),
-  (:w_new, 0.2),
-  (:w_prior, 0.05),
-  (:maxsteps, 20),
+  (:elite_frac, 0.6),
+  (:w_new, 0.4),
+  (:w_prior, 0.1),
+  (:maxsteps, 40),
   (:default_code, :(eval(false)))
 ]
