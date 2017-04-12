@@ -71,70 +71,69 @@ function combine_logs()
         transpose_syms=Union{Symbol,Void}[nothing, :parameter])
 end
 
-#= function master_log() =#
-#=     masterlog = DataFrame([Int64, Float64, Float64, UTF8String, ASCIIString, UTF8String],  =#
-#=         [:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name], 0) =#
-#=  =#
-#=     dir = studypath() =#
-#=     logs = load_log(TaggedDFLogger, joinpath(dir, "subdirjoined.txt")) =#
-#=     D = join(logs["elapsed_cpu_s"], logs["current_best"], on=[:nevals, :name]) =#
-#=     append!(masterlog, D[[:nevals, :elapsed_cpu_s, :fitness, :expr, :algorithm, :name]]) =#
-#=  =#
-#=     writetable(MASTERLOG_FILE, masterlog) =#
-#=     masterlog =#
-#= end =#
-#=  =#
-#= master_plot(; kwargs...) = master_plot(readtable(MASTERLOG_FILE); kwargs...) =#
-#=  =#
-#= """ =#
-#= Subsamples the collected data at 'subsample' rate to plot at a lower rate than collected =#
-#= """ =#
-#= function master_plot(masterlog::DataFrame; subsample::Int64=25000) =#
-#=     D = masterlog  =#
-#=  =#
-#=     #aggregate over seed =#
-#=     D = aggregate(D[[:nevals, :elapsed_cpu_s, :fitness, :algorithm]], [:nevals, :algorithm],  =#
-#=         [mean, std, length, SEM]) =#
-#=     D = D[rem(D[:nevals], subsample) .== 0, :] #subsample data =#
-#=  =#
-#=     #workaround for naming in julia 0.4 =#
-#=     rename!(D, Symbol("fitness_MathUtils.SEM"), :fitness_SEM)  =#
-#=     rename!(D, Symbol("elapsed_cpu_s_MathUtils.SEM"), :elapsed_cpu_s_SEM)  =#
-#=  =#
-#=     writetable(PLOTLOG_FILE, D) =#
-#=  =#
-#=     td = TikzDocument() =#
-#=     algo_names = unique(D[:algorithm]) =#
-#=     n_algos = length(algo_names) =#
-#=  =#
-#=     #nevals_vs_fitness =#
-#=     plotarray = Plots.Plot[] =#
-#=     for i = 1:n_algos  =#
-#=         D1 = D[D[:algorithm].==algo_names[i], [:nevals, :fitness_mean, :fitness_SEM]] =#
-#=         push!(plotarray, Plots.Linear(D1[:nevals], D1[:fitness_mean],  =#
-#=             errorBars=ErrorBars(; y=D1[:fitness_SEM]),    =#
-#=             legendentry=escape_latex(algo_names[i]))) =#
-#=     end =#
-#=     tp = PGFPlots.plot(Axis(plotarray, xlabel="Number of Evaluations", ylabel="Fitness", =#
-#=         title="Fitness vs. Number of Evaluations", legendPos="north east")) =#
-#=     push!(td, tp)  =#
-#=      =#
-#=     #nevals_vs_elapsed_cpu =#
-#=     empty!(plotarray) =#
-#=     for i = 1:n_algos =#
-#=         D1 = D[D[:algorithm].==algo_names[i], [:nevals, :elapsed_cpu_s_mean,  =#
-#=             :elapsed_cpu_s_SEM]] =#
-#=         push!(plotarray, Plots.Linear(D1[:nevals], D1[:elapsed_cpu_s_mean],  =#
-#=             errorBars=ErrorBars(;y=D1[:elapsed_cpu_s_SEM]),  =#
-#=             legendentry=escape_latex(algo_names[i]))) =#
-#=     end =#
-#=     tp = PGFPlots.plot(Axis(plotarray, xlabel="Number of Evaluations", ylabel="Elapsed CPU Time (s)", =#
-#=         title="Elapsed CPU Time vs. Number of Evaluations", legendPos="north west")) =#
-#=     push!(td, tp) =#
-#=  =#
-#=     save(PDF(PLOTFILEROOT * ".pdf"), td) =#
-#=     save(TEX(PLOTFILEROOT * ".tex"), td) =#
-#= end =#
+function master_log()
+    dir = studypath()
+    logs = load_log(TaggedDFLogger, joinpath(dir, "joined.txt"))
+    master_log(logs)
+end
+function master_log(logs::TaggedDFLogger)
+    masterlog = join(logs["parameters"], logs["result"], on=:name)
+    masterlog = masterlog[[:num_samples,:iterations,:elite_frac,:w_new
+    writetable(MASTERLOG_FILE, masterlog)
+    masterlog
+end
+
+master_plot(; kwargs...) = master_plot(readtable(MASTERLOG_FILE); kwargs...)
+"""
+Subsamples the collected data at 'subsample' rate to plot at a lower rate than collected
+"""
+function master_plot(masterlog::DataFrame; subsample::Int64=25000)
+    D = masterlog 
+
+    #aggregate over seed
+    D = D[[:num_samples, :iterations, :elite_frac, :w_new, :w_prior, :maxsteps, :seed, :fitness]]
+    D = aggregate(D, [:num_samples, :iterations, :elite_frac, :w_new, :w_prior, :maxsteps], 
+        [mean, std, length, SEM]) #operations applied over :seed and :fitness
+    D = D[rem(D[:nevals], subsample) .== 0, :] #subsample data
+
+    #workaround for naming in julia 0.4
+    rename!(D, Symbol("fitness_MathUtils.SEM"), :fitness_SEM) 
+    rename!(D, Symbol("seed_MathUtils.SEM"), :seed_SEM) 
+
+    writetable(PLOTLOG_FILE, D)
+
+    #= td = TikzDocument() =#
+    #= algo_names = unique(D[:algorithm]) =#
+    #= n_algos = length(algo_names) =#
+    #=  =#
+    #= #nevals_vs_fitness =#
+    #= plotarray = Plots.Plot[] =#
+    #= for i = 1:n_algos  =#
+    #=     D1 = D[D[:algorithm].==algo_names[i], [:nevals, :fitness_mean, :fitness_SEM]] =#
+    #=     push!(plotarray, Plots.Linear(D1[:nevals], D1[:fitness_mean],  =#
+    #=         errorBars=ErrorBars(; y=D1[:fitness_SEM]),    =#
+    #=         legendentry=escape_latex(algo_names[i]))) =#
+    #= end =#
+    #= tp = PGFPlots.plot(Axis(plotarray, xlabel="Number of Evaluations", ylabel="Fitness", =#
+    #=     title="Fitness vs. Number of Evaluations", legendPos="north east")) =#
+    #= push!(td, tp)  =#
+    #=  =#
+    #= #nevals_vs_elapsed_cpu =#
+    #= empty!(plotarray) =#
+    #= for i = 1:n_algos =#
+    #=     D1 = D[D[:algorithm].==algo_names[i], [:nevals, :elapsed_cpu_s_mean,  =#
+    #=         :elapsed_cpu_s_SEM]] =#
+    #=     push!(plotarray, Plots.Linear(D1[:nevals], D1[:elapsed_cpu_s_mean],  =#
+    #=         errorBars=ErrorBars(;y=D1[:elapsed_cpu_s_SEM]),  =#
+    #=         legendentry=escape_latex(algo_names[i]))) =#
+    #= end =#
+    #= tp = PGFPlots.plot(Axis(plotarray, xlabel="Number of Evaluations", ylabel="Elapsed CPU Time (s)", =#
+    #=     title="Elapsed CPU Time vs. Number of Evaluations", legendPos="north west")) =#
+    #= push!(td, tp) =#
+    #=  =#
+    #= save(PDF(PLOTFILEROOT * ".pdf"), td) =#
+    #= save(TEX(PLOTFILEROOT * ".tex"), td) =#
+end
 
 function combine_and_plot(; subsample=25000)
     combine_logs()
