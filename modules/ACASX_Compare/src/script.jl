@@ -1,7 +1,7 @@
 using RLESUtils, RunUtils, IFTTTUtils
 
 const COMP = gethostname()
-const DATA = "nvn_dascfilt"
+const DATA = "nvn_dasc"
 const CONFIG = "normal"
 const I_START = 1 
 const I_END = 20 
@@ -51,9 +51,9 @@ notifydone() = sendifttt(;value1="$COMP done")
 
 A = JuliaSource[]
 append!(A, [JuliaSource(template_ce(i)) for i=I_START:I_END])
-#append!(A, [JuliaSource(template_ge(i)) for i=I_START:I_END])
-#append!(A, [JuliaSource(template_gp(i)) for i=I_START:I_END])
-#append!(A, [JuliaSource(template_mc(i)) for i=I_START:I_END])
+append!(A, [JuliaSource(template_ge(i)) for i=I_START:I_END])
+append!(A, [JuliaSource(template_gp(i)) for i=I_START:I_END])
+append!(A, [JuliaSource(template_mc(i)) for i=I_START:I_END])
 #append!(A, [JuliaSource(template_mcts(i)) for i=I_START:I_END])
 
 #include("script.jl")

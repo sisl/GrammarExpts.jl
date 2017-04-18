@@ -70,8 +70,8 @@ function acasx_mc(; outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC"),
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
                   data::AbstractString="dasc",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
+                  manuals::AbstractString="",
+                  clusterdataname::AbstractString="",
 
                   maxsteps::Int64=20,
                   n_samples::Int64=50,

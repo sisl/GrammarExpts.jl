@@ -33,18 +33,20 @@
 # *****************************************************************************
 
 """
-Create a decision tree to recursively split encounters in the ACASX Problem. GE algorithm.
-Example usage: config=configure(ACASX_GE_Tree,"normal","nvn_dasc"); acasx_ge_tree(;config...)
+Create a decision tree to recursively split encounters in the ACASX Problem. 
+Cross entropy method algorithm.
+Example usage: config=configure(ACASX_CE_Tree,"normal","nvn_dasc"); acasx_ce_tree(;config...)
 """
-module ACASX_GE_Tree
+module ACASX_CE_Tree
 
-export configure, acasx_ge_tree
+export configure, acasx_ce_tree
 
 import Compat.ASCIIString
 
-using ExprSearch.GE
+using ExprSearch.CE
 using Datasets
 using RLESUtils, Configure, Loggers, LogSystems
+import RLESTypes.SymbolTable
 using JLD
 
 using GrammarExpts, GBDTs, ACASXProblem, DecisionTreeVis
@@ -55,16 +57,16 @@ const RESULTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "results")
 const T1 = Bool #predict_type
 const T2 = Int64 #label_type
 
-configure(::Type{Val{:ACASX_GE_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
+configure(::Type{Val{:ACASX_CE_Tree}}, configs::AbstractString...) = configure_path(CONFIGDIR, configs...)
 
 """
 Example call:
-config=configure(ACASX_GE_Tree, "nvn_dasc", "normal")
-acasx_ge_tree(; config...)
+config=configure(ACASX_CE_Tree, "nvn_dasc", "normal")
+acasx_ce_tree(; config...)
 """
-function acasx_ge_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE_Tree"),
+function acasx_ce_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_CE_Tree"),
                         seed=1,
-                        logfileroot::AbstractString="acasx_ge_tree_log",
+                        logfileroot::AbstractString="acasx_ce_tree_log",
 
                         #dataset
                         runtype::Symbol=:nmacs_vs_nonnmacs,
@@ -75,17 +77,14 @@ function acasx_ge_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE_T
                         #decision tree
                         maxdepth::Int64=1,
 
-                        #GE
-                        genome_size::Int64=20,
-                        pop_size::Int64=50,
-                        maxwraps::Int64=0,
-                        top_keep::Float64=0.25,
-                        top_seed::Float64=0.5,
-                        rand_frac::Float64=0.25,
-                        prob_mutation::Float64=0.2,
-                        mutation_rate::Float64=0.2,
-                        defaultcode::Union{Symbol,Expr}=:(eval(false)),
-                        maxiterations::Int64=3,
+                        #CE params
+                        num_samples::Int64=100,
+                        iterations::Int64=10,
+                        elite_frac::Float64=0.6,
+                        w_new::Float64=0.4,
+                        w_prior::Float64=0.1,
+                        maxsteps::Int64=40,
+                        default_code::Any=:(eval(false)),
         
                         #DT vis
                         vis::Bool=true,
@@ -101,17 +100,17 @@ function acasx_ge_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE_T
 
     problem = ACASXClustering(runtype, data, manuals, clusterdataname)
 
-    ge_logsys = GE.logsystem()
-    send_to!(STDOUT, ge_logsys, ["verbose1", "current_best_print"])
-    ge_params = GEESParams(genome_size, pop_size, maxwraps, top_keep, top_seed, 
-        rand_frac, prob_mutation, mutation_rate, defaultcode, maxiterations, ge_logsys)
+    ce_logsys = CE.logsystem()
+    send_to!(STDOUT, ce_logsys, ["verbose1", "current_best_print"])
+    ce_params = CEESParams(num_samples, iterations, elite_frac, w_new, w_prior, maxsteps, 
+        default_code, ce_logsys; userargs=SymbolTable(:ids=>collect(1:length(problem.Dl))))
     gbdt_logsys = GBDTs.logsystem()
     send_to!(STDOUT, gbdt_logsys, ["verbose1", "split_result_print"])
     logs = TaggedDFLogger()
     send_to!(logs, gbdt_logsys, ["computeinfo", "parameters", "elapsed_cpu_s", 
         "members", "classifier_metrics", "interpretability_metrics", "split_result"])
 
-    gbdt_params = GBDTParams(problem, length(problem.Dl), ge_params, maxdepth, 
+    gbdt_params = GBDTParams(problem, length(problem.Dl), ce_params, maxdepth, 
         T1, T2, gbdt_logsys)
   
     result = induce_tree(gbdt_params)

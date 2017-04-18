@@ -33,7 +33,6 @@
 # *****************************************************************************
 
 pkgs = Pkg.installed()
-!haskey(pkgs, "RLESCAS") && Pkg.clone("https://github.com/sisl/RLESCAS.jl.git", "RLESCAS") #json2csv converter
 !haskey(pkgs, "RLESUtils") && Pkg.clone("https://github.com/sisl/RLESUtils.jl.git", "RLESUtils")
 !haskey(pkgs, "Datasets") && Pkg.clone("https://github.com/rcnlee/Datasets.jl.git", "Datasets")
 
@@ -42,9 +41,14 @@ if !haskey(pkgs, "ExprSearch")
   Pkg.build("ExprSearch")
 end
 
-Pkg.checkout("RLESUtils")
-
 import DataFrames #workaround stale cache issue
 
-script = abspath(joinpath(dirname(@__FILE__), "build_dasc.jl"))
-include(script)
+#build datasets
+datasets = ["dasc", "dascfilt", "libcas098small_10K", "libcas098smallfilt_10K"]
+srcdir = abspath(joinpath(dirname(@__FILE__), "..", "data", "datasets"))
+dstdir = Pkg.dir("Datasets", "data")
+for d in datasets
+    src = joinpath(srcdir, d)
+    dst = joinpath(dstdir, d)
+    cp(src, dst)
+end

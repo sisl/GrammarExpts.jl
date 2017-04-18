@@ -28,11 +28,18 @@
 # NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
 # PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
 # HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-# ACTION OF CONTRACT, TORT O0 OTHERWISE, ARISING FROM, OUT OF OR IN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#nmac rule sequence
-[(:actions, Int64[2, 2, 7, 10, 7, 7, 5, 3, 10])
- ]
+using GrammarExpts
+using Base.Test
+
+const MODULEDIR = joinpath(dirname(@__FILE__), "..", "modules")
+
+pkgs = readdir(MODULEDIR)
+
+for pkg in pkgs
+  GrammarExpts.test(pkg)
+end
 

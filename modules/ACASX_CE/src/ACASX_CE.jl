@@ -66,16 +66,16 @@ function acasx_ce(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_CE"),
                   logfileroot::AbstractString="acasx_ce_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dascfilt",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
+                  data::AbstractString="dasc",
+                  manuals::AbstractString="",
+                  clusterdataname::AbstractString="",
 
                   #CE params
                   num_samples::Int64=100,
                   iterations::Int64=10,
-                  elite_frac::Float64=0.2,
-                  w_new::Float64=0.2,
-                  w_prior::Float64=0.05,
+                  elite_frac::Float64=0.6,
+                  w_new::Float64=0.4,
+                  w_prior::Float64=0.1,
                   maxsteps::Int64=40,
                   default_code::Any=:(eval(false)),
 

@@ -32,6 +32,6 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts, PipelineTest
+#using GrammarExpts, PipelineTest
 using Base.Test
 

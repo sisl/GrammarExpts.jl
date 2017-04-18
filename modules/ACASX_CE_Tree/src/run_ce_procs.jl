@@ -1,3 +1,4 @@
+
 # *****************************************************************************
 # Written by Ritchie Lee, ritchie.lee@sv.cmu.edu
 # *****************************************************************************
@@ -32,9 +33,27 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-#nmacs vs nonnmacs
-[(:runtype, :nmacs_vs_nonnmacs),
-(:data, "dasc"),
-(:manuals, ""),
-(:clusterdataname, "")]
+using Iterators
+using RLESUtils, RunUtils, IFTTTUtils
 
+const RANGE = 1:10
+const COMP = gethostname()
+const DATA = "nvn_dascfilt"
+const CONFIG = "normal"
+
+template_ce_tree(seed) = 
+"""
+using GrammarExpts, ACASX_CE_Tree
+config = configure(ACASX_CE_Tree, "$DATA", "$CONFIG")
+acasx_ge_tree(; seed=$i, outdir=joinpath(ACASX_CE_Tree.RESULTDIR, "./ACASX_CE_Tree$i"), config...)
+"""
+
+notifydone() = sendifttt(;value1="$COMP done")
+
+A = JuliaSource[]
+for i in RANGE 
+    push!(A, JuliaSource(template_ce(i))
+end
+
+#include("run_ce_procs.jl")
+#fs=julia_process(A, np); notifydone()

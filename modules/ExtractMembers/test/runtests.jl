@@ -33,18 +33,18 @@
 # *****************************************************************************
 
 using GrammarExpts
-using ExtractMembers, Datasets
+#using ExtractMembers, Datasets
 
-const DIR = dirname(@__FILE__)
-const MEMBERFILE = joinpath(DIR, "../../../results/ACASX_Compare_Tree/ACASX_GP_Tree/seed4/acasx_gp_tree_log_members.csv.gz")
-const JSONDIR = "D:/backup/josh/testBatchFrom.0.9.8" 
-const JSONROOT = "trajSaveMCTS_ACASX_Multi_"
-const OUTDIR = joinpath(DIR, "../../../results/Clusters")
-const DATASET = "libcas098smallfilt_10K"
-const N = 5
-
-function test1()
-    extract_members(MEMBERFILE, JSONDIR, JSONROOT, DATASET, OUTDIR, N)
-end
+#= const DIR = dirname(@__FILE__) =#
+#= const MEMBERFILE = joinpath(DIR, "../../../results/ACASX_Compare_Tree/ACASX_GP_Tree/seed4/acasx_gp_tree_log_members.csv.gz") =#
+#= const JSONDIR = "D:/backup/josh/testBatchFrom.0.9.8"  =#
+#= const JSONROOT = "trajSaveMCTS_ACASX_Multi_" =#
+#= const OUTDIR = joinpath(DIR, "../../../results/Clusters") =#
+#= const DATASET = "libcas098smallfilt_10K" =#
+#= const N = 5 =#
+#=  =#
+#= function test1() =#
+#=     extract_members(MEMBERFILE, JSONDIR, JSONROOT, DATASET, OUTDIR, N) =#
+#= end =#
 
 

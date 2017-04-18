@@ -32,7 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts, CASJson2DataFrame, FilterNMACInfo
+#nmacs vs nonnmacs
+[
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "libcas098smallfilt_10K"),
+  (:manuals, ""),
+  (:clusterdataname, "")
+]
 
-CASJson2DataFrame.script_dasc(false)
-FilterNMACInfo.script_dasc()
+
