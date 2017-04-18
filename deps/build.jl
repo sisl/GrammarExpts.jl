@@ -52,3 +52,5 @@ for d in datasets
     dst = joinpath(dstdir, d)
     cp(src, dst)
 end
+
+using PGFPlots #workaround for contention between TikzPictures cache and this
