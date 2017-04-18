@@ -33,6 +33,9 @@
 # *****************************************************************************
 
 using GrammarExpts
-#using CASJson2DataFrame
+using ACASX_CE_Tree
 
+const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_CE_Tree")
 
+mkpath(TESTDIR)
+acasx_ce_tree(outdir=TESTDIR)

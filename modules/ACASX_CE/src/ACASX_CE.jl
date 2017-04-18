@@ -66,9 +66,9 @@ function acasx_ce(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_CE"),
                   logfileroot::AbstractString="acasx_ce_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dascfilt",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
+                  data::AbstractString="dasc",
+                  manuals::AbstractString="",
+                  clusterdataname::AbstractString="",
 
                   #CE params
                   num_samples::Int64=100,

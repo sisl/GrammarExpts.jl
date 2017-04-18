@@ -66,9 +66,9 @@ function acasx_gp(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GP"),
                   logfileroot::AbstractString="acasx_gp_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dascfilt",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
+                  data::AbstractString="dasc",
+                  manuals::AbstractString="",
+                  clusterdataname::AbstractString="",
 
                   pop_size::Int64=100,
                   maxdepth::Int64=10,

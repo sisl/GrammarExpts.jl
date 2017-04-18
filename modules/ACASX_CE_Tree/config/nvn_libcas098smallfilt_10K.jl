@@ -33,8 +33,11 @@
 # *****************************************************************************
 
 #nmacs vs nonnmacs
-[(:runtype, :nmacs_vs_nonnmacs),
-(:data, "libcas0100llcem"),
-(:manuals, ""),
-(:clusterdataname, "")]
+[
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "libcas098smallfilt_10K"),
+  (:manuals, ""),
+  (:clusterdataname, "")
+]
+
 

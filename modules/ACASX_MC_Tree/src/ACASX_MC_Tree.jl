@@ -62,9 +62,9 @@ function acasx_mc_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MC_Tre
                        logfileroot::AbstractString="acasx_mc_tree_log",
 
                        runtype::Symbol=:nmacs_vs_nonnmacs,
-                       data::AbstractString="dasc",
-                       manuals::AbstractString="dasc_manual",
-                       clusterdataname::AbstractString="josh1",
+                       data::AbstractString="dascfilt",
+                       manuals::AbstractString="",
+                       clusterdataname::AbstractString="",
 
                        maxsteps::Int64=20,
                        n_samples::Int64=50,

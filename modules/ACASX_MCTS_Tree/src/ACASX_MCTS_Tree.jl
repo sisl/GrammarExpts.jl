@@ -68,9 +68,9 @@ function acasx_mcts_tree(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MCTS
                           logfileroot::AbstractString="acasx_mcts_tree_log",
 
                           runtype::Symbol=:nmacs_vs_nonnmacs,
-                          data::AbstractString="dasc",
-                          manuals::AbstractString="dasc_manual",
-                          clusterdataname::AbstractString="josh1",
+                          data::AbstractString="dascfilt",
+                          manuals::AbstractString="",
+                          clusterdataname::AbstractString="",
 
                           n_iters::Int64=200,
                           searchdepth::Int64=20,

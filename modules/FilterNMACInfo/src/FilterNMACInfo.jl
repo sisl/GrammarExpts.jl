@@ -39,7 +39,7 @@ sample uniformly between 't_min' and 't_max'.
 module FilterNMACInfo
 
 export script_dasc, script_libcas098small, script_libcas0100star, script_libcas0100llcem
-export remove_cpa, find_cpa
+export remove_cpa, find_cpa, filter_nmac_info
 
 using FilterRecords
 using DataFrameSets

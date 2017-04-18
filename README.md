@@ -24,7 +24,7 @@ Initial tests can be useful in detecting install/dependency problems.
 * Pkg.test("ExprSearch") to test all the submodules
 * Pkg.test("GrammarExpts") to test all the submodules
 
-Optional, more in-depth test that includes data processing.
+Optional, more in-depth test that includes data processing. Requires the RLESCAS package.
 
 ```julia
 using GrammarExpts, PipelineTest
@@ -33,7 +33,7 @@ ptest = pipelinetest() #produces data under GrammarExpts/test/PipelineTest
 cleanup(ptest) #remove created artifacts, except results
 ```
 
-### Usage
+## Usage
 
 In general, first call ``using GrammarExpts`` to make all the submodules globally visible, then call the submodule you want.
 
@@ -55,9 +55,26 @@ config = configure(ACASX_CE_Tree, "normal", "nvn_dasc") #load configs.
 acasx_ce_tree(; config...) #run. By default will output to current directory
 ```
 
-### Preparing a new dataset 
+### Processing and running on a new dataset from CAS Json files
 
+```julia
+#Create the dataset and filtered dataset
+#Only have to do this once
+using GrammarExpts, CASJson2DataFrame
+process_jsons("mydataset", "/path/to/jsonfiles/")
 
+#Learn an expression
+using GrammarExpts, ACASX_CE
+config = configure(ACASX_CE, "normal")
+config[:data] = "mydataset"
+acasx_ce(; config...) #run. Outputs to results directory 
+
+#Learn a tree
+using GrammarExpts, ACASX_CE_Tree
+config = configure(ACASX_CE_Tree, "normal")
+config[:data] = "mydatasetfilt"
+acasx_ce_tree(; config...) #run. By default will output to current directory
+```
 
 ## Package Details
 ### Main Package Dependencies

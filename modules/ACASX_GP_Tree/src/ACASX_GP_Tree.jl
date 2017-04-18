@@ -70,9 +70,9 @@ function acasx_gp_tree(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GP_T
 
                         #dataset
                         runtype::Symbol=:nmacs_vs_nonnmacs,
-                        data::AbstractString="dasc",
-                        manuals::AbstractString="dasc_manual",
-                        clusterdataname::AbstractString="josh1",
+                        data::AbstractString="dascfilt",
+                        manuals::AbstractString="",
+                        clusterdataname::AbstractString="",
 
                         #decision tree
                         dt_maxdepth::Int64=1,

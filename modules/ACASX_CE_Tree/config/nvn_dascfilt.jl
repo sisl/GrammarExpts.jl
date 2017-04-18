@@ -32,10 +32,12 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
-using GrammarExpts
-using ACASX_Ref
+#nmacs vs nonnmacs
+[
+  (:runtype, :nmacs_vs_nonnmacs),
+  (:data, "dascfilt"),
+  (:manuals, ""),
+  (:clusterdataname, "")
+]
 
-const TESTDIR = joinpath(dirname(@__FILE__), "..", "..", "..", "test", "ACASX_Ref")
 
-mkpath(TESTDIR)
-acasx_ref(outdir=TESTDIR)

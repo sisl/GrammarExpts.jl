@@ -69,8 +69,8 @@ function acasx_mcts(;outdir::AbstractString=joinpath(RESULTDIR, "ACASX_MCTS"),
 
                     runtype::Symbol=:nmacs_vs_nonnmacs,
                     data::AbstractString="dasc",
-                    manuals::AbstractString="dasc_manual",
-                    clusterdataname::AbstractString="josh1",
+                    manuals::AbstractString="",
+                    clusterdataname::AbstractString="",
 
                     n_iters::Int64=200,
                     searchdepth::Int64=20,

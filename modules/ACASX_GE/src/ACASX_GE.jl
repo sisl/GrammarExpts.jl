@@ -66,9 +66,9 @@ function acasx_ge(;outdir::AbstractString=joinpath(RESULTDIR, "./ACASX_GE"),
                   logfileroot::AbstractString="acasx_ge_log",
 
                   runtype::Symbol=:nmacs_vs_nonnmacs,
-                  data::AbstractString="dascfilt",
-                  manuals::AbstractString="dasc_manual",
-                  clusterdataname::AbstractString="josh1",
+                  data::AbstractString="dasc",
+                  manuals::AbstractString="",
+                  clusterdataname::AbstractString="",
 
                   genome_size::Int64=20,
                   pop_size::Int64=50,

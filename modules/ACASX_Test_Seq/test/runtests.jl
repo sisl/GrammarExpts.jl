@@ -33,10 +33,10 @@
 # *****************************************************************************
 
 using GrammarExpts
-using ACASX_Test_Seq
 using Base.Test
-
-tree, fitness, expr = nmacrule();
-@test_approx_eq_eps fitness 1.9 1e-2
-
+#= using ACASX_Test_Seq =#
+#=  =#
+#= tree, fitness, expr = nmacrule(); =#
+#= @test_approx_eq_eps fitness 1.9 1e-2 =#
+#=  =#
 

@@ -33,6 +33,9 @@
 # *****************************************************************************
 
 export script_base, script_dasc, script_libcas098small, script_libcas0100star, script_libcas0100llcem
+export process_jsons
+
+using FilterNMACInfo
 
 const DATADIR = joinpath(dirname(@__FILE__), "..", "..", "..", "data")
 
@@ -104,5 +107,19 @@ function script_base(jsondir::AbstractString, csvdir::AbstractString,
   make_dataset(tmpdir, jsondir, outdir)
 end
 
+"""
+Convenience function to process a new dataset from directory of json files
+dataname is the name of the dataset (no spaces)
+jsonpath is the directory of input json files
+adds 2 new datasets to Datasets/data (original and filtered NMAC)
+"""
+function process_jsons(dataname::AbstractString, jsonpath::AbstractString)
+    csvpath = joinpath(jsonpath, "csv") 
+    outpath = Pkg.dir("Datasets", "data", dataname)
+    script_base(jsonpath, csvpath, outpath; fromjson=true, correct_coc=false) 
 
+    filtname = dataname * "filt"
+    filtpath = Pkg.dir("Datasets", "data", filtname)
+    filter_nmac_info(FilterNMACInfo.isnmac, dataname, filtpath)
+end
 
