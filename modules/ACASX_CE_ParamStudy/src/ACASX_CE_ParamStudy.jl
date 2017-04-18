@@ -62,13 +62,19 @@ const MASTERLOG_FILE = joinpath(RESULTDIR, STUDYNAME, "masterlog.csv.gz")
 const PLOTLOG_FILE =  joinpath(RESULTDIR, STUDYNAME, "plotlog.csv.gz")
 const PLOTFILEROOT = joinpath(RESULTDIR, STUDYNAME, "plots")
 
+
+const PARAM_COLS = [:num_samples, :iterations, :elite_frac, :w_new, :w_prior, :maxsteps]
+const REDUCE_COLS = [:seed, :fitness]
+const MASTER_COLS = vcat(PARAM_COLS, REDUCE_COLS)
+
 resultpath(dir::ASCIIString="") = joinpath(RESULTDIR, dir)
 studypath(dir::ASCIIString="") = joinpath(RESULTDIR, STUDYNAME, dir)
 
 function combine_logs()
     dir = studypath()
-    D = logjoin(dir, "acasx_ce_log.txt", ["result", "parameters"], joinpath(dir, "joined"); 
+    logs = logjoin(dir, "acasx_ce_log.txt", ["result", "parameters"], joinpath(dir, "joined"); 
         transpose_syms=Union{Symbol,Void}[nothing, :parameter])
+    logs
 end
 
 function master_log()
@@ -78,7 +84,7 @@ function master_log()
 end
 function master_log(logs::TaggedDFLogger)
     masterlog = join(logs["parameters"], logs["result"], on=:name)
-    masterlog = masterlog[[:num_samples,:iterations,:elite_frac,:w_new
+    masterlog = masterlog[[:num_samples,:iterations,:elite_frac,:w_new,:w_prior,:maxsteps,:seed,:fitness]]
     writetable(MASTERLOG_FILE, masterlog)
     masterlog
 end
@@ -87,14 +93,12 @@ master_plot(; kwargs...) = master_plot(readtable(MASTERLOG_FILE); kwargs...)
 """
 Subsamples the collected data at 'subsample' rate to plot at a lower rate than collected
 """
-function master_plot(masterlog::DataFrame; subsample::Int64=25000)
+function master_plot(masterlog::DataFrame)
     D = masterlog 
 
     #aggregate over seed
-    D = D[[:num_samples, :iterations, :elite_frac, :w_new, :w_prior, :maxsteps, :seed, :fitness]]
-    D = aggregate(D, [:num_samples, :iterations, :elite_frac, :w_new, :w_prior, :maxsteps], 
+    D = aggregate(D[MASTER_COLS], PARAM_COLS, 
         [mean, std, length, SEM]) #operations applied over :seed and :fitness
-    D = D[rem(D[:nevals], subsample) .== 0, :] #subsample data
 
     #workaround for naming in julia 0.4
     rename!(D, Symbol("fitness_MathUtils.SEM"), :fitness_SEM) 
@@ -135,8 +139,10 @@ function master_plot(masterlog::DataFrame; subsample::Int64=25000)
     #= save(TEX(PLOTFILEROOT * ".tex"), td) =#
 end
 
-function combine_and_plot(; subsample=25000)
-    combine_logs()
+function combine_and_plot()
+    logs = combine_logs()
+    mlog = master_log(logs)
+    plog = master_plot(mlog) 
 end
 
 end #module

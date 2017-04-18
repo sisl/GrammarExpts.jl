@@ -5,11 +5,11 @@ const COMP = gethostname()
 const DATA = "nvn_dascfilt"
 const CONFIG = "normal"
 
-V_seeds = collect(1:5) 
+V_seeds = collect(1:20) 
 V_efs = [0.1, 0.25, 0.5, 0.6]
 V_wnews = [0.1, 0.2, 0.4, 0.6, 0.8, 1.0]
 V_wprior = [0.01, 0.05, 0.1, 0.2, 0.4]
-V_maxsteps = [20, 40, 60, 80]
+V_maxsteps = [20, 40, 60]
 
 template_ce(seed, elite_frac, w_new, w_prior, maxsteps) =
 """
