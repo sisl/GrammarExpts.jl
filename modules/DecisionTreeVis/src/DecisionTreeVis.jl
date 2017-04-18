@@ -89,7 +89,8 @@ function decisiontreevis{T}(dtree::DecisionTree, Dl::DFSetLabeled{T}, fileroot::
     viscalls = VisCalls(get_name, get_children, get_depth)
     write_json(dtree, viscalls, "$(fileroot)_decisiontree.json")
     if plotpdf
-        plottree("$(fileroot)_decisiontree.json", outfileroot="$(fileroot)_decisiontree")
+        plottree("$(fileroot)_decisiontree.json", level_dist_cm=5, 
+            outfileroot="$(fileroot)_decisiontree")
     end
 end
 
