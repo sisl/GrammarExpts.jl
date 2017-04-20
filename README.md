@@ -95,7 +95,7 @@ These are automatically fetched by the build script:
 
 ### Expression Search Problems
 
-A expression search problem is defined in a problem module that includes: 
+An expression search problem is defined in a problem module that includes: 
 
 * Grammar - From which expressions should be derived. Defines domain of search space.  The semantics of the grammar can be defined arbitrarily by the user.  For example, subsets of temporal logic can be used in time-series analysis.
 * Fitness function - A function that maps an expression to a real number indicating the quality of the expression.  Lower is better.  For example, for a classification task, this may be misclassification rate.
@@ -107,7 +107,7 @@ The following problems are currently implemented:
 
 ### ACAS X Datasets
 
-The build script automatically copies the default datasets into the Datasets/data folder. The source folders for the data are located under PKGDIR/GrammarExpts/data/Datasets. 
+The build script automatically copies the default datasets into the Datasets/data folder. The source folders for the data are located under PKGDIR/GrammarExpts/data/datasets. 
 
 * dasc - Encounter data for DASC dataset
 * dascfilt - Encounter data for DASC dataset filtered starting 5 seconds before CPA
@@ -195,5 +195,5 @@ using DataFrames
 D = readtable("acasx_ce_tree_log_result.csv.gz")
 ```
 
-You may have noticed that DataFrames just stores its data in CSV format, so another way to access the data is to decompress the .csv.gz file into a .csv file and view it.  This is especially useful when just taking a quick look at a particular log.
+You may have noticed that DataFrames just stores its data in CSV format, so another way to access the data is to decompress the .csv.gz file into a .csv file and open it as ASCII text.  This is especially useful when just taking a quick look at a particular log.
 

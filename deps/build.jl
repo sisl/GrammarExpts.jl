@@ -50,5 +50,7 @@ dstdir = Pkg.dir("Datasets", "data")
 for d in datasets
     src = joinpath(srcdir, d)
     dst = joinpath(dstdir, d)
-    cp(src, dst)
+    cp(src, dst; remove_destination=true)
 end
+
+using PGFPlots #workaround for contention between TikzPictures cache and this

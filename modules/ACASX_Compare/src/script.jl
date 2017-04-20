@@ -1,7 +1,7 @@
 using RLESUtils, RunUtils, IFTTTUtils
 
 const COMP = gethostname()
-const DATA = "nvn_dasc"
+const DATA = "nvn_dascfilt"
 const CONFIG = "normal"
 const I_START = 1 
 const I_END = 20 
