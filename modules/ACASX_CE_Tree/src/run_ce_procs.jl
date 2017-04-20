@@ -36,23 +36,23 @@
 using Iterators
 using RLESUtils, RunUtils, IFTTTUtils
 
-const RANGE = 1:10
+const RANGE = 3:5
 const COMP = gethostname()
-const DATA = "nvn_dascfilt"
+const DATA = "nvn_libcas098smallfilt_10K"
 const CONFIG = "normal"
 
 template_ce_tree(seed) = 
 """
 using GrammarExpts, ACASX_CE_Tree
 config = configure(ACASX_CE_Tree, "$DATA", "$CONFIG")
-acasx_ge_tree(; seed=$i, outdir=joinpath(ACASX_CE_Tree.RESULTDIR, "./ACASX_CE_Tree$i"), config...)
+acasx_ce_tree(; seed=$seed, outdir=joinpath(ACASX_CE_Tree.RESULTDIR, "ACASX_CE_Tree_$(DATA)_seed$seed"), config...)
 """
 
 notifydone() = sendifttt(;value1="$COMP done")
 
 A = JuliaSource[]
 for i in RANGE 
-    push!(A, JuliaSource(template_ce(i))
+    push!(A, JuliaSource(template_ce_tree(i)))
 end
 
 #include("run_ce_procs.jl")
